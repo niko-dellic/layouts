@@ -102,3 +102,40 @@ Returned handle: `popout(id, placement?): boolean`, `returnPane(id)`, `dispose()
 ## Theme variables
 
 Override `.layouts` variables in your application stylesheet: `--layouts-bg`, `--layouts-panel`, `--layouts-header`, `--layouts-text`, `--layouts-muted`, `--layouts-line`, `--layouts-accent`, `--layouts-focus`, and `--layouts-radius`. Styling remains scoped; application content is yours. No OS-dependent motion overrides are installed.
+
+## Tab icons and shortcuts
+
+`Pane.icon?: string` is an optional, serializable application key. Supply
+`renderIcon(key, document)` to the vanilla mount options or React `<Layout>`.
+Return a fresh decorative DOM element, or `undefined` for an unknown key.
+The library falls back to the first character of the title, keeps the full title
+as the accessible name and tooltip, and never interprets icon keys as markup.
+The demos use a small Lucide registry; consumers can use any icon library without
+adding Lucide to their production dependencies. See `demos/icons.ts`.
+
+Tabs shrink according to their own available width. Below 130px per tab, only
+the active tab keeps its close button; below 95px, labels hide and icons remain.
+If even icon tabs cannot fit, the strip scrolls. Drag to either half of another
+tab to insert before or after it, including within the same pane region.
+Closing respects `capabilities.close`; locked tabs have no close button.
+
+Convenience shortcuts are disabled by default:
+
+```ts
+mountLayout(host, {
+  store,
+  renderers,
+  shortcuts: true, // enable both defaults
+});
+// Or select individually:
+// shortcuts: { maximize: true, middleClickClose: false }
+```
+
+Option+Space (`Alt+Space`) toggles workspace maximize/restore for the hovered
+pane region, falling back to the keyboard-focused region. This fills the layout
+host; it does not invoke the browser Fullscreen API. Text inputs, editable
+content, dialogs, and repeated key events are left alone. Some operating systems
+reserve Alt+Space and may intercept it before the page receives it; the actions
+menu remains available. Middle-click closes a tab when enabled and permitted.
+Normal tab arrow-key navigation and divider keyboard resizing remain available
+regardless of this convenience setting.

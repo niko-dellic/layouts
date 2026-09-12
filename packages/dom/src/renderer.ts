@@ -1,3 +1,5 @@
+import { fillTabs } from './tabs.js';
+import { bindShortcuts } from './shortcuts.js';
 import { allocate, bounds, DIVIDER, findNode, groups, paneIds } from '@niko-dellic/layouts-core';
 import type { Group, Layout, Node, Pane } from '@niko-dellic/layouts-core';
 import type { LayoutOptions, MountedLayout } from './types.js';
@@ -51,6 +53,7 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
       error(e);
     }
   };
+  bindShortcuts(root, options, scope, act);
   const windows = new Windows(doc, options, error);
   const menu = createPaneMenu(root, options, windows, render, error);
   const renderOptions = { ...options, onError: error };
@@ -283,54 +286,21 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
       const tabs = el(doc, 'div', 'layouts-tabs');
       tabs.setAttribute('role', 'tablist');
       tabs.setAttribute('aria-label', `Tabs in ${g.id}`);
-      definitions.forEach((pane, i) => {
-        const tab = button(pane.title, pane.title, () => options.store.activate(g.id, pane.id));
-        tab.className = 'layouts-tab';
-        tab.setAttribute('role', 'tab');
-        tab.setAttribute('aria-selected', String(g.active === pane.id));
-        tab.tabIndex = g.active === pane.id ? 0 : -1;
-        tab.dataset.focusId = `tab-${pane.id}`;
-        tab.id = `${prefix}-tab-${pane.id}`;
-        tab.setAttribute('aria-controls', `${prefix}-panel-${pane.id}`);
-        tab.draggable = options.store.can(pane.id, 'move');
-        tab.ondragstart = (e) => {
-          dragId = pane.id;
-          e.dataTransfer?.setData('text/plain', pane.id);
-          if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
-        };
-        tab.ondragend = () => {
-          dragId = undefined;
+      fillTabs(tabs, g, definitions, {
+        options,
+        prefix,
+        act,
+        getDrag: () => dragId,
+        setDrag: (id) => {
+          dragId = id;
+        },
+        clearDrop: () => {
           for (const region of regions.values()) delete region.element.dataset.drop;
-        };
-        tab.ondragover = (e) => {
-          if (dragId && g.panes.every((id) => options.store.can(id, 'move'))) {
-            e.preventDefault();
-            e.stopPropagation();
-          }
-        };
-        tab.ondrop = (e) => {
-          if (!dragId) return;
-          e.preventDefault();
-          e.stopPropagation();
-          const id = dragId;
-          dragId = undefined;
-          act(() => options.store.move(id, g.id, 'tab', i, { source: 'user' }));
-        };
-        tab.onkeydown = (e) => {
-          let index = i;
-          if (e.key === 'ArrowRight') index = (i + 1) % g.panes.length;
-          else if (e.key === 'ArrowLeft') index = (i + g.panes.length - 1) % g.panes.length;
-          else if (e.key === 'Home') index = 0;
-          else if (e.key === 'End') index = g.panes.length - 1;
-          else return;
-          e.preventDefault();
-          act(() => options.store.activate(g.id, g.panes[index]!));
-          regions
-            .get(g.id)
-            ?.header?.querySelector<HTMLButtonElement>('[aria-selected="true"]')
-            ?.focus();
-        };
-        tabs.append(tab);
+          for (const marker of root.querySelectorAll<HTMLElement>('[data-tab-drop]'))
+            delete marker.dataset.tabDrop;
+        },
+        focusActive: () =>
+          regions.get(g.id)?.header?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus(),
       });
       r.header!.append(tabs);
       const active = g.active ? layout.panes[g.active] : undefined;

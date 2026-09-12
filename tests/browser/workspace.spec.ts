@@ -64,10 +64,9 @@ for (const framework of ['vanilla', 'react']) {
       await page.getByRole('button', { name: 'Notes actions', exact: true }).click();
       await page.getByRole('button', { name: 'Join sibling region', exact: true }).click();
       await expect(page.getByRole('tab', { name: 'Scene', exact: true })).toBeVisible();
-      await page.getByRole('button', { name: 'Notes actions', exact: true }).click();
       await page
-        .getByRole('button', { name: 'Move into Inspector / Activity', exact: true })
-        .click();
+        .getByRole('tab', { name: 'Notes', exact: true })
+        .dragTo(page.getByRole('tab', { name: 'Inspector', exact: true }));
       const target = page.locator('[data-node-id="inspector-group"]');
       await expect(target.getByRole('tab', { name: 'Notes', exact: true })).toBeVisible();
       await page.getByRole('button', { name: 'Notes actions', exact: true }).click();

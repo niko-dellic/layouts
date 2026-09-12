@@ -1,0 +1,29 @@
+import { Activity, Box, Layers, SlidersHorizontal, Timer } from 'lucide';
+import type { IconNode } from 'lucide';
+const icons: Record<string, IconNode> = {
+  activity: Activity,
+  canvas: Box,
+  tools: Layers,
+  notes: SlidersHorizontal,
+  timeline: Timer,
+};
+/** An application-owned registry; only these Lucide icons enter the demo bundle. */
+export function renderIcon(key: string, doc: Document): Element | undefined {
+  if (!Object.hasOwn(icons, key)) return;
+  const svg = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  for (const [key, value] of Object.entries({
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    'stroke-width': '1.7',
+    'stroke-linecap': 'round',
+    'stroke-linejoin': 'round',
+  }))
+    svg.setAttribute(key, value);
+  for (const [tag, attrs] of icons[key]!) {
+    const node = doc.createElementNS(svg.namespaceURI, tag);
+    for (const [name, value] of Object.entries(attrs)) node.setAttribute(name, String(value));
+    svg.append(node);
+  }
+  return svg;
+}

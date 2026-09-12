@@ -5,6 +5,8 @@ export interface Pane {
   id: string;
   type: string;
   title: string;
+  /** Application-defined icon key, resolved by the view adapter. */
+  icon?: string;
   params?: Json;
   capabilities?: Partial<Record<Capability, boolean>>;
   size?: { minWidth?: number; maxWidth?: number; minHeight?: number; maxHeight?: number };

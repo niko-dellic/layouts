@@ -84,6 +84,8 @@ export const Layout = forwardRef<MountedLayout, LayoutProps>(function Layout(pro
     onError,
     prepareWindow,
     openWindow,
+    renderIcon,
+    shortcuts,
     className,
     style,
   } = props;
@@ -116,6 +118,8 @@ export const Layout = forwardRef<MountedLayout, LayoutProps>(function Layout(pro
         ...(onError ? { onError } : {}),
         ...(prepareWindow ? { prepareWindow } : {}),
         ...(openWindow ? { openWindow } : {}),
+        ...(renderIcon ? { renderIcon } : {}),
+        ...(shortcuts !== undefined ? { shortcuts } : {}),
       });
       mounted.current = instance;
     });
@@ -125,7 +129,17 @@ export const Layout = forwardRef<MountedLayout, LayoutProps>(function Layout(pro
       queueMicrotask(() => previous?.dispose());
       if (mounted.current === previous) mounted.current = null;
     };
-  }, [store, renderers, getPaneState, createPane, onError, prepareWindow, openWindow]);
+  }, [
+    store,
+    renderers,
+    getPaneState,
+    createPane,
+    onError,
+    prepareWindow,
+    openWindow,
+    renderIcon,
+    shortcuts,
+  ]);
   return (
     <div ref={host} className={className} style={{ width: '100%', height: '100%', ...style }} />
   );

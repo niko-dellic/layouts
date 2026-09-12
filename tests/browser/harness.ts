@@ -31,6 +31,7 @@ let fail = false,
 function mount() {
   mounted = mountLayout(document.querySelector('#host')!, {
     store,
+    shortcuts: new URLSearchParams(location.search).has('shortcuts'),
     getPaneState: () => data,
     onError: (e) => stats.errors.push(String(e)),
     openWindow: () =>

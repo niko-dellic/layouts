@@ -23,28 +23,38 @@ export const initial: Layout = {
     tools: {
       id: 'tools',
       type: 'tools',
+      icon: 'tools',
       title: 'Objects',
       size: { minWidth: 190, minHeight: 120 },
     },
     canvas: {
       id: 'canvas',
       type: 'canvas',
+      icon: 'canvas',
       title: 'Scene',
       size: { minWidth: 280, minHeight: 180 },
     },
     notes: {
       id: 'notes',
       type: 'notes',
+      icon: 'notes',
       title: 'Inspector',
       size: { minWidth: 220, minHeight: 180 },
     },
     activity: {
       id: 'activity',
       type: 'activity',
+      icon: 'activity',
       title: 'Activity',
       size: { minWidth: 220, minHeight: 180 },
     },
-    timeline: { id: 'timeline', type: 'timeline', title: 'Timeline', size: { minHeight: 110 } },
+    timeline: {
+      id: 'timeline',
+      type: 'timeline',
+      icon: 'timeline',
+      title: 'Timeline',
+      size: { minHeight: 110 },
+    },
     footer: {
       id: 'footer',
       type: 'footer',
@@ -145,6 +155,7 @@ let next = 1;
 export const createPane = (_source: Pane): Pane => ({
   id: `notes-${next++}`,
   type: 'notes',
+  icon: 'notes',
   title: 'Notes',
   size: { minWidth: 180, minHeight: 120 },
 });

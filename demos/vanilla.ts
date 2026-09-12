@@ -1,3 +1,4 @@
+import { renderIcon } from './icons.js';
 import '@niko-dellic/layouts/styles.css';
 import './style.css';
 import { mountLayout } from '@niko-dellic/layouts';
@@ -9,6 +10,8 @@ const layout = mountLayout(document.querySelector('#workspace')!, {
   renderers,
   getPaneState,
   createPane,
+  renderIcon,
+  shortcuts: true,
 });
 setupShell(() => layout);
 window.addEventListener('pagehide', () => layout.dispose(), { once: true });

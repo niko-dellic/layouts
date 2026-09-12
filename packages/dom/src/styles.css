@@ -213,3 +213,84 @@
   min-height: 0;
   height: auto;
 }
+
+/* Each tab responds to its allocated width, not the whole viewport. */
+.layouts-tab-item {
+  position: relative;
+  display: flex;
+  flex: 0 1 180px;
+  min-width: 32px;
+  container: layouts-tab / inline-size;
+  border-bottom: 2px solid transparent;
+}
+.layouts-tab-item[data-active='true'] {
+  min-width: 56px;
+  background: var(--layouts-panel);
+  border-bottom-color: var(--layouts-accent);
+}
+.layouts-tab-item .layouts-tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: 5px 8px;
+}
+.layouts-tab-icon {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.layouts-tab-icon > * {
+  width: 16px;
+  height: 16px;
+}
+.layouts-tab-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.layouts-tab-item .layouts-tab-close {
+  flex: 0 0 22px;
+  align-self: center;
+  width: 22px;
+  height: 24px;
+  padding: 0;
+  margin-right: 3px;
+  font-size: 17px;
+}
+@container layouts-tab (max-width: 130px) {
+  .layouts-tab-close {
+    display: none;
+  }
+  .layouts-tab-item[data-active='true'] > .layouts-tab-close {
+    display: block;
+  }
+}
+@container layouts-tab (max-width: 95px) {
+  .layouts-tab-label {
+    display: none;
+  }
+  .layouts-tab-item .layouts-tab {
+    justify-content: center;
+    padding-inline: 4px;
+  }
+}
+.layouts-tab-item[data-tab-drop]::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 0;
+  width: 2px;
+  background: var(--layouts-accent);
+  pointer-events: none;
+}
+.layouts-tab-item[data-tab-drop='after']::after {
+  left: auto;
+  right: 0;
+}

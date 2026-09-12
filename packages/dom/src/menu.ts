@@ -1,4 +1,3 @@
-import { groups } from '@niko-dellic/layouts-core';
 import type { Group, Pane } from '@niko-dellic/layouts-core';
 import type { LayoutOptions } from './types.js';
 import type { Windows } from './windows.js';
@@ -43,7 +42,7 @@ export function createPaneMenu(
       b.disabled = !enabled;
       dialog.append(b);
     };
-    const allowed = (cap: 'split' | 'join' | 'move') =>
+    const allowed = (cap: 'split' | 'join') =>
       group.panes.every((id) => options.store.can(id, cap));
     const create = (axis: 'horizontal' | 'vertical') => {
       const fresh = options.createPane?.(pane);
@@ -70,44 +69,6 @@ export function createPaneMenu(
         refresh();
       },
     );
-    if (options.store.can(pane.id, 'move')) {
-      if (group.panes.indexOf(pane.id) > 0)
-        add('Move tab earlier', allowed('move'), () =>
-          options.store.move(pane.id, group.id, 'tab', group.panes.indexOf(pane.id) - 1, {
-            source: 'user',
-          }),
-        );
-      if (group.panes.indexOf(pane.id) < group.panes.length - 1)
-        add('Move tab later', allowed('move'), () =>
-          options.store.move(pane.id, group.id, 'tab', group.panes.indexOf(pane.id) + 1, {
-            source: 'user',
-          }),
-        );
-      for (const target of groups(options.store.getSnapshot().root).filter(
-        (g) => g.id !== group.id,
-      )) {
-        const label =
-          target.panes.map((id) => options.store.getSnapshot().panes[id]!.title).join(' / ') ||
-          'Empty region';
-        for (const [position, verb] of [
-          ['tab', 'into'],
-          ['left', 'left of'],
-          ['right', 'right of'],
-          ['top', 'above'],
-          ['bottom', 'below'],
-        ] as const) {
-          add(
-            `Move ${verb} ${label}`,
-            target.panes.every(
-              (id) =>
-                options.store.can(id, 'move') &&
-                (position === 'tab' || options.store.can(id, 'split')),
-            ),
-            () => options.store.move(pane.id, target.id, position, undefined, { source: 'user' }),
-          );
-        }
-      }
-    }
     add('Close pane', options.store.can(pane.id, 'close'), () =>
       options.store.close(pane.id, { source: 'user' }),
     );

@@ -1,3 +1,4 @@
+import { renderIcon } from './icons.js';
 import '@niko-dellic/layouts/styles.css';
 import './style.css';
 import { createRoot } from 'react-dom/client';
@@ -74,6 +75,8 @@ root.render(
     components={components}
     getPaneState={getPaneState}
     createPane={createPane}
+    renderIcon={renderIcon}
+    shortcuts
   />,
 );
 setupShell(() => ref.current ?? undefined);

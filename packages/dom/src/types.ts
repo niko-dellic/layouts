@@ -17,6 +17,10 @@ export type PaneRenderer = (context: PaneContext) => PaneView;
 export interface LayoutOptions {
   store: LayoutStore;
   renderers: Record<string, PaneRenderer>;
+  /** Return a fresh decorative icon element. Unknown keys use a title initial. */
+  renderIcon?: (key: string, document: Document) => Element | undefined;
+  /** Opt-in conveniences; omitted and false disable both. */
+  shortcuts?: boolean | { maximize?: boolean; middleClickClose?: boolean };
   getPaneState?: (paneId: string) => unknown;
   /** Called by the split menu. Returning undefined cancels pane creation. */
   createPane?: (source: Pane) => Pane | undefined;
