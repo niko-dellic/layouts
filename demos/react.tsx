@@ -1,3 +1,4 @@
+import { themes } from '@niko-dellic/layouts';
 import { renderIcon } from './icons.js';
 import '@niko-dellic/layouts/styles.css';
 import './style.css';
@@ -6,7 +7,7 @@ import { createRef, useLayoutEffect, useRef, useSyncExternalStore } from 'react'
 import { Layout } from '@niko-dellic/layouts-react';
 import type { PaneProps } from '@niko-dellic/layouts-react';
 import type { MountedLayout } from '@niko-dellic/layouts';
-import { store, state, getPaneState, createPane } from './model.js';
+import { store, state, getPaneState, tabs } from './model.js';
 import { imperativeView } from './views.js';
 import { setupShell } from './shell.js';
 function Notes() {
@@ -66,6 +67,7 @@ const components = {
   activity: Imperative,
   footer: Imperative,
 };
+const demoTheme = { ...themes.sage, fontSize: '11px', headerHeight: '32px' };
 const ref = createRef<MountedLayout>();
 const root = createRoot(document.querySelector('#workspace')!);
 root.render(
@@ -74,7 +76,8 @@ root.render(
     store={store}
     components={components}
     getPaneState={getPaneState}
-    createPane={createPane}
+    tabs={tabs}
+    theme={demoTheme}
     renderIcon={renderIcon}
     shortcuts
   />,

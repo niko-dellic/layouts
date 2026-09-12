@@ -1,6 +1,6 @@
 import { LayoutStore } from '@niko-dellic/layouts-core';
 import type { Layout } from '@niko-dellic/layouts-core';
-import { mountLayout } from '@niko-dellic/layouts';
+import { mountLayout, TabRegistry } from '@niko-dellic/layouts';
 import '@niko-dellic/layouts/styles.css';
 import type { MountedLayout } from '@niko-dellic/layouts';
 const data = { text: 'initial' };
@@ -25,12 +25,14 @@ const fixture: Layout = {
   },
 };
 const store = new LayoutStore(fixture);
+const tabs = new TabRegistry();
 let mounted: MountedLayout;
 let fail = false,
   blocked = false;
 function mount() {
   mounted = mountLayout(document.querySelector('#host')!, {
     store,
+    tabs,
     shortcuts: new URLSearchParams(location.search).has('shortcuts'),
     getPaneState: () => data,
     onError: (e) => stats.errors.push(String(e)),
@@ -60,6 +62,8 @@ mount();
 document.querySelector('#open')!.addEventListener('click', () => mounted.popout('a'));
 document.querySelector('#return')!.addEventListener('click', () => mounted.returnPane('a'));
 export const harness = {
+  tabs,
+  setTheme: (theme: import('@niko-dellic/layouts').LayoutTheme) => mounted.setTheme(theme),
   store,
   stats,
   fixture,

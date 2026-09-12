@@ -1,6 +1,22 @@
+import { themes } from '@niko-dellic/layouts';
 import { store } from './model.js';
 import type { MountedLayout } from '@niko-dellic/layouts';
 export function setupShell(getMounted: () => MountedLayout | undefined) {
+  const themeSelect = document.createElement('select');
+  themeSelect.setAttribute('aria-label', 'Workspace theme');
+  for (const name of ['sage', 'light', 'dark'] as const) {
+    const option = document.createElement('option');
+    option.value = name;
+    option.textContent = name[0]!.toUpperCase() + name.slice(1);
+    themeSelect.append(option);
+  }
+  themeSelect.onchange = () =>
+    getMounted()?.setTheme({
+      ...themes[themeSelect.value as keyof typeof themes],
+      fontSize: '11px',
+      headerHeight: '32px',
+    });
+  document.querySelector('.demo-actions')!.prepend(themeSelect);
   const output = document.querySelector<HTMLTextAreaElement>('#layout-json')!;
   const dialog = document.querySelector<HTMLDialogElement>('#json-dialog')!;
   const error = document.querySelector<HTMLElement>('#json-error')!;

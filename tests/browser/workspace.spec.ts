@@ -60,6 +60,7 @@ for (const framework of ['vanilla', 'react']) {
       await expect(fixed).toHaveAttribute('aria-disabled', 'true');
       await page.getByRole('button', { name: 'Scene actions', exact: true }).click();
       await page.getByRole('button', { name: 'Split below', exact: true }).click();
+      await page.getByRole('option', { name: 'Notes', exact: true }).click();
       await expect(page.getByRole('tab', { name: 'Notes', exact: true })).toBeVisible();
       await page.getByRole('button', { name: 'Notes actions', exact: true }).click();
       await page.getByRole('button', { name: 'Join sibling region', exact: true }).click();
@@ -74,6 +75,7 @@ for (const framework of ['vanilla', 'react']) {
       await expect(page.getByRole('tab', { name: 'Notes', exact: true })).toHaveCount(0);
       await page.getByRole('button', { name: 'Scene actions', exact: true }).click();
       await page.getByRole('button', { name: '+ Add tab', exact: true }).click();
+      await page.getByRole('option', { name: 'Notes', exact: true }).click();
       const sceneGroup = page
         .getByRole('tab', { name: 'Scene', exact: true })
         .locator('xpath=ancestor::section[1]');

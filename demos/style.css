@@ -153,44 +153,22 @@ h1 {
     monospace;
   padding: 13px 1px 18px;
 }
-.layouts {
-  --layouts-bg: #cbd3c7;
-  --layouts-panel: #f1f3ed;
-  --layouts-header: #e9ede4;
-  --layouts-text: #2d4133;
-  --layouts-muted: #72816e;
-  --layouts-line: #d0d8c9;
-  --layouts-accent: #6a957a;
-  --layouts-focus: #316c4b;
-  font-size: 11px;
-}
-.layouts-header {
-  height: 32px;
-  flex-basis: 32px;
-}
-.layouts-tab {
-  font-size: 11px;
-  padding: 6px 12px;
-}
-.layouts-menu {
-  font-size: 12px;
-}
 .demo-toolbar {
   display: flex;
   align-items: center;
   gap: 16px;
   padding: 0 18px;
-  background: #e9ede4;
+  background: var(--layouts-header);
   font-size: 11px;
 }
 .demo-toolbar strong {
   font-weight: 550;
 }
 .slash {
-  color: #a0ad9c;
+  color: var(--layouts-muted);
 }
 .muted {
-  color: #7a8a79;
+  color: var(--layouts-muted);
   line-height: 1.7;
 }
 .toolbar-right {
@@ -204,15 +182,15 @@ h1 {
   font-size: 10px;
 }
 .toolbar-right button[aria-pressed='true'] {
-  background: #d5e0ce;
+  background: color-mix(in srgb, var(--layouts-accent) 18%, var(--layouts-panel));
 }
 .session-dot {
   font-size: 10px;
-  color: #87947f;
+  color: var(--layouts-muted);
 }
 .session-dot::before {
   content: '●';
-  color: #6e9878;
+  color: var(--layouts-muted);
   margin-right: 7px;
 }
 .demo-tools {
@@ -224,28 +202,28 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  border-bottom: 1px solid #e0e5db;
+  border-bottom: 1px solid var(--layouts-line);
 }
 .object-row:nth-child(2) {
-  background: #dce6d5;
-  border: 1px solid #bdcfb5;
+  background: color-mix(in srgb, var(--layouts-accent) 18%, var(--layouts-panel));
+  border: 1px solid var(--layouts-line);
   border-radius: 4px;
 }
 .object-name::before {
   content: '◇';
   margin-right: 8px;
-  color: #899b7f;
+  color: var(--layouts-muted);
 }
 .object-row small {
   font:
     9px ui-monospace,
     monospace;
-  color: #92a088;
+  color: var(--layouts-muted);
   padding-left: 19px;
 }
 .tools-help {
   font-size: 10px;
-  color: #95a08e;
+  color: var(--layouts-muted);
   line-height: 1.8;
   margin: 28px 9px;
 }
@@ -276,17 +254,17 @@ h1 {
 .field-label {
   font-size: 10px;
   display: block;
-  color: #73836d;
+  color: var(--layouts-muted);
 }
 .field-label textarea {
   display: block;
   width: 100%;
   height: 145px;
   resize: vertical;
-  background: #fafbf7;
-  border: 1px solid #d4ddcc;
+  background: var(--layouts-panel);
+  border: 1px solid var(--layouts-line);
   border-radius: 4px;
-  color: #65775d;
+  color: var(--layouts-muted);
   font-size: 11px;
   line-height: 1.8;
   padding: 12px;
@@ -294,7 +272,7 @@ h1 {
 }
 .footnote {
   font-size: 9px;
-  color: #92a087;
+  color: var(--layouts-muted);
   line-height: 1.6;
 }
 .scene-container {
@@ -325,9 +303,9 @@ h1 {
   font:
     8px ui-monospace,
     monospace;
-  color: #93a28a;
+  color: var(--layouts-muted);
   padding-bottom: 10px;
-  border-bottom: 1px solid #d6dfce;
+  border-bottom: 1px solid var(--layouts-line);
 }
 .ruler span {
   position: relative;
@@ -338,7 +316,7 @@ h1 {
   left: 0;
   top: 17px;
   height: 4px;
-  border-left: 1px solid #b7c6aa;
+  border-left: 1px solid var(--layouts-line);
 }
 .track {
   display: flex;
@@ -348,7 +326,7 @@ h1 {
   font-size: 10px;
 }
 .track-label {
-  color: #8c9d80;
+  color: var(--layouts-muted);
   min-width: 110px;
 }
 .clip {
@@ -357,18 +335,18 @@ h1 {
   background: #d5e4c9;
   border-left: 3px solid #8eb277;
   border-radius: 3px;
-  color: #75965f;
+  color: #526e40;
 }
 .demo-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 12px;
-  background: #e4e9dd;
+  background: var(--layouts-header);
   font:
     8px ui-monospace,
     monospace;
-  color: #8c9c7f;
+  color: var(--layouts-muted);
 }
 .activity-count {
   font:
@@ -547,4 +525,18 @@ h1 {
     flex-wrap: wrap;
     gap: 20px;
   }
+}
+
+.demo-actions select {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid #c9d1c4;
+  border-radius: 5px;
+  padding: 8px;
+}
+
+.layouts .toolbar-right button {
+  color: var(--layouts-text);
+  border-color: var(--layouts-line);
 }

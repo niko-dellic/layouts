@@ -143,3 +143,5 @@ The suite checks the pure model, real popouts, rollback, lifecycle cleanup, data
 - On small viewports, constraints are preserved through overflow rather than silently shrinking panes below their minimums.
 
 MIT © niko-dellic
+
+Tab creation uses an application-owned `TabRegistry` with a searchable picker, including canvas views. See [registration API](docs/api.md#register-available-tabs) and [theme tokens and presets](docs/theming.md).

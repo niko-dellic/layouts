@@ -1,3 +1,4 @@
+import { TabRegistry } from '@niko-dellic/layouts';
 import { LayoutStore } from '@niko-dellic/layouts-core';
 import type { Layout, Pane } from '@niko-dellic/layouts-core';
 export const initial: Layout = {
@@ -151,11 +152,37 @@ export const state = {
   },
 };
 export const getPaneState = () => state;
-let next = 1;
-export const createPane = (_source: Pane): Pane => ({
-  id: `notes-${next++}`,
-  type: 'notes',
-  icon: 'notes',
-  title: 'Notes',
-  size: { minWidth: 180, minHeight: 120 },
-});
+export const tabs = new TabRegistry([
+  {
+    id: 'canvas',
+    title: 'Canvas',
+    description: 'Interactive scene viewport',
+    icon: 'canvas',
+    keywords: ['scene', '3d', 'viewport'],
+    create: () => ({
+      id: crypto.randomUUID(),
+      type: 'canvas',
+      icon: 'canvas',
+      title: 'Scene',
+      size: { minWidth: 180, minHeight: 120 },
+    }),
+  },
+  ...[
+    ['notes', 'Notes', 'Inspector and working notes'],
+    ['tools', 'Objects', 'Scene object collection'],
+    ['activity', 'Activity', 'Application activity'],
+    ['timeline', 'Timeline', 'Animation and playback'],
+  ].map(([type, title, description]) => ({
+    id: type!,
+    title: title!,
+    description: description!,
+    icon: type!,
+    create: (): Pane => ({
+      id: crypto.randomUUID(),
+      type: type!,
+      icon: type!,
+      title: title!,
+      size: { minWidth: 180, minHeight: 120 },
+    }),
+  })),
+]);

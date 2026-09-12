@@ -139,3 +139,49 @@ reserve Alt+Space and may intercept it before the page receives it; the actions
 menu remains available. Middle-click closes a tab when enabled and permitted.
 Normal tab arrow-key navigation and divider keyboard resizing remain available
 regardless of this convenience setting.
+
+## Register available tabs
+
+A `TabRegistry` describes what users can create; the layout snapshot describes
+what is already open. Registering a type does not mount it. Removing a
+registration prevents new instances without closing existing panes.
+
+```ts
+import { TabRegistry, mountLayout } from '@niko-dellic/layouts';
+const tabs = new TabRegistry();
+const unregister = tabs.register({
+  id: 'canvas',
+  title: 'Canvas',
+  description: 'Interactive scene viewport',
+  icon: 'canvas',
+  keywords: ['scene', 'viewport', '3d'],
+  create: ({ source, groupId }) => ({
+    id: crypto.randomUUID(),
+    type: 'canvas', // corresponding renderer/component registry key
+    title: 'Scene',
+    icon: 'canvas',
+  }),
+});
+const workspace = mountLayout(host, { store, renderers, tabs });
+// unregister(); // also updates a currently open picker
+```
+
+`new TabRegistry(entries)` accepts an initial array. `register` rejects duplicate
+or empty IDs and returns an idempotent unregister function. `list()` returns
+registrations in insertion order; `subscribe(listener)` returns cleanup.
+Registration IDs identify choices; pane IDs identify individual open instances.
+Factories own unique IDs, type, metadata, constraints, and initial params; return
+`undefined` to cancel. They run only after an explicit selection. Core validation
+remains atomic, so a rejected creation preserves the workspace.
+
+Add tab and split actions open a searchable combobox tray. Search matches titles,
+descriptions, and keywords. Arrow keys move selection, Enter creates, and Escape
+cancels. Add tab activates the new tab in the same region. Split creates a new
+region containing the selected type. Canvas is an ordinary pane renderer and can
+be added, tabbed, dragged, closed, maximized, and popped out under the same rules.
+
+Pass `tabs` to React `<Layout>` too. Keep the registry object stable and register
+or unregister entries as features mount or unmount. The legacy `createPane`
+callback is supported only for splitting when no registry is supplied; Add tab
+requires registered choices. Existing movement/split capability checks still
+apply. See [Theming](theming.md) for the separate theme API.

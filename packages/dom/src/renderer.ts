@@ -1,3 +1,4 @@
+import { applyTheme } from './theme.js';
 import { fillTabs } from './tabs.js';
 import { bindShortcuts } from './shortcuts.js';
 import { allocate, bounds, DIVIDER, findNode, groups, paneIds } from '@niko-dellic/layouts-core';
@@ -27,6 +28,7 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
     regions = new Map<string, Region>(),
     panes = new Map<string, MountedPane>();
   const root = el(doc, 'div', 'layouts');
+  applyTheme(root, options.theme ?? {});
   root.setAttribute('aria-label', 'Pane workspace');
   const stage = el(doc, 'div', 'layouts-stage');
   const status = el(doc, 'div', 'layouts-status');
@@ -54,7 +56,7 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
     }
   };
   bindShortcuts(root, options, scope, act);
-  const windows = new Windows(doc, options, error);
+  const windows = new Windows(doc, options, error, root);
   const menu = createPaneMenu(root, options, windows, render, error);
   const renderOptions = { ...options, onError: error };
   function button(text: string, title: string, action: () => void) {
@@ -474,6 +476,9 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
   });
   render();
   return {
+    setTheme(theme) {
+      applyTheme(root, theme);
+    },
     popout(id, placement) {
       const opened = windows.open(id, placement);
       render();

@@ -1,10 +1,11 @@
+import { fillTabPicker } from './picker.js';
 import type { Group, Pane } from '@niko-dellic/layouts-core';
 import type { LayoutOptions } from './types.js';
 import type { Windows } from './windows.js';
 import { el, Scope } from './lifetime.js';
 export function createPaneMenu(
   root: HTMLElement,
-  options: Pick<LayoutOptions, 'store' | 'createPane'>,
+  options: LayoutOptions,
   windows: Pick<Windows, 'pending' | 'open'>,
   refresh: () => void,
   report: (e: unknown) => void,
@@ -44,16 +45,45 @@ export function createPaneMenu(
     };
     const allowed = (cap: 'split' | 'join' | 'move') =>
       group.panes.every((id) => options.store.can(id, cap));
-    const create = (axis: 'horizontal' | 'vertical') => {
-      const fresh = options.createPane?.(pane);
-      if (fresh) options.store.split(group.id, axis, fresh, { source: 'user' });
+    const available = Boolean(options.tabs?.list().length);
+    const create = (axis?: 'horizontal' | 'vertical') => {
+      const commit = (fresh: Pane) =>
+        axis
+          ? options.store.split(group.id, axis, fresh, { source: 'user' })
+          : options.store.add(fresh, group.id, { source: 'user' });
+      if (options.tabs) {
+        const pickerScope = new Scope();
+        current = pickerScope;
+        const picker = el(doc, 'dialog', 'layouts-menu layouts-picker');
+        pickerScope.add(() => picker.remove());
+        pickerScope.listen(picker, 'close', () => pickerScope.dispose());
+        root.append(picker);
+        const rect = anchor.getBoundingClientRect();
+        picker.style.left = `${Math.max(8, Math.min(rect.right - 340, win.innerWidth - 356))}px`;
+        picker.style.top = `${Math.max(8, Math.min(rect.bottom + 4, win.innerHeight - 380))}px`;
+        pickerScope.listen(picker, 'click', (event) => {
+          const e = event as MouseEvent;
+          const bounds = picker.getBoundingClientRect();
+          if (
+            e.target === picker &&
+            (e.clientX < bounds.left ||
+              e.clientX > bounds.right ||
+              e.clientY < bounds.top ||
+              e.clientY > bounds.bottom)
+          )
+            pickerScope.dispose();
+        });
+        picker.showModal();
+        fillTabPicker(picker, pickerScope, options, pane, group, commit, report);
+      } else if (axis) {
+        const fresh = options.createPane?.(pane);
+        if (fresh) commit(fresh);
+      }
     };
-    add('+ Add tab', Boolean(options.createPane) && allowed('move'), () => {
-      const fresh = options.createPane?.(pane);
-      if (fresh) options.store.add(fresh, group.id, { source: 'user' });
-    });
-    add('Split right', Boolean(options.createPane) && allowed('split'), () => create('horizontal'));
-    add('Split below', Boolean(options.createPane) && allowed('split'), () => create('vertical'));
+    add('+ Add tab', available && allowed('move'), () => create());
+    const canCreate = options.tabs ? available : Boolean(options.createPane);
+    add('Split right', canCreate && allowed('split'), () => create('horizontal'));
+    add('Split below', canCreate && allowed('split'), () => create('vertical'));
     add('Join sibling region', allowed('join'), () =>
       options.store.join(group.id, { source: 'user' }),
     );

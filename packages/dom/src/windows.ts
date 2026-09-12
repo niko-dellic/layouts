@@ -1,3 +1,4 @@
+import { themeProperties } from './theme.js';
 import type { Pane, WindowPlacement } from '@niko-dellic/layouts-core';
 import type { LayoutOptions } from './types.js';
 import { el, Scope } from './lifetime.js';
@@ -19,6 +20,7 @@ export class Windows {
     private doc: Document,
     private options: LayoutOptions,
     private error: (e: unknown) => void,
+    private themeRoot: HTMLElement,
   ) {
     const interval = setInterval(() => this.check(), 300);
     this.scope.add(() => clearInterval(interval));
@@ -141,6 +143,20 @@ export class Windows {
       bar.append(el(dest, 'strong', '', pane.title), button);
       shell.append(bar);
       dest.body.append(shell);
+      const syncTheme = () => {
+        const computed = this.doc.defaultView!.getComputedStyle(this.themeRoot);
+        for (const property of Object.values(themeProperties)) {
+          const value = computed.getPropertyValue(property);
+          if (value.trim()) shell.style.setProperty(property, value);
+          else shell.style.removeProperty(property);
+        }
+      };
+      syncTheme();
+      const themeObserver = new MutationObserver(syncTheme);
+      for (let node: HTMLElement | null = this.themeRoot; node; node = node.parentElement)
+        themeObserver.observe(node, { attributes: true });
+      themeObserver.observe(this.doc.head, { childList: true, subtree: true, characterData: true });
+      scope.add(() => themeObserver.disconnect());
       this.options.prepareWindow?.(child, pane);
       mounted = mountPane(dest, pane, 'popout', this.options);
       shell.append(mounted.element);

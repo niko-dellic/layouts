@@ -78,6 +78,8 @@ export interface LayoutProps extends Omit<LayoutOptions, 'renderers'> {
 export const Layout = forwardRef<MountedLayout, LayoutProps>(function Layout(props, ref) {
   const {
     store,
+    tabs,
+    theme,
     components,
     getPaneState,
     createPane,
@@ -91,6 +93,11 @@ export const Layout = forwardRef<MountedLayout, LayoutProps>(function Layout(pro
   } = props;
   const host = useRef<HTMLDivElement>(null),
     mounted = useRef<MountedLayout | null>(null);
+  const currentTheme = useRef(theme);
+  currentTheme.current = theme;
+  useLayoutEffect(() => {
+    mounted.current?.setTheme(theme ?? {});
+  }, [theme]);
   const renderers = useMemo(
     () => Object.fromEntries(Object.entries(components).map(([id, c]) => [id, reactRenderer(c)])),
     [components],
@@ -98,6 +105,7 @@ export const Layout = forwardRef<MountedLayout, LayoutProps>(function Layout(pro
   useImperativeHandle(
     ref,
     () => ({
+      setTheme: (theme) => mounted.current?.setTheme(theme),
       popout: (...args) => mounted.current?.popout(...args) ?? false,
       returnPane: (id) => mounted.current?.returnPane(id),
       dispose: () => mounted.current?.dispose(),
@@ -113,6 +121,8 @@ export const Layout = forwardRef<MountedLayout, LayoutProps>(function Layout(pro
       instance = mountLayout(host.current, {
         store,
         renderers,
+        ...(tabs ? { tabs } : {}),
+        ...(currentTheme.current ? { theme: currentTheme.current } : {}),
         ...(getPaneState ? { getPaneState } : {}),
         ...(createPane ? { createPane } : {}),
         ...(onError ? { onError } : {}),
@@ -132,6 +142,7 @@ export const Layout = forwardRef<MountedLayout, LayoutProps>(function Layout(pro
   }, [
     store,
     renderers,
+    tabs,
     getPaneState,
     createPane,
     onError,
