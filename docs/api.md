@@ -1,0 +1,104 @@
+# Configuration and API
+
+## JSON v1
+
+```ts
+interface Layout {
+  version: 1;
+  root: Group | Split;
+  panes: Record<string, Pane>;
+  popouts: Popout[];
+  maximized: string | null; // group id
+}
+interface Group {
+  kind: 'group';
+  id: string;
+  panes: string[];
+  active: string | null;
+}
+interface Split {
+  kind: 'split';
+  id: string;
+  axis: 'horizontal' | 'vertical';
+  ratio: number; // preferred share of the first child, strictly between 0 and 1
+  children: [Group | Split, Group | Split];
+}
+interface Pane {
+  id: string;
+  type: string;
+  title: string;
+  params?: Json; // JSON only, not runtime state
+  header?: boolean;
+  capabilities?: Partial<
+    Record<'resize' | 'move' | 'split' | 'join' | 'close' | 'popout', boolean>
+  >;
+  size?: { minWidth?: number; maxWidth?: number; minHeight?: number; maxHeight?: number };
+}
+interface Popout {
+  paneId: string;
+  groupId: string;
+  index: number; // desired return location
+  placement?: { width?: number; height?: number; left?: number; top?: number };
+}
+```
+
+The `version`, `root`, `panes`, `popouts`, and `maximized` properties are required. Node IDs are unique across the tree; pane IDs are unique in their dictionary. Every pane appears exactly once, either in a group or the popout list. Empty groups have `active: null`. Maximum nesting depth is 64. JSON cannot contain cycles, functions, undefined values, nonfinite numbers, or class instances.
+
+Sizes refer to the full pane region, including chrome. Defaults are minimum zero and no maximum. Tab groups satisfy the intersection of their panes' constraints, so incompatible tabs are rejected. Split children may leave unused space when a maximum prevents them filling the cross axis. A six-pixel divider contributes to recursive minimum sizes. Below the combined minimum, the workspace scrolls. Above combined maximums, surplus space stays empty. Split ratios are preferences constrained by these limits, not guaranteed pixel proportions.
+
+Capability flags default to true. Group-level operations require permission from affected panes: resizing a split checks both subtrees; tabbing and moving check the dragged pane and destination group; splitting checks the destination; joining checks the sibling region. Fixed bars normally disable all capabilities as well as specify size bounds. Host code can still deliberately reposition them.
+
+## Core exports
+
+`parseLayout(unknown): Layout` clones and validates or throws `LayoutError`. `validate(unknown): Issue[]` returns `{path, message}` issues. `bounds`, `allocate`, `groups`, `paneIds`, `findNode`, and `findParent` are pure helpers.
+
+`new LayoutStore(input)` creates a single state owner. Commands clone, validate, and commit atomically. A failed command leaves the previous snapshot intact and reports to `onError` subscribers before throwing.
+
+| Method                                               | Behavior                                                                                                |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `getSnapshot()`                                      | Stable, deeply frozen snapshot; treat it as read-only                                                   |
+| `export()`                                           | Mutable clone suitable for JSON serialization                                                           |
+| `subscribe(listener)`                                | Observe `{action, layout}`; returns unsubscribe                                                         |
+| `onError(listener)`                                  | Observe command/subscriber failures; returns unsubscribe                                                |
+| `load(input)`                                        | Replace with validated JSON atomically                                                                  |
+| `reset()`                                            | Restore constructor configuration                                                                       |
+| `activate(groupId, paneId)`                          | Select an existing tab                                                                                  |
+| `add(pane, groupId, options?)`                       | Insert a new pane as a tab                                                                              |
+| `updatePane(pane)`                                   | Replace metadata/constraints with validation                                                            |
+| `split(groupId, axis, newPane, options?)`            | Create a new region after the existing group                                                            |
+| `join(groupId, options?)`                            | Collapse its parent split, retaining all sibling content as tabs                                        |
+| `move(paneId, groupId, position?, index?, options?)` | Position is `tab`, `left`, `right`, `top`, or `bottom`; index is a tab insertion index after detachment |
+| `resize(splitId, ratio, options?)`                   | Set a preferred split proportion                                                                        |
+| `maximize(groupId \| null)`                          | Maximize or restore a region                                                                            |
+| `close(paneId, options?)`                            | Remove pane and placement                                                                               |
+| `popout(paneId, placement?, options?)`               | Pure model transition; does not open a browser                                                          |
+| `returnPane(paneId)`                                 | Return to a compatible original/fallback group, or a new region                                         |
+| `dispose()`                                          | End subscriptions; idempotent; subsequent commands fail                                                 |
+
+Options accept `{source: 'user' | 'api'}`; default is `api`. Flags only restrict `user` commands. Use the mounted renderer's `popout` method, not the store's pure `popout` command, to open browser windows. A DOM renderer interprets detached records without live companion handles as restored data and docks them with a Reopen action.
+
+## DOM exports
+
+`mountLayout(host, options)` appends its own scoped root; it does not clear unrelated host content. Options:
+
+- `store`: externally owned `LayoutStore`.
+- `renderers`: pane-type-to-renderer registry.
+- `getPaneState(id)`: optional application-owned reference for each view mount.
+- `createPane(source)`: synchronous new-pane factory for split-menu commands; returning undefined cancels. IDs must be unique.
+- `onError(error)`: mount, interaction, and window failures.
+- `prepareWindow(window, pane)`: copy additional styles/providers/assets into a companion document.
+- `openWindow(pane, placement)`: optional synchronous, same-origin window factory; null means blocked. The library owns this returned window and replaces its body, so do not return an existing unrelated application window.
+
+Returned handle: `popout(id, placement?): boolean`, `returnPane(id)`, `dispose()`. Dispose the mounted view before disposing the externally owned store.
+
+## React exports
+
+`Layout` accepts the same options, replacing `renderers` with `components: Record<string, ComponentType<PaneProps>>`, plus `className` and `style`. Its ref exposes the mounted handle. Mounting is deferred one microtask beyond React's commit; ref methods return false/no-op before mounting completes.
+
+`reactRenderer(Component)` adapts a React component for mixed vanilla/React consumers. `useLayoutSnapshot(store)` subscribes with React's external-store API. React 18.3 and 19 are peer-compatible; automated development tests use React 19.
+
+`PaneProps` includes `document`, `window`, `pane`, `state`, and `location`; the vanilla renderer also receives `element`.
+
+## Theme variables
+
+Override `.layouts` variables in your application stylesheet: `--layouts-bg`, `--layouts-panel`, `--layouts-header`, `--layouts-text`, `--layouts-muted`, `--layouts-line`, `--layouts-accent`, `--layouts-focus`, and `--layouts-radius`. Styling remains scoped; application content is yours. No OS-dependent motion overrides are installed.

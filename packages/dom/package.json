@@ -1,0 +1,33 @@
+{
+  "name": "@niko-dellic/layouts",
+  "version": "0.1.0",
+  "description": "Composable TypeScript pane layouts with real browser popouts",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/niko-dellic/layouts.git",
+    "directory": "packages/dom"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./styles.css": "./dist/styles.css"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && cp src/styles.css dist/styles.css"
+  },
+  "dependencies": {
+    "@niko-dellic/layouts-core": "0.1.0"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ]
+}

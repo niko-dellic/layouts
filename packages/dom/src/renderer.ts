@@ -1,0 +1,535 @@
+import { allocate, bounds, DIVIDER, findNode, groups, paneIds } from '@niko-dellic/layouts-core';
+import type { Group, Layout, Node, Pane } from '@niko-dellic/layouts-core';
+import type { LayoutOptions, MountedLayout } from './types.js';
+import { Scope, el, syncChildren } from './lifetime.js';
+import { mountPane } from './panes.js';
+import type { MountedPane } from './panes.js';
+import { Windows } from './windows.js';
+import { createPaneMenu } from './menu.js';
+interface Region {
+  element: HTMLElement;
+  kind: Node['kind'];
+  scope: Scope;
+  header?: HTMLElement;
+  body?: HTMLElement;
+  divider?: HTMLElement;
+  signature?: string;
+}
+let nextMount = 0;
+export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedLayout {
+  const prefix = `layouts-${++nextMount}`;
+  const doc = host.ownerDocument,
+    win = doc.defaultView;
+  if (!win) throw new Error('Layout host must belong to a live document');
+  const scope = new Scope(),
+    regions = new Map<string, Region>(),
+    panes = new Map<string, MountedPane>();
+  const root = el(doc, 'div', 'layouts');
+  root.setAttribute('aria-label', 'Pane workspace');
+  const stage = el(doc, 'div', 'layouts-stage');
+  const status = el(doc, 'div', 'layouts-status');
+  status.setAttribute('role', 'status');
+  root.append(stage, status);
+  host.append(root);
+  let disposed = false,
+    rendering = false,
+    again = false,
+    dragScope: Scope | undefined;
+  let dragId: string | undefined;
+  const error = (e: unknown) => {
+    status.textContent = e instanceof Error ? e.message : String(e);
+    try {
+      options.onError?.(e);
+    } catch {
+      /* A consumer reporter must not prevent cleanup. */
+    }
+  };
+  const act = (fn: () => void) => {
+    try {
+      fn();
+    } catch (e) {
+      error(e);
+    }
+  };
+  const windows = new Windows(doc, options, error);
+  const menu = createPaneMenu(root, options, windows, render, error);
+  const renderOptions = { ...options, onError: error };
+  function button(text: string, title: string, action: () => void) {
+    const b = el(doc, 'button', 'layouts-button', text);
+    b.type = 'button';
+    b.title = title;
+    b.setAttribute('aria-label', title);
+    b.onclick = () => act(action);
+    return b;
+  }
+  function region(node: Node): Region {
+    const existing = regions.get(node.id);
+    if (existing?.kind === node.kind) return existing;
+    if (existing) {
+      existing.scope.dispose();
+      existing.element.remove();
+      regions.delete(node.id);
+    }
+    const r: Region = {
+      kind: node.kind,
+      element: el(doc, 'section', `layouts-node layouts-${node.kind}`),
+      scope: new Scope(),
+    };
+    r.element.dataset.nodeId = node.id;
+    if (node.kind === 'group') {
+      r.header = el(doc, 'header', 'layouts-header');
+      r.body = el(doc, 'div', 'layouts-body');
+      r.element.append(r.header, r.body);
+      r.element.setAttribute('aria-label', 'Pane region');
+      r.scope.listen(r.element, 'dragover', (event) => {
+        if (!dragId) return;
+        const e = event as DragEvent;
+        const current = findNode(options.store.getSnapshot().root, node.id);
+        if (current?.kind !== 'group') return;
+        const position = dropPosition(e, r.element);
+        if (
+          !options.store.can(dragId, 'move') ||
+          !current.panes.every(
+            (id) =>
+              options.store.can(id, 'move') &&
+              (position === 'tab' || options.store.can(id, 'split')),
+          )
+        )
+          return;
+        e.preventDefault();
+        e.stopPropagation();
+        r.element.dataset.drop = position;
+      });
+      r.scope.listen(r.element, 'dragleave', (event) => {
+        if (!r.element.contains((event as DragEvent).relatedTarget as globalThis.Node | null))
+          delete r.element.dataset.drop;
+      });
+      r.scope.listen(r.element, 'drop', (event) => {
+        const e = event as DragEvent;
+        if (!dragId) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const id = dragId;
+        dragId = undefined;
+        delete r.element.dataset.drop;
+        act(() =>
+          options.store.move(id, node.id, dropPosition(e, r.element), undefined, {
+            source: 'user',
+          }),
+        );
+      });
+    } else {
+      r.divider = el(doc, 'div', 'layouts-divider');
+      r.divider.tabIndex = 0;
+      r.divider.setAttribute('role', 'separator');
+      r.divider.setAttribute('aria-label', 'Resize panes');
+      const start = (event: Event) => {
+        const e = event as PointerEvent;
+        if (e.button !== 0) return;
+        const n = findNode(options.store.getSnapshot().root, node.id);
+        if (n?.kind !== 'split' || !paneIds(n).every((id) => options.store.can(id, 'resize')))
+          return;
+        e.preventDefault();
+        dragScope?.dispose();
+        const drag = new Scope();
+        dragScope = drag;
+        const ratio = n.ratio;
+        r.divider!.setPointerCapture(e.pointerId);
+        root.classList.add('layouts-resizing');
+        drag.add(() => {
+          root.classList.remove('layouts-resizing');
+          try {
+            r.divider!.releasePointerCapture(e.pointerId);
+          } catch {}
+        });
+        const set = (move: PointerEvent) => {
+          const current = findNode(options.store.getSnapshot().root, node.id);
+          if (current?.kind !== 'split') return;
+          const rect = r.element.getBoundingClientRect();
+          const available = (current.axis === 'horizontal' ? rect.width : rect.height) - DIVIDER;
+          if (available > 0)
+            act(() =>
+              options.store.resize(
+                node.id,
+                Math.max(
+                  0.001,
+                  Math.min(
+                    0.999,
+                    (current.axis === 'horizontal'
+                      ? move.clientX - rect.left
+                      : move.clientY - rect.top) / available,
+                  ),
+                ),
+                { source: 'user' },
+              ),
+            );
+        };
+        drag.listen(r.divider!, 'pointermove', (move) => set(move as PointerEvent));
+        drag.listen(r.divider!, 'pointerup', () => drag.dispose());
+        drag.listen(r.divider!, 'pointercancel', () => drag.dispose());
+        drag.listen(doc, 'keydown', (key) => {
+          if ((key as KeyboardEvent).key === 'Escape') {
+            act(() => options.store.resize(node.id, ratio));
+            drag.dispose();
+          }
+        });
+      };
+      r.scope.listen(r.divider, 'pointerdown', start);
+      r.scope.listen(r.divider, 'keydown', (event) => {
+        const e = event as KeyboardEvent;
+        const n = findNode(options.store.getSnapshot().root, node.id);
+        if (n?.kind !== 'split') return;
+        const keys =
+          n.axis === 'horizontal' ? ['ArrowLeft', 'ArrowRight'] : ['ArrowUp', 'ArrowDown'];
+        if (keys.includes(e.key)) {
+          e.preventDefault();
+          act(() =>
+            options.store.resize(
+              node.id,
+              Math.max(
+                0.001,
+                Math.min(0.999, n.ratio + (e.key === keys[0] ? -1 : 1) * (e.shiftKey ? 0.1 : 0.02)),
+              ),
+              { source: 'user' },
+            ),
+          );
+        }
+      });
+    }
+    regions.set(node.id, r);
+    return r;
+  }
+  function dropPosition(
+    e: DragEvent,
+    element: HTMLElement,
+  ): 'tab' | 'left' | 'right' | 'top' | 'bottom' {
+    const rect = element.getBoundingClientRect(),
+      x = (e.clientX - rect.left) / rect.width,
+      y = (e.clientY - rect.top) / rect.height;
+    if (x < 0.22) return 'left';
+    if (x > 0.78) return 'right';
+    if (y < 0.22) return 'top';
+    if (y > 0.78) return 'bottom';
+    return 'tab';
+  }
+  function content(pane: Pane): MountedPane {
+    const old = panes.get(pane.id),
+      signature = JSON.stringify(pane);
+    if (
+      old &&
+      old.renderer !==
+        (Object.hasOwn(options.renderers, pane.type) ? options.renderers[pane.type] : undefined)
+    ) {
+      old.dispose();
+      panes.delete(pane.id);
+      return content(pane);
+    }
+    if (old) {
+      if (old.signature !== signature) {
+        if (
+          old.pane.type !== pane.type ||
+          JSON.stringify(old.pane.params) !== JSON.stringify(pane.params)
+        ) {
+          old.dispose();
+          panes.delete(pane.id);
+        } else {
+          old.pane = pane;
+          old.signature = signature;
+          old.view.update?.(pane);
+          return old;
+        }
+      } else return old;
+    }
+    try {
+      const mounted = mountPane(doc, pane, 'main', renderOptions);
+      panes.set(pane.id, mounted);
+      return mounted;
+    } catch (e) {
+      error(e);
+      const element = el(
+        doc,
+        'div',
+        'layouts-pane layouts-placeholder',
+        `Could not mount ${pane.title}. Reload the layout to retry.`,
+      );
+      element.dataset.paneId = pane.id;
+      const mounted: MountedPane = {
+        element,
+        pane,
+        signature,
+        renderer: options.renderers[pane.type],
+        failed: true,
+        view: { dispose() {} },
+        dispose() {
+          element.remove();
+        },
+      };
+      panes.set(pane.id, mounted);
+      return mounted;
+    }
+  }
+  function paintGroup(g: Group, r: Region, layout: Layout) {
+    const definitions = g.panes.map((id) => layout.panes[id]!);
+    const signature = JSON.stringify([
+      definitions,
+      g.active,
+      layout.maximized,
+      definitions.map((p) => windows.pending.has(p.id)),
+    ]);
+    if (r.signature !== signature) {
+      r.signature = signature;
+      r.header!.replaceChildren();
+      r.header!.hidden = definitions.length === 1 && definitions[0]!.header === false;
+      const tabs = el(doc, 'div', 'layouts-tabs');
+      tabs.setAttribute('role', 'tablist');
+      tabs.setAttribute('aria-label', `Tabs in ${g.id}`);
+      definitions.forEach((pane, i) => {
+        const tab = button(pane.title, pane.title, () => options.store.activate(g.id, pane.id));
+        tab.className = 'layouts-tab';
+        tab.setAttribute('role', 'tab');
+        tab.setAttribute('aria-selected', String(g.active === pane.id));
+        tab.tabIndex = g.active === pane.id ? 0 : -1;
+        tab.dataset.focusId = `tab-${pane.id}`;
+        tab.id = `${prefix}-tab-${pane.id}`;
+        tab.setAttribute('aria-controls', `${prefix}-panel-${pane.id}`);
+        tab.draggable = options.store.can(pane.id, 'move');
+        tab.ondragstart = (e) => {
+          dragId = pane.id;
+          e.dataTransfer?.setData('text/plain', pane.id);
+          if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+        };
+        tab.ondragend = () => {
+          dragId = undefined;
+          for (const region of regions.values()) delete region.element.dataset.drop;
+        };
+        tab.ondragover = (e) => {
+          if (dragId && g.panes.every((id) => options.store.can(id, 'move'))) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        };
+        tab.ondrop = (e) => {
+          if (!dragId) return;
+          e.preventDefault();
+          e.stopPropagation();
+          const id = dragId;
+          dragId = undefined;
+          act(() => options.store.move(id, g.id, 'tab', i, { source: 'user' }));
+        };
+        tab.onkeydown = (e) => {
+          let index = i;
+          if (e.key === 'ArrowRight') index = (i + 1) % g.panes.length;
+          else if (e.key === 'ArrowLeft') index = (i + g.panes.length - 1) % g.panes.length;
+          else if (e.key === 'Home') index = 0;
+          else if (e.key === 'End') index = g.panes.length - 1;
+          else return;
+          e.preventDefault();
+          act(() => options.store.activate(g.id, g.panes[index]!));
+          regions
+            .get(g.id)
+            ?.header?.querySelector<HTMLButtonElement>('[aria-selected="true"]')
+            ?.focus();
+        };
+        tabs.append(tab);
+      });
+      r.header!.append(tabs);
+      const active = g.active ? layout.panes[g.active] : undefined;
+      if (active) {
+        const more = button('⋯', `${active.title} actions`, () => menu.open(more, active, g));
+        more.dataset.focusId = `menu-${active.id}`;
+        more.setAttribute('aria-haspopup', 'dialog');
+        r.header!.append(more);
+      }
+    }
+    const bodies = definitions.map((pane) => {
+      const p = content(pane);
+      p.element.hidden = pane.id !== g.active;
+      p.element.id = `${prefix}-panel-${pane.id}`;
+      p.element.setAttribute('role', 'tabpanel');
+      if (r.header!.hidden) {
+        p.element.setAttribute('aria-label', pane.title);
+        p.element.removeAttribute('aria-labelledby');
+      } else {
+        p.element.setAttribute('aria-labelledby', `${prefix}-tab-${pane.id}`);
+        p.element.removeAttribute('aria-label');
+      }
+      return p.element;
+    });
+    if (!bodies.length) bodies.push(el(doc, 'div', 'layouts-placeholder', 'Empty region'));
+    syncChildren(r.body!, bodies);
+  }
+  function tree(node: Node, layout: Layout, used: Set<string>): HTMLElement {
+    used.add(node.id);
+    const r = region(node);
+    if (node.kind === 'group') paintGroup(node, r, layout);
+    else {
+      const a = tree(node.children[0], layout, used),
+        b = tree(node.children[1], layout, used);
+      syncChildren(r.element, [a, r.divider!, b]);
+      r.divider!.setAttribute(
+        'aria-orientation',
+        node.axis === 'horizontal' ? 'vertical' : 'horizontal',
+      );
+      r.divider!.dataset.axis = node.axis;
+      r.divider!.setAttribute('aria-valuenow', String(Math.round(node.ratio * 100)));
+      r.divider!.setAttribute('aria-valuemin', '0');
+      r.divider!.setAttribute('aria-valuemax', '100');
+      r.divider!.setAttribute(
+        'aria-disabled',
+        String(!paneIds(node).every((id) => options.store.can(id, 'resize'))),
+      );
+    }
+    return r.element;
+  }
+  function geometry(
+    node: Node,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    layout: Layout,
+  ) {
+    const r = regions.get(node.id);
+    if (!r) return;
+    const b = bounds(node, layout);
+    width = Math.max(b.minWidth, Math.min(width, b.maxWidth));
+    height = Math.max(b.minHeight, Math.min(height, b.maxHeight));
+    Object.assign(r.element.style, {
+      left: `${x}px`,
+      top: `${y}px`,
+      width: `${width}px`,
+      height: `${height}px`,
+    });
+    if (node.kind === 'split') {
+      const a = bounds(node.children[0], layout),
+        b = bounds(node.children[1], layout),
+        horizontal = node.axis === 'horizontal';
+      const [first, second] = allocate(
+        horizontal ? width : height,
+        node.ratio,
+        horizontal ? a.minWidth : a.minHeight,
+        horizontal ? a.maxWidth : a.maxHeight,
+        horizontal ? b.minWidth : b.minHeight,
+        horizontal ? b.maxWidth : b.maxHeight,
+      );
+      geometry(
+        node.children[0],
+        0,
+        0,
+        horizontal ? first : width,
+        horizontal ? height : first,
+        layout,
+      );
+      geometry(
+        node.children[1],
+        horizontal ? first + DIVIDER : 0,
+        horizontal ? 0 : first + DIVIDER,
+        horizontal ? second : width,
+        horizontal ? height : second,
+        layout,
+      );
+      Object.assign(
+        r.divider!.style,
+        horizontal
+          ? { left: `${first}px`, top: '0', width: `${DIVIDER}px`, height: `${height}px` }
+          : { left: '0', top: `${first}px`, width: `${width}px`, height: `${DIVIDER}px` },
+      );
+    }
+  }
+  function measure() {
+    const layout = options.store.getSnapshot();
+    const node = layout.maximized ? findNode(layout.root, layout.maximized) : layout.root;
+    if (node) geometry(node, 0, 0, stage.clientWidth, stage.clientHeight, layout);
+  }
+  function render() {
+    if (disposed) return;
+    if (rendering) {
+      again = true;
+      return;
+    }
+    rendering = true;
+    try {
+      const focused = (doc.activeElement as HTMLElement | null)?.dataset.focusId;
+      const layout = options.store.getSnapshot(),
+        used = new Set<string>();
+      const element = tree(layout.root, layout, used);
+      // Maximizing reparents a region; pane views remain mounted.
+      const visible = layout.maximized ? regions.get(layout.maximized)?.element : element;
+      if (visible) syncChildren(stage, [visible]);
+      for (const [id, r] of regions)
+        if (!used.has(id)) {
+          r.scope.dispose();
+          r.element.remove();
+          regions.delete(id);
+        }
+      const docked = new Set(groups(layout.root).flatMap((g) => g.panes));
+      for (const [id, p] of panes)
+        if (!docked.has(id)) {
+          p.dispose();
+          panes.delete(id);
+        }
+      measure();
+      if (focused && doc.activeElement === doc.body)
+        Array.from(root.querySelectorAll<HTMLElement>('[data-focus-id]'))
+          .find((n) => n.dataset.focusId === focused)
+          ?.focus();
+    } catch (e) {
+      error(e);
+    } finally {
+      rendering = false;
+      if (again) {
+        again = false;
+        render();
+      }
+    }
+  }
+  scope.add(
+    options.store.subscribe((event) => {
+      if (event.action === 'load') {
+        for (const [id, pane] of panes)
+          if (pane.failed) {
+            pane.dispose();
+            panes.delete(id);
+          }
+      }
+      render();
+    }),
+  );
+  const observer = new ResizeObserver(measure);
+  observer.observe(stage);
+  scope.add(() => observer.disconnect());
+  scope.listen(doc, 'dragend', () => {
+    dragId = undefined;
+    for (const r of regions.values()) delete r.element.dataset.drop;
+  });
+  render();
+  return {
+    popout(id, placement) {
+      const opened = windows.open(id, placement);
+      render();
+      return opened;
+    },
+    returnPane(id) {
+      windows.returnPane(id);
+    },
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      menu.dispose();
+      dragScope?.dispose();
+      scope.dispose();
+      windows.dispose();
+      for (const p of panes.values()) {
+        try {
+          p.dispose();
+        } catch (e) {
+          error(e);
+        }
+      }
+      for (const r of regions.values()) r.scope.dispose();
+      panes.clear();
+      regions.clear();
+      root.remove();
+    },
+  };
+}
