@@ -155,7 +155,9 @@
   box-shadow: 0 12px 40px #0005;
 }
 .layouts-menu .layouts-button {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   width: 100%;
   text-align: left;
   white-space: normal;

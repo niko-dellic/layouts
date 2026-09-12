@@ -1,3 +1,5 @@
+import { actionIcon } from './action-icons.js';
+import type { ActionIcon } from './action-icons.js';
 import { fillTabPicker } from './picker.js';
 import type { Group, Pane } from '@niko-dellic/layouts-core';
 import type { LayoutOptions } from './types.js';
@@ -35,11 +37,15 @@ export function createPaneMenu(
     const dialog = el(doc, 'dialog', 'layouts-menu');
     dialog.setAttribute('aria-label', `${pane.title} actions`);
     local.add(() => dialog.remove());
-    const add = (label: string, enabled: boolean, fn: () => void) => {
+    const add = (icon: ActionIcon, label: string, enabled: boolean, fn: () => void) => {
       const b = button(label, label, () => {
         local.dispose();
         act(fn);
       });
+      const glyph = el(doc, 'span', 'layouts-tab-icon');
+      glyph.setAttribute('aria-hidden', 'true');
+      act(() => glyph.append(actionIcon(doc, icon, options)));
+      b.replaceChildren(glyph, el(doc, 'span', '', label.replace(/^\+ /, '')));
       b.disabled = !enabled;
       dialog.append(b);
     };
@@ -80,14 +86,15 @@ export function createPaneMenu(
         if (fresh) commit(fresh);
       }
     };
-    add('+ Add tab', available && allowed('move'), () => create());
+    add('add-tab', '+ Add tab', available && allowed('move'), () => create());
     const canCreate = options.tabs ? available : Boolean(options.createPane);
-    add('Split right', canCreate && allowed('split'), () => create('horizontal'));
-    add('Split below', canCreate && allowed('split'), () => create('vertical'));
-    add('Join sibling region', allowed('join'), () =>
+    add('split-right', 'Split right', canCreate && allowed('split'), () => create('horizontal'));
+    add('split-below', 'Split below', canCreate && allowed('split'), () => create('vertical'));
+    add('join', 'Join sibling region', allowed('join'), () =>
       options.store.join(group.id, { source: 'user' }),
     );
     add(
+      options.store.getSnapshot().maximized === group.id ? 'restore' : 'maximize',
       options.store.getSnapshot().maximized === group.id ? 'Restore region' : 'Maximize region',
       true,
       () =>
@@ -96,6 +103,7 @@ export function createPaneMenu(
         ),
     );
     add(
+      'popout',
       windows.pending.has(pane.id) ? 'Reopen window' : 'Open in window',
       options.store.can(pane.id, 'popout'),
       () => {
@@ -103,10 +111,10 @@ export function createPaneMenu(
         refresh();
       },
     );
-    add('Close pane', options.store.can(pane.id, 'close'), () =>
+    add('close', 'Close pane', options.store.can(pane.id, 'close'), () =>
       options.store.close(pane.id, { source: 'user' }),
     );
-    add('Cancel', true, () => {});
+    add('cancel', 'Cancel', true, () => {});
     root.append(dialog);
     const rect = anchor.getBoundingClientRect();
     dialog.style.left = `${Math.max(8, Math.min(rect.right - 230, win!.innerWidth - 250))}px`;

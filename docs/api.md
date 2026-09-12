@@ -185,3 +185,9 @@ or unregister entries as features mount or unmount. The legacy `createPane`
 callback is supported only for splitting when no registry is supplied; Add tab
 requires registered choices. Existing movement/split capability checks still
 apply. See [Theming](theming.md) for the separate theme API.
+
+Menu actions include built-in decorative icons. The optional `renderIcon` resolver
+can override them using `layouts:add-tab`, `layouts:split-right`,
+`layouts:split-below`, `layouts:join`, `layouts:maximize`, `layouts:restore`,
+`layouts:popout`, `layouts:close`, and `layouts:cancel`. Return `undefined` to use
+the built-in icon. Icons inherit text color, including disabled and themed states.
