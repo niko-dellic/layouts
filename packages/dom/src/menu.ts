@@ -42,12 +42,16 @@ export function createPaneMenu(
       b.disabled = !enabled;
       dialog.append(b);
     };
-    const allowed = (cap: 'split' | 'join') =>
+    const allowed = (cap: 'split' | 'join' | 'move') =>
       group.panes.every((id) => options.store.can(id, cap));
     const create = (axis: 'horizontal' | 'vertical') => {
       const fresh = options.createPane?.(pane);
       if (fresh) options.store.split(group.id, axis, fresh, { source: 'user' });
     };
+    add('+ Add tab', Boolean(options.createPane) && allowed('move'), () => {
+      const fresh = options.createPane?.(pane);
+      if (fresh) options.store.add(fresh, group.id, { source: 'user' });
+    });
     add('Split right', Boolean(options.createPane) && allowed('split'), () => create('horizontal'));
     add('Split below', Boolean(options.createPane) && allowed('split'), () => create('vertical'));
     add('Join sibling region', allowed('join'), () =>

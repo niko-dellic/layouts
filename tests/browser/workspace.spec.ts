@@ -72,6 +72,15 @@ for (const framework of ['vanilla', 'react']) {
       await page.getByRole('button', { name: 'Notes actions', exact: true }).click();
       await page.getByRole('button', { name: 'Close pane', exact: true }).click();
       await expect(page.getByRole('tab', { name: 'Notes', exact: true })).toHaveCount(0);
+      await page.getByRole('button', { name: 'Scene actions', exact: true }).click();
+      await page.getByRole('button', { name: '+ Add tab', exact: true }).click();
+      const sceneGroup = page
+        .getByRole('tab', { name: 'Scene', exact: true })
+        .locator('xpath=ancestor::section[1]');
+      await expect(sceneGroup.getByRole('tab', { name: 'Notes', exact: true })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      );
     });
     test('invalid JSON is rejected without destroying the workspace', async ({ page }) => {
       await page.getByRole('button', { name: 'Layout JSON', exact: true }).click();

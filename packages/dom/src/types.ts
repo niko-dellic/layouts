@@ -22,7 +22,7 @@ export interface LayoutOptions {
   /** Opt-in conveniences; omitted and false disable both. */
   shortcuts?: boolean | { maximize?: boolean; middleClickClose?: boolean };
   getPaneState?: (paneId: string) => unknown;
-  /** Called by the split menu. Returning undefined cancels pane creation. */
+  /** Called by the Add tab and split menu actions. Returning undefined cancels pane creation. */
   createPane?: (source: Pane) => Pane | undefined;
   onError?: (error: unknown) => void;
   /** Copy additional app styles/assets into a same-origin companion document. */
