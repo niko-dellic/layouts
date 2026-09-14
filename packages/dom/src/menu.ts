@@ -186,6 +186,8 @@ export function createPaneMenu(
     }
     add('add-tab', '+ Add tab', available && allowed('move'), () => create());
     const canCreate = !group.panes.length || available;
+    const flyouts: { trigger: HTMLElement; flyout: HTMLElement }[] = [];
+    let positionMenus = () => {};
     function submenu(label: string, icon: ActionIcon, enabled = true) {
       const container = el(doc, 'div', 'layouts-submenu');
       const trigger = button(`${label} ▸`, label, () => setOpen(true));
@@ -200,9 +202,17 @@ export function createPaneMenu(
       flyout.hidden = true;
       flyout.setAttribute('role', 'menu');
       flyout.setAttribute('aria-label', label);
+      flyouts.push({ trigger, flyout });
       const setOpen = (open: boolean) => {
+        if (open) {
+          for (const other of flyouts) {
+            other.flyout.hidden = true;
+            other.trigger.setAttribute('aria-expanded', 'false');
+          }
+        }
         flyout.hidden = !open;
         trigger.setAttribute('aria-expanded', String(open));
+        if (open) positionMenus();
       };
       local.listen(container, 'pointerenter', () => {
         if (!trigger.disabled) setOpen(true);
@@ -222,8 +232,6 @@ export function createPaneMenu(
           trigger.focus();
         }
       });
-      container.dataset.side =
-        anchor.getBoundingClientRect().right + 220 > win.innerWidth ? 'left' : 'right';
       container.append(trigger, flyout);
       dialog.append(container);
       return flyout;
@@ -389,9 +397,44 @@ export function createPaneMenu(
     );
     add('cancel', 'Cancel', true, () => {});
     root.append(dialog);
-    const rect = anchor.getBoundingClientRect();
-    dialog.style.left = `${Math.max(8, Math.min(rect.right - 230, win!.innerWidth - 250))}px`;
-    dialog.style.top = `${Math.min(rect.bottom + 4, win!.innerHeight - 180)}px`;
+    // Measure after opening: theme density, labels, and available actions change the size.
+    // Fixed flyouts escape the scrolling dialog while retaining its modal focus scope.
+    positionMenus = () => {
+      const viewport = win.visualViewport;
+      const left = (viewport?.offsetLeft ?? 0) + 8;
+      const top = (viewport?.offsetTop ?? 0) + 8;
+      const width = Math.max(0, (viewport?.width ?? doc.documentElement.clientWidth) - 16);
+      const height = Math.max(0, (viewport?.height ?? doc.documentElement.clientHeight) - 16);
+      const fit = (element: HTMLElement) => {
+        element.style.maxWidth = `${width}px`;
+        element.style.maxHeight = `${height}px`;
+      };
+      const place = (element: HTMLElement, x: number, y: number) => {
+        const bounds = element.getBoundingClientRect();
+        element.style.left = `${Math.max(left, Math.min(x, left + width - bounds.width))}px`;
+        element.style.top = `${Math.max(top, Math.min(y, top + height - bounds.height))}px`;
+      };
+      fit(dialog);
+      const rect = anchor.getBoundingClientRect();
+      const bounds = dialog.getBoundingClientRect();
+      const below = rect.bottom + 4;
+      const above = rect.top - bounds.height - 4;
+      place(
+        dialog,
+        rect.right - bounds.width,
+        below + bounds.height <= top + height || above < top ? below : above,
+      );
+      for (const { trigger, flyout } of flyouts) {
+        if (flyout.hidden) continue;
+        fit(flyout);
+        const row = trigger.getBoundingClientRect();
+        const menu = dialog.getBoundingClientRect();
+        const size = flyout.getBoundingClientRect();
+        const x =
+          menu.right - 1 + size.width <= left + width ? menu.right - 1 : menu.left - size.width + 1;
+        place(flyout, x, row.top);
+      }
+    };
     local.listen(dialog, 'close', () => local.dispose());
     local.listen(dialog, 'click', (event) => {
       if (event.target === dialog) {
@@ -402,6 +445,18 @@ export function createPaneMenu(
       }
     });
     dialog.showModal();
+    positionMenus();
+    const observer = new win.ResizeObserver(positionMenus);
+    observer.observe(dialog);
+    observer.observe(anchor);
+    for (const { flyout } of flyouts) observer.observe(flyout);
+    local.add(() => observer.disconnect());
+    local.listen(win, 'resize', positionMenus);
+    local.listen(doc, 'scroll', positionMenus, { capture: true });
+    if (win.visualViewport) {
+      local.listen(win.visualViewport, 'resize', positionMenus);
+      local.listen(win.visualViewport, 'scroll', positionMenus);
+    }
     dialog.focus({ preventScroll: true });
   }
   return {
