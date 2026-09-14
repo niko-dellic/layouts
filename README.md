@@ -13,11 +13,28 @@ Applications own their content and data. Quilt owns arrangement and chrome.
 
 Explore pane arrangements, interact with the scene, and switch workspace presets in this 35-second recording. [Compare before and after resizing screenshots](docs/showcase.md#resizing).
 
-| Light theme · compact vertical tabs                                                                 | Sage theme · anchored, tapered tabs                                                                               |
-| --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| ![Focus workspace with a light theme and compact vertical capsule tabs](docs/media/focus-light.png) | ![Review workspace with a sage theme, timeline, inspector, and anchored tapered tabs](docs/media/review-sage.png) |
+### Configure your workspace
 
-Choose themes, tab orientation and shape, font and icon sizes, divider widths, and corner-handle styling. The demo also includes Default, Focus, and Review workspace presets. [Explore the screenshot gallery and configuration controls](docs/showcase.md).
+The vanilla and React adapters share the same layout engine and configuration options.
+
+| Setting                        | What you can control                                                                                                                                                                             |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Pane arrangement**           | Nest horizontal (side-by-side) and vertical (stacked) splits, set their proportions, and group panes into tabs.                                                                                  |
+| **Tab orientation and labels** | Use horizontal tabs along the top or a vertical rail on the left. Show labels when space permits, or use compact icon-only tabs. Override these settings per region.                             |
+| **Tab taper and shape**        | Choose full-width or tapered anchored bars. Taper shapes include angled, round, and scooped ends, with configurable taper width; fitted and rounded shapes are also available.                   |
+| **Floating tabs**              | Anchor tabs to the pane edge or float them over content. Floating bars support full-width or fit-to-content sizing, fitted/rounded/capsule corners, and a configurable inset.                    |
+| **Pane size limits**           | Set minimum and maximum width and height per pane. Equal limits create fixed-size regions, useful for toolbars and status bars; hide the header for a single-tab group.                          |
+| **Dividers**                   | Change the resize-handle width (4px by default), override individual split gaps, and style or hide disabled dividers and their borders.                                                          |
+| **Empty-region collapsing**    | `disabled` keeps empty regions (the default); `protected` collapses them after closing or moving panes but preserves popout source regions; `enabled` also collapses regions emptied by popouts. |
+| **Pane permissions**           | Allow or restrict user resizing, moving, splitting, joining, closing, and popping out on a pane-by-pane basis.                                                                                   |
+| **Corner handles**             | Customize split/join handle size, inset, stroke, radius, fill, color, opacity, and visibility. The demo offers bracket, rounded bracket, square, and dot styles.                                 |
+| **Themes and density**         | Use light/dark presets or custom colors. Adjust fonts, icon sizes, tab height, vertical rail width, padding, control spacing, and scrollbars.                                                    |
+| **Available content**          | Register the pane types users can create, with titles, descriptions, search keywords, icons, and creation callbacks through `TabRegistry`.                                                       |
+| **Popout windows**             | Open same-origin companion windows with configurable size and position, supply application styles, and return panes to the workspace.                                                            |
+| **Shortcut preferences**       | Opt into maximize/restore, add-tab, restore-closed-tab, and middle-click-close conveniences individually or together.                                                                            |
+| **Workspace state**            | Choose active tabs, maximize or restore a region, and export/load validated layout JSON. The demo includes Default, Focus, and Review presets.                                                   |
+
+Explore the [screenshot gallery](docs/showcase.md), [configuration API](docs/api.md), and [theme and tab-bar options](docs/theming.md).
 
 ## Try it
 
