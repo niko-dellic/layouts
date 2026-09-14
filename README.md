@@ -1,5 +1,8 @@
 # Quilt
 
+[![CI](https://github.com/niko-dellic/quilt/actions/workflows/ci.yml/badge.svg)](https://github.com/niko-dellic/quilt/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/quilt-react)](https://www.npmjs.com/package/quilt-react)
+
 **A place for every pane.** A small TypeScript workspace library with recursive splits, tab groups, constrained bars, and real browser-window popouts. A framework-independent engine powers vanilla DOM and React bindings.
 
 Applications own their content and data. Quilt owns arrangement and chrome.
@@ -183,3 +186,7 @@ Scrollbar theme roles are `scrollbarThumb`, `scrollbarTrack`, and
 `--layouts-scrollbar-track`, and `--layouts-scrollbar-size`. Browsers supporting
 standard scrollbar-width use their thin width; WebKit scrollbar styling uses the
 size role. The same roles apply in companion windows.
+
+## Releases
+
+See [release instructions](docs/releases.md) and the [changelog](CHANGELOG.md).

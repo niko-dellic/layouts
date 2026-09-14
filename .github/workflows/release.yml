@@ -1,0 +1,74 @@
+name: Release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version already committed in all package manifests
+        required: true
+        type: string
+      publish:
+        description: Publish to npm and create the GitHub release
+        default: false
+        type: boolean
+permissions:
+  contents: read
+concurrency:
+  group: npm-release
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      RELEASE_VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: node scripts/release.mjs --validate
+      - run: npx playwright install --with-deps chromium firefox webkit
+      - run: npm run check
+      - run: node scripts/release.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-packages
+          path: artifacts/packages/
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: release-browser-results
+          path: test-results/
+  publish:
+    if: inputs.publish
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: npm
+    permissions:
+      contents: write
+      id-token: write
+    env:
+      RELEASE_VERSION: ${{ inputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-packages
+          path: artifacts/packages/
+      - run: node scripts/release.mjs --publish
+      - name: Create GitHub release
+        shell: bash
+        run: |
+          tag="v${RELEASE_VERSION}"
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" --target "$GITHUB_SHA" --title "$tag" --notes-file artifacts/packages/release-notes.md artifacts/packages/*.tgz artifacts/packages/manifest.json
+          fi

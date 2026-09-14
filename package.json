@@ -15,9 +15,11 @@
     "dev": "vite --host localhost --port 5186",
     "build:demos": "vite build",
     "pack:all": "node scripts/pack.mjs",
-    "check": "npm run format:check && npm run build && npm run typecheck && npm test && npm run test:browser && npm run build:demos && npm run test:packed",
+    "check": "npm run format:check && npm run test:release && npm run build && npm run typecheck && npm test && npm run test:browser && npm run build:demos && npm run test:packed",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "release:version": "node scripts/release-version.mjs",
+    "test:release": "node --test scripts/release.test.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.0",
