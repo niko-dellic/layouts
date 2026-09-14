@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { allocate, bounds, groups, joinRange, LayoutStore, validate } from 'layouts-core';
-import type { Axis, Group, Layout, Node, Split } from 'layouts-core';
+import { allocate, bounds, groups, joinRange, LayoutStore, validate } from 'quilt-core';
+import type { Axis, Group, Layout, Node, Split } from 'quilt-core';
 const group = (id: string): Group => ({ kind: 'group', id, panes: [id], active: id });
 const split = (id: string, a: Node, b: Node, axis: Axis = 'horizontal'): Split => ({
   kind: 'split',

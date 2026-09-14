@@ -1,12 +1,12 @@
 {
-  "name": "layouts-core",
+  "name": "quilt-core",
   "version": "0.1.0",
-  "description": "Composable TypeScript pane layouts with real browser popouts",
+  "description": "Framework-independent pane layout model, validation, commands, and subscriptions",
   "type": "module",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/niko-dellic/layouts.git",
+    "url": "git+https://github.com/niko-dellic/quilt.git",
     "directory": "packages/core"
   },
   "files": [
@@ -26,5 +26,20 @@
     "prepack": "node ../../scripts/build-package.mjs core --dependencies"
   },
   "dependencies": {},
-  "sideEffects": false
+  "sideEffects": false,
+  "homepage": "https://github.com/niko-dellic/quilt/tree/main/packages/core#readme",
+  "bugs": {
+    "url": "https://github.com/niko-dellic/quilt/issues"
+  },
+  "keywords": [
+    "layout",
+    "split-pane",
+    "tabs",
+    "workspace",
+    "typescript"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
 }

@@ -1,8 +1,8 @@
 import { actionIcon } from './action-icons.js';
 import type { ActionIcon } from './action-icons.js';
 import { fillTabPicker } from './picker.js';
-import { findNode, findParent, groups, paneIds } from 'layouts-core';
-import type { Group, Pane } from 'layouts-core';
+import { findNode, findParent, groups, paneIds } from 'quilt-core';
+import type { Group, Pane } from 'quilt-core';
 import type { LayoutOptions } from './types.js';
 import type { Windows } from './windows.js';
 import { el, Scope } from './lifetime.js';

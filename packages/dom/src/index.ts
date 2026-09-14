@@ -5,7 +5,7 @@ export { TabRegistry } from './registry.js';
 export type { TabRegistration } from './registry.js';
 export { themes, themeFamilies } from './theme.js';
 export type { LayoutTheme } from './theme.js';
-export { LayoutStore, LayoutError, createLayout, parseLayout, validate } from 'layouts-core';
+export { LayoutStore, LayoutError, createLayout, parseLayout, validate } from 'quilt-core';
 export type {
   AutoCollapse,
   LayoutStoreOptions,
@@ -24,4 +24,4 @@ export type {
   Change,
   Bounds,
   JoinOptions,
-} from 'layouts-core';
+} from 'quilt-core';

@@ -1,24 +1,22 @@
-# layouts
+# quilt-dom
 
 Vanilla DOM pane layouts, tabs, themes, resizing, and same-origin browser popouts. Includes convenient core exports; does not install React. MIT licensed, ESM and TypeScript.
 
 ## Install
 
-Not yet published to npm. With Node 24, run `npm ci` and `npm run pack:all` in the repository. Copy the core and DOM archives listed in `artifacts/packages/manifest.json` to your app's `vendor/` directory and install together:
-
 ```sh
-npm install ./vendor/layouts-core-<version>.tgz ./vendor/layouts-<version>.tgz
+npm install quilt-dom
 ```
 
-Replace `<version>` with the archive version and retain both archives and your lockfile. Use an ESM-capable bundler with CSS import support, such as Vite.
+Core is installed automatically; React is not required. Use an ESM-capable bundler with CSS import support, such as Vite. For local archives, see [packaging instructions](https://github.com/niko-dellic/quilt/blob/main/docs/packaging.md).
 
 ## Use
 
 Provide a host in your HTML: `<div id="workspace" style="width:100%;height:600px"></div>`.
 
 ```ts
-import { createLayout, LayoutStore, mountLayout } from 'layouts';
-import 'layouts/styles.css';
+import { createLayout, LayoutStore, mountLayout } from 'quilt-dom';
+import 'quilt-dom/styles.css';
 
 const store = new LayoutStore(
   createLayout({
@@ -57,4 +55,4 @@ The host needs an explicit height. Supply a `TabRegistry` through `tabs` to offe
 
 Call `mounted.popout(id)` from a user action. Companions are same-origin and owned by the main session. Use the supplied document/window inside renderers and release every view-owned resource in `dispose`. Keep app data outside view lifetimes.
 
-See [API](https://github.com/niko-dellic/layouts/blob/main/docs/api.md), [lifecycle](https://github.com/niko-dellic/layouts/blob/main/docs/lifecycle.md), and [migration](https://github.com/niko-dellic/layouts/blob/main/docs/migration.md).
+See [API](https://github.com/niko-dellic/quilt/blob/main/docs/api.md), [lifecycle](https://github.com/niko-dellic/quilt/blob/main/docs/lifecycle.md), and [migration](https://github.com/niko-dellic/quilt/blob/main/docs/migration.md).

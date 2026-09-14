@@ -1,4 +1,4 @@
-import type { Pane } from 'layouts-core';
+import type { Pane } from 'quilt-core';
 export interface TabRegistration {
   id: string;
   title: string;

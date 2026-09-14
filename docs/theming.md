@@ -4,7 +4,7 @@ Themes style workspace chrome: tabs, menus, dividers, picker, and companion wind
 bars. Pane content is application-owned and may consume these same tokens. A
 canvas's authored colors are content, not theme tokens.
 
-Like [Tweakpane](https://tweakpane.github.io/docs/theming/), layouts accepts CSS
+Like [Tweakpane](https://tweakpane.github.io/docs/theming/), Quilt accepts CSS
 custom properties on its container. Variables inherit normally. Defaults are CSS
 fallbacks, so a nested `.layouts` element does not overwrite container values.
 
@@ -44,7 +44,7 @@ floating chrome with one value.
 Use the typed API for presets and runtime changes:
 
 ```ts
-import { mountLayout, themes } from 'layouts';
+import { mountLayout, themes } from 'quilt-dom';
 const workspace = mountLayout(host, {
   store,
   renderers,
@@ -78,7 +78,7 @@ selector switches chrome presets; visualization palettes remain authored data.
 `themeFamilies.neutral`, `.zinc`, `.stone` and `.mist` each expose `light` and
 `dark` color objects inspired by shadcn palettes. Existing `themes.dark`,
 `themes.light` and `themes.sage` retain their values. Both demo selectors include
-all variants. Choose the family and mode in your application; layouts has no
+all variants. Choose the family and mode in your application; Quilt has no
 singleton preference state, persistence, or framework dependency.
 
 Additional tokens:
@@ -97,7 +97,7 @@ and divider gaps remain layout configuration. Font files and licensing belong to
 the consuming application. The library never downloads a font.
 
 ```ts
-import { themeFamilies, type LayoutTheme } from 'layouts';
+import { themeFamilies, type LayoutTheme } from 'quilt-dom';
 const myThemes = {
   graphite: { ...themeFamilies.zinc.dark, accent: '#82baff' },
 } satisfies Record<string, LayoutTheme>;
@@ -110,8 +110,8 @@ workspace.setTheme({
 ```
 
 ```tsx
-import { Layout } from 'layouts-react';
-import { themeFamilies } from 'layouts';
+import { Layout } from 'quilt-react';
+import { themeFamilies } from 'quilt-dom';
 // Changing this prop updates chrome without remounting registered content.
 <Layout store={store} components={components} theme={themeFamilies.stone.light} />;
 ```

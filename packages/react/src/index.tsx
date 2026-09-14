@@ -1,4 +1,4 @@
-export type { TabBarOptions, TabBarStyle } from 'layouts';
+export type { TabBarOptions, TabBarStyle } from 'quilt-dom';
 import {
   Component,
   createElement,
@@ -12,9 +12,9 @@ import {
 import type { ComponentType, CSSProperties, ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { mountLayout } from 'layouts';
-import type { LayoutOptions, MountedLayout, PaneContext, PaneRenderer } from 'layouts';
-import type { Layout as LayoutSnapshot, LayoutStore } from 'layouts-core';
+import { mountLayout } from 'quilt-dom';
+import type { LayoutOptions, MountedLayout, PaneContext, PaneRenderer } from 'quilt-dom';
+import type { Layout as LayoutSnapshot, LayoutStore } from 'quilt-core';
 export type PaneProps = Omit<PaneContext, 'element'>;
 class Boundary extends Component<
   { children: ReactNode; onError: (error: unknown) => void },
@@ -164,7 +164,7 @@ export const Layout = forwardRef<MountedLayout, LayoutProps>(function Layout(pro
 export function useLayoutSnapshot(store: LayoutStore): LayoutSnapshot {
   return useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
 }
-export { LayoutStore, LayoutError, createLayout, parseLayout, validate } from 'layouts-core';
+export { LayoutStore, LayoutError, createLayout, parseLayout, validate } from 'quilt-core';
 export type {
   AutoCollapse,
   LayoutStoreOptions,
@@ -183,8 +183,8 @@ export type {
   Change,
   Bounds,
   JoinOptions,
-} from 'layouts-core';
-export { TabRegistry, themes, themeFamilies } from 'layouts';
+} from 'quilt-core';
+export { TabRegistry, themes, themeFamilies } from 'quilt-dom';
 export type {
   TabRegistration,
   LayoutTheme,
@@ -193,4 +193,4 @@ export type {
   PaneContext,
   PaneView,
   PaneRenderer,
-} from 'layouts';
+} from 'quilt-dom';

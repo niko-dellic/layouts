@@ -1,4 +1,4 @@
-# layouts contributor guide
+# Quilt contributor guide
 
 Keep the core package framework-independent and free of browser APIs. The DOM renderer owns chrome and interactions; React bindings reuse it. Applications own pane content and data.
 

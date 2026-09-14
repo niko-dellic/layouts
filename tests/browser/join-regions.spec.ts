@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import type { Axis, Group, Node, Split } from 'layouts-core';
+import type { Axis, Group, Node, Split } from 'quilt-core';
 
 async function setup(page: import('@playwright/test').Page, axis: Axis = 'horizontal') {
   await page.goto('/tests/browser/harness.html');

@@ -1,16 +1,13 @@
 {
-  "name": "layouts-workspace",
+  "name": "quilt-workspace",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "engines": {
-    "node": "24.x"
-  },
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build -w layouts-core && npm run build -w layouts && npm run build -w layouts-react",
+    "build": "npm run build -w quilt-core && npm run build -w quilt-dom && npm run build -w quilt-react",
     "typecheck": "tsc -p tsconfig.demo.json --noEmit",
     "test": "vitest run",
     "test:browser": "playwright test",
@@ -18,7 +15,7 @@
     "dev": "vite --host localhost --port 5186",
     "build:demos": "vite build",
     "pack:all": "node scripts/pack.mjs",
-    "check": "node scripts/check-runtime.mjs && npm run format:check && npm run build && npm run typecheck && npm test && npm run test:browser && npm run build:demos && npm run test:packed",
+    "check": "npm run format:check && npm run build && npm run typecheck && npm test && npm run test:browser && npm run build:demos && npm run test:packed",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

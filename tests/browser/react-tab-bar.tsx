@@ -1,9 +1,9 @@
 import { createRoot } from 'react-dom/client';
 import { useEffect, useState } from 'react';
-import { Layout } from 'layouts-react';
-import { LayoutStore } from 'layouts-core';
-import type { TabBarOptions } from 'layouts';
-import 'layouts/styles.css';
+import { Layout } from 'quilt-react';
+import { LayoutStore } from 'quilt-core';
+import type { TabBarOptions } from 'quilt-dom';
+import 'quilt-dom/styles.css';
 const store = new LayoutStore({
   version: 1,
   root: { kind: 'group', id: 'main', panes: ['a'], active: 'a' },

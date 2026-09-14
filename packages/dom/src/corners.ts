@@ -1,5 +1,5 @@
-import { allocate, bounds, DIVIDER, findNode, joinRange } from 'layouts-core';
-import type { Group, Pane } from 'layouts-core';
+import { allocate, bounds, DIVIDER, findNode, joinRange } from 'quilt-core';
+import type { Group, Pane } from 'quilt-core';
 import type { LayoutOptions } from './types.js';
 import { el, Scope } from './lifetime.js';
 type Direction = 'left' | 'right' | 'top' | 'bottom';

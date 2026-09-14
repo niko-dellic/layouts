@@ -1,5 +1,5 @@
-import type { Group } from 'layouts-core';
-import { findNode } from 'layouts-core';
+import type { Group } from 'quilt-core';
+import { findNode } from 'quilt-core';
 import type { LayoutOptions } from './types.js';
 import type { Scope } from './lifetime.js';
 export function shortcutEnabled(

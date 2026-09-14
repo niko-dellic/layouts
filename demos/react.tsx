@@ -1,12 +1,12 @@
 import { defaultTheme } from './theme.js';
 import { surfaces, swatchBackground } from './surfaces.js';
 import { renderIcon } from './icons.js';
-import 'layouts-react/styles.css';
+import 'quilt-react/styles.css';
 import { createRoot } from 'react-dom/client';
 import { createRef, useLayoutEffect, useRef, useSyncExternalStore } from 'react';
-import { Layout } from 'layouts-react';
-import type { PaneProps } from 'layouts-react';
-import type { MountedLayout } from 'layouts-react';
+import { Layout } from 'quilt-react';
+import type { PaneProps } from 'quilt-react';
+import type { MountedLayout } from 'quilt-react';
 import { store, state, getPaneState, tabs } from './model.js';
 import { imperativeView } from './views.js';
 import { setupShell } from './shell.js';

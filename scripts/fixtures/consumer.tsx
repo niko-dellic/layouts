@@ -7,9 +7,9 @@ import {
   useLayoutSnapshot,
   TabRegistry,
   themes,
-} from 'layouts-react';
-import type { MountedLayout, PaneProps, LayoutSnapshot, LayoutProps } from 'layouts-react';
-import 'layouts-react/styles.css';
+} from 'quilt-react';
+import type { MountedLayout, PaneProps, LayoutSnapshot, LayoutProps } from 'quilt-react';
+import 'quilt-react/styles.css';
 const store = new LayoutStore(createLayout({ pane: { id: 'note', type: 'note', title: 'Note' } }));
 const state = { text: 'initial' };
 const stats = { live: 0 };

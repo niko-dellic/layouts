@@ -8,8 +8,8 @@ import {
   bounds,
   groups,
   validate,
-} from 'layouts-core';
-import type { Layout, Pane } from 'layouts-core';
+} from 'quilt-core';
+import type { Layout, Pane } from 'quilt-core';
 const pane = (id: string): Pane => ({ id, type: 'test', title: id });
 function fixture(): Layout {
   return {

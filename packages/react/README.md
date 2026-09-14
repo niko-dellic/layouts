@@ -1,16 +1,14 @@
-# layouts-react
+# quilt-react
 
-React components and hooks over the shared layouts engine and DOM renderer. React 18.3 and 19 are supported peers. MIT licensed; ESM, declarations, and sources included.
+React components and hooks over the shared Quilt engine and DOM renderer. React 18.3 and 19 are supported peers. MIT licensed; ESM, declarations, and sources included.
 
 ## Install
 
-Not yet published to npm. Use Node 24 to run `npm ci` and `npm run pack:all` in the repository. Copy all three archives listed in `artifacts/packages/manifest.json` into your application's `vendor/` directory:
-
 ```sh
-npm install ./vendor/layouts-core-<version>.tgz ./vendor/layouts-<version>.tgz ./vendor/layouts-react-<version>.tgz react react-dom
+npm install quilt-react react react-dom
 ```
 
-Replace `<version>` with the archive version. Keep the archives and lockfile. TypeScript apps also need matching `@types/react` and `@types/react-dom`. Use an ESM-capable bundler with CSS imports.
+Core and DOM are installed automatically. TypeScript apps also need matching `@types/react` and `@types/react-dom`. Use an ESM-capable bundler with CSS imports. For local archives, see [packaging instructions](https://github.com/niko-dellic/quilt/blob/main/docs/packaging.md).
 
 ## Use
 
@@ -18,9 +16,9 @@ Provide `<div id="app"></div>` in your HTML.
 
 ```tsx
 import { createRoot } from 'react-dom/client';
-import { Layout, LayoutStore, createLayout } from 'layouts-react';
-import type { PaneProps } from 'layouts-react';
-import 'layouts-react/styles.css';
+import { Layout, LayoutStore, createLayout } from 'quilt-react';
+import type { PaneProps } from 'quilt-react';
+import 'quilt-react/styles.css';
 
 const store = new LayoutStore(
   createLayout({
@@ -62,4 +60,4 @@ Keep the store, components, registry, and adapter callbacks stable. `useLayoutSn
 
 Panes are separate React roots and do not inherit your app's context providers. Wrap pane components with required providers. React-local state does not survive crossing documents: retain data in an application-owned store, and subscribe inside each view when live synchronization is needed. Companion windows are same-origin and depend on the main session.
 
-The stylesheet is identical to `layouts/styles.css`; import either once. See [API](https://github.com/niko-dellic/layouts/blob/main/docs/api.md), [lifecycle](https://github.com/niko-dellic/layouts/blob/main/docs/lifecycle.md), and [migration](https://github.com/niko-dellic/layouts/blob/main/docs/migration.md).
+The stylesheet is identical to `quilt-dom/styles.css`; import either once. See [API](https://github.com/niko-dellic/quilt/blob/main/docs/api.md), [lifecycle](https://github.com/niko-dellic/quilt/blob/main/docs/lifecycle.md), and [migration](https://github.com/niko-dellic/quilt/blob/main/docs/migration.md).

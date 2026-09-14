@@ -1,4 +1,4 @@
-import type { PaneRenderer } from 'layouts';
+import type { PaneRenderer } from 'quilt-dom';
 import { state, cameraFor, defaultCamera } from './model.js';
 import type { Camera } from './model.js';
 import { surfaceColors } from './surfaces.js';

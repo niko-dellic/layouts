@@ -1,8 +1,8 @@
-# layouts
+# Quilt
 
 **A place for every pane.** A small TypeScript workspace library with recursive splits, tab groups, constrained bars, and real browser-window popouts. A framework-independent engine powers vanilla DOM and React bindings.
 
-Applications own their content and data. Layouts owns arrangement and chrome.
+Applications own their content and data. Quilt owns arrangement and chrome.
 
 ## Try it
 
@@ -19,55 +19,39 @@ The React demo uses a React-controlled inspector alongside an imperative canvas.
 
 ## Packages
 
-| Package         | Responsibility                                                    |
-| --------------- | ----------------------------------------------------------------- |
-| `layouts-core`  | Pure model, commands, validation, constraints, change events      |
-| `layouts`       | Vanilla DOM rendering, chrome, gestures, browser-window lifecycle |
-| `layouts-react` | React components and hooks over the same engine and chrome        |
+| Package       | Responsibility                                                    |
+| ------------- | ----------------------------------------------------------------- |
+| `quilt-core`  | Pure model, commands, validation, constraints, change events      |
+| `quilt-dom`   | Vanilla DOM rendering, chrome, gestures, browser-window lifecycle |
+| `quilt-react` | React components and hooks over the same engine and chrome        |
 
-All packages ship ESM, declarations, and source maps. React is a peer dependency of the React package only. The vanilla package does not depend on React. Packages are distributed as local tarballs for now, not published to the npm registry.
+All packages ship ESM, declarations, and source maps. React is a peer dependency of the React package only. The vanilla package does not depend on React.
 
 ## Install in your application
 
-In a clone of this repository, use Node 24 and run:
-
 ```sh
-npm ci
-npm run build
-npm run pack:all
+# Vanilla DOM (includes core)
+npm install quilt-dom
+
+# React (includes core and DOM)
+npm install quilt-react react react-dom
+
+# Model only
+npm install quilt-core
 ```
 
-Copy the generated `.tgz` files from `artifacts/packages/` into your application's
-`vendor/layouts/` directory. Then, from your application's root, install the packages
-using relative paths:
+Import `quilt-dom/styles.css` for vanilla or `quilt-react/styles.css` for React.
+Use ESM imports and a bundler with CSS support, such as Vite. TypeScript React
+applications also need matching `@types/react` and `@types/react-dom`.
 
-```sh
-# Vanilla: install core and DOM together.
-npm install ./vendor/layouts/layouts-core-0.1.0.tgz \
-  ./vendor/layouts/layouts-0.1.0.tgz
-
-# React: install all three together (with React and React DOM peers).
-npm install ./vendor/layouts/layouts-core-0.1.0.tgz \
-  ./vendor/layouts/layouts-0.1.0.tgz \
-  ./vendor/layouts/layouts-react-0.1.0.tgz react react-dom
-```
-
-Choose the command for your application. Keep the tarballs, `package.json`, and
-`package-lock.json` in your application repository so other users can run `npm ci`
-without this checkout.
-
-Import from `layouts-core`, `layouts`, or `layouts-react` as shown below.
-The stylesheet is available at `layouts/styles.css`. Use an ESM-capable bundler
-that supports CSS imports, as the demos do with Vite.
-
-See [Packaging and integration](docs/packaging.md) for archive versioning and
-verification details.
+For checkout builds and local tarball installation, see
+[Packaging and integration](docs/packaging.md).
 
 ## Vanilla
 
 ```ts
-import { LayoutStore, mountLayout } from 'layouts';
-import 'layouts/styles.css';
+import { LayoutStore, mountLayout } from 'quilt-dom';
+import 'quilt-dom/styles.css';
 
 const store = new LayoutStore({
   version: 1,
@@ -109,9 +93,9 @@ Give the host an explicit size (`width: 100%; height: 600px`, for example).
 ## React
 
 ```tsx
-import { Layout } from 'layouts-react';
-import type { PaneProps } from 'layouts-react';
-import 'layouts-react/styles.css';
+import { Layout } from 'quilt-react';
+import type { PaneProps } from 'quilt-react';
+import 'quilt-react/styles.css';
 
 // Create the store and app state outside the pane component's lifetime.
 function Notes({ state }: PaneProps) {

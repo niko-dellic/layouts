@@ -1,4 +1,4 @@
-import { themeFamilies } from 'layouts';
+import { themeFamilies } from 'quilt-dom';
 
 const preferredMode = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 export const defaultThemeName = `neutral-${preferredMode}`;

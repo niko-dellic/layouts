@@ -6,12 +6,12 @@ import {
   LayoutError,
   joinRange,
   DIVIDER,
-} from 'layouts-core';
-import type { Layout, Pane, JoinOptions } from 'layouts-core';
+} from 'quilt-core';
+import type { Layout, Pane, JoinOptions } from 'quilt-core';
 // @ts-expect-error Internal validation helper is not public.
-import { isJson } from 'layouts-core';
+import { isJson } from 'quilt-core';
 // @ts-expect-error Internal bounds helper is not public.
-import { paneBounds } from 'layouts-core';
+import { paneBounds } from 'quilt-core';
 const pane: Pane = { id: 'a', type: 'text', title: 'A' };
 const layout: Layout = createLayout({ pane });
 const store = new LayoutStore(parseLayout(layout));

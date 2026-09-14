@@ -1,5 +1,5 @@
-import { bounds, DIVIDER, findNode } from 'layouts-core';
-import type { Axis, Layout, Node } from 'layouts-core';
+import { bounds, DIVIDER, findNode } from 'quilt-core';
+import type { Axis, Layout, Node } from 'quilt-core';
 
 /** Resize only the branches touching a divider, preserving every farther edge. */
 export function isolatedResize(

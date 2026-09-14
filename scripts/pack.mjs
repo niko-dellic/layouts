@@ -39,7 +39,7 @@ try {
 writeFileSync(
   resolve(out, 'manifest.json'),
   JSON.stringify(
-    { repository: 'https://github.com/niko-dellic/layouts', commit, dirty, packages: archives },
+    { repository: 'https://github.com/niko-dellic/quilt', commit, dirty, packages: archives },
     null,
     2,
   ) + '\n',

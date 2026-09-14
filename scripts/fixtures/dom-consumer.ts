@@ -1,12 +1,12 @@
-import { mountLayout, LayoutStore, createLayout, TabRegistry, themes, validate } from 'layouts';
+import { mountLayout, LayoutStore, createLayout, TabRegistry, themes, validate } from 'quilt-dom';
 import type {
   LayoutSnapshot,
   LayoutTheme,
   MountedLayout,
   PaneRenderer,
   LayoutOptions,
-} from 'layouts';
-import 'layouts/styles.css';
+} from 'quilt-dom';
+import 'quilt-dom/styles.css';
 const layout: LayoutSnapshot = createLayout();
 const theme: LayoutTheme = themes.light;
 const store = new LayoutStore(layout);

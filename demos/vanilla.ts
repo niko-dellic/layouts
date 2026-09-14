@@ -1,7 +1,7 @@
 import { defaultTheme } from './theme.js';
 import { renderIcon } from './icons.js';
-import 'layouts/styles.css';
-import { mountLayout } from 'layouts';
+import 'quilt-dom/styles.css';
+import { mountLayout } from 'quilt-dom';
 import { store, getPaneState, tabs } from './model.js';
 import { renderers } from './views.js';
 import { setupShell } from './shell.js';

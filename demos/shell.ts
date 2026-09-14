@@ -1,8 +1,8 @@
-import { themes, themeFamilies } from 'layouts';
-import type { AutoCollapse } from 'layouts-core';
+import { themes, themeFamilies } from 'quilt-dom';
+import type { AutoCollapse } from 'quilt-core';
 import { store, workspaceSession } from './model.js';
 import { defaultThemeName } from './theme.js';
-import type { MountedLayout } from 'layouts';
+import type { MountedLayout } from 'quilt-dom';
 // Controls belong to the demo session and survive pane moves and layout resets.
 let settings: HTMLElement | undefined;
 let settingsHost: HTMLElement | undefined;

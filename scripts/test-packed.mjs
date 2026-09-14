@@ -23,7 +23,7 @@ const run = (command, args, cwd = root) => execFileSync(command, args, { cwd, st
 for (const name of ['core', 'dom', 'react']) {
   rmSync(resolve(root, 'packages', name, 'dist'), { recursive: true, force: true });
 }
-const direct = mkdtempSync(join(tmpdir(), 'layouts-direct-pack-'));
+const direct = mkdtempSync(join(tmpdir(), 'quilt-direct-pack-'));
 try {
   run('npm', ['pack', '--pack-destination', direct], resolve(root, 'packages/react'));
 } finally {
@@ -45,7 +45,7 @@ const metadata = Object.fromEntries(
     JSON.parse(readFileSync(resolve(root, `packages/${key}/package.json`), 'utf8')),
   ]),
 );
-const temp = realpathSync(mkdtempSync(join(tmpdir(), 'layouts-consumer-')));
+const temp = realpathSync(mkdtempSync(join(tmpdir(), 'quilt-consumer-')));
 const installFlags = ['--ignore-scripts', '--no-audit', '--no-fund'];
 try {
   const vendor = join(temp, 'vendor');
@@ -57,7 +57,7 @@ try {
   writeFileSync(
     join(temp, 'package.json'),
     JSON.stringify({
-      name: 'isolated-layouts-consumer',
+      name: 'isolated-quilt-consumer',
       private: true,
       type: 'module',
       dependencies: { [metadata.core.name]: archive('core'), [metadata.dom.name]: archive('dom') },
@@ -77,9 +77,9 @@ try {
   for (const file of ['core-consumer.ts', 'dom-consumer.ts', 'consumer.tsx']) {
     let source = readFileSync(resolve(root, 'scripts/fixtures', file), 'utf8');
     for (const [old, key] of [
-      ['layouts-core', 'core'],
-      ['layouts-react', 'react'],
-      ['layouts', 'dom'],
+      ['quilt-core', 'core'],
+      ['quilt-react', 'react'],
+      ['quilt-dom', 'dom'],
     ])
       source = source
         .replaceAll(`'${old}'`, `'${metadata[key].name}'`)

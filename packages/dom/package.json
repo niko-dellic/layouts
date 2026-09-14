@@ -1,12 +1,12 @@
 {
-  "name": "layouts",
+  "name": "quilt-dom",
   "version": "0.1.0",
-  "description": "Composable TypeScript pane layouts with real browser popouts",
+  "description": "Vanilla DOM split panes, tabs, themes, and same-origin window popouts",
   "type": "module",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/niko-dellic/layouts.git",
+    "url": "git+https://github.com/niko-dellic/quilt.git",
     "directory": "packages/dom"
   },
   "files": [
@@ -27,9 +27,24 @@
     "prepack": "node ../../scripts/build-package.mjs dom --dependencies"
   },
   "dependencies": {
-    "layouts-core": "0.1.0"
+    "quilt-core": "0.1.0"
   },
   "sideEffects": [
     "**/*.css"
-  ]
+  ],
+  "homepage": "https://github.com/niko-dellic/quilt/tree/main/packages/dom#readme",
+  "bugs": {
+    "url": "https://github.com/niko-dellic/quilt/issues"
+  },
+  "keywords": [
+    "layout",
+    "split-pane",
+    "tabs",
+    "workspace",
+    "typescript"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
 }
