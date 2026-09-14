@@ -7,7 +7,21 @@
 
 Applications own their content and data. Quilt owns arrangement and chrome.
 
+## See it in action
+
+![Quilt resizing the inspector width and timeline height while keeping the workspace contents in place](docs/media/resizing.gif)
+
+Drag a divider to change pane widths or heights. Nested regions resize together, while the toolbar and status bar stay fixed. [Compare the before and after screenshots](docs/showcase.md#resizing).
+
+| Light theme · compact vertical tabs                                                                 | Sage theme · anchored, tapered tabs                                                                               |
+| --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| ![Focus workspace with a light theme and compact vertical capsule tabs](docs/media/focus-light.png) | ![Review workspace with a sage theme, timeline, inspector, and anchored tapered tabs](docs/media/review-sage.png) |
+
+Choose themes, tab orientation and shape, font and icon sizes, divider widths, and corner-handle styling. The demo also includes Default, Focus, and Review workspace presets. [Explore the screenshot gallery and configuration controls](docs/showcase.md).
+
 ## Try it
+
+Open the live [vanilla demo](https://layouts-ruddy.vercel.app/vanilla.html) or [React demo](https://layouts-ruddy.vercel.app/react.html), or run locally:
 
 ```sh
 nvm use
