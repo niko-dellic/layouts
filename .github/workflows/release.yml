@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   verify:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || !inputs.publish
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -44,7 +44,7 @@ jobs:
           name: release-browser-results
           path: test-results/
   publish:
-    if: inputs.publish
+    if: inputs.publish && github.ref == 'refs/heads/main'
     needs: verify
     runs-on: ubuntu-latest
     timeout-minutes: 15
