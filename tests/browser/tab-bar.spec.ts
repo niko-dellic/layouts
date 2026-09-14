@@ -320,7 +320,7 @@ test('left icon rail reserves space, labels icons, navigates vertically and rest
   await expect(a.locator('.layouts-tab-icon')).toBeVisible();
   const header = (await group.locator('.layouts-header').boundingBox())!;
   const body = (await group.locator('.layouts-body').boundingBox())!;
-  expect(header.width).toBe(40);
+  expect(header.width).toBe(32);
   expect(body.x).toBe(header.x + header.width);
   expect(body.y).toBe(header.y);
   await a.focus();

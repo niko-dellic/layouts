@@ -14,7 +14,9 @@ export interface LayoutTheme {
   /** Tab and menu icon size (default 16px). */
   iconSize?: string;
   headerHeight?: string;
-  /** Resize gap in CSS pixels (default 6px). Explicit split gaps take precedence. */
+  /** Width of the vertical tab rail (default 32px). */
+  headerWidth?: string;
+  /** Resize gap in CSS pixels (default 4px). Explicit split gaps take precedence. */
   resizeHandleWidth?: string;
   /** Gap for disabled dividers in CSS pixels (default 0px). */
   disabledResizeHandleWidth?: string;
@@ -40,6 +42,7 @@ export const themeProperties = {
   fontSize: '--layouts-font-size',
   iconSize: '--layouts-icon-size',
   headerHeight: '--layouts-header-height',
+  headerWidth: '--layouts-header-width',
   resizeHandleWidth: '--layouts-resize-handle-width',
   disabledResizeHandleWidth: '--layouts-disabled-resize-handle-width',
   frozenPaneBorder: '--layouts-frozen-pane-border',

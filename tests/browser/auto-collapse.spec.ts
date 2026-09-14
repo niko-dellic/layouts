@@ -27,7 +27,7 @@ for (const mode of ['disabled', 'protected', 'enabled'] as const) {
 }
 
 for (const framework of ['vanilla', 'react']) {
-  test(`${framework}: pending split searches coexist and survive losing focus`, async ({
+  test(`${framework}: pending regions survive while searches dismiss outside the pane`, async ({
     page,
   }) => {
     await page.goto(`/${framework}.html`);
@@ -51,9 +51,11 @@ for (const framework of ['vanilla', 'react']) {
     await page.getByRole('button', { name: 'Scene actions', exact: true }).click();
     await page.getByRole('button', { name: 'Split', exact: true }).hover();
     await page.getByRole('menuitem', { name: 'Split down', exact: true }).click();
-    await expect(pickers).toHaveCount(2);
-    await pickers.last().locator('..').getByRole('button', { name: 'Close empty pane' }).click();
     await expect(pickers).toHaveCount(1);
+    await expect(page.locator(`[data-node-id="${id}"] .layouts-empty`)).toBeVisible();
+    await pickers.last().locator('..').getByRole('button', { name: 'Close empty pane' }).click();
+    await expect(pickers).toHaveCount(0);
+    await page.locator(`[data-node-id="${id}"] .layouts-empty`).click();
     await first.getByRole('option', { name: 'Notes', exact: true }).click();
     await expect(pickers).toHaveCount(0);
     await expect(

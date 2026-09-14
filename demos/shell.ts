@@ -25,12 +25,12 @@ export function mountTheming(element: HTMLElement) {
 }
 export function setupShell(getMounted: () => MountedLayout | undefined) {
   let headerHeight = 32,
+    headerWidth = 32,
     fontSize = 11,
     iconSize = 16,
     radius = 5,
-    handleWidth = 6,
-    showDisabledHandles = false,
-    showFrozenBorders = true;
+    handleWidth = 4,
+    showDisabledHandles = false;
   settings = document.querySelector<HTMLElement>('[aria-label="Workspace controls"]')!;
   settings.remove();
   settingsHost?.append(settings);
@@ -65,10 +65,10 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
       fontSize: `${fontSize}px`,
       iconSize: `${iconSize}px`,
       headerHeight: `${headerHeight}px`,
+      headerWidth: `${headerWidth}px`,
       radius: `${radius}px`,
       resizeHandleWidth: `${handleWidth}px`,
       disabledResizeHandleWidth: showDisabledHandles ? `${handleWidth}px` : '0px',
-      frozenPaneBorder: showFrozenBorders ? 'var(--layouts-line)' : 'transparent',
     });
   };
   themeSelect.onchange = applyTheme;
@@ -98,9 +98,9 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
   barSelect.setAttribute('aria-label', 'Tab bar style');
   for (const [value, label] of [
     ['full', 'Full-width'],
-    ['angle', 'Tapered: angle'],
-    ['round', 'Tapered: round'],
-    ['scoop', 'Tapered: scoop'],
+    ['angle', 'Angle'],
+    ['round', 'Round'],
+    ['scoop', 'Scoop'],
     ['vertical', 'Fitted'],
   ]) {
     const option = document.createElement('option');
@@ -114,7 +114,7 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
   placement.setAttribute('aria-label', 'Tab placement');
   for (const [value, label] of [
     ['top', 'Top'],
-    ['left', 'Left: icons only'],
+    ['left', 'Vertical'],
   ]) {
     const option = document.createElement('option');
     option.value = value!;
@@ -149,7 +149,7 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
     // Angle is measured from the horizontal.
     const taperWidth =
       shape === 'angle'
-        ? (position === 'left' ? 40 : headerHeight) / Math.tan((value * Math.PI) / 180)
+        ? (position === 'left' ? headerWidth : headerHeight) / Math.tan((value * Math.PI) / 180)
         : value;
     getMounted()?.setTabBar({ placement: position, mode: 'tapered', shape, taperWidth });
   };
@@ -166,16 +166,45 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
   };
   amount.oninput = applyBar;
   barSelect.onchange = updateAmount;
-  placement.onchange = updateAmount;
+  placement.onchange = () => {
+    updateAmount();
+  };
   themeField.after(placementField, barField, amountField);
   updateAmount();
-  const resizing = document.createElement('section');
-  resizing.className = 'demo-resizing';
-  resizing.setAttribute('aria-label', 'Resizing');
-  const resizingTitle = document.createElement('h3');
-  resizingTitle.textContent = 'Resizing';
-  resizing.append(resizingTitle);
-  let last: HTMLElement = amountField;
+  const section = (name: string) => {
+    const region = document.createElement('section');
+    region.className = 'demo-settings-section';
+    region.setAttribute('aria-label', name);
+    const details = document.createElement('details');
+    details.open = true;
+    const summary = document.createElement('summary');
+    summary.textContent = name;
+    const chevron = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    chevron.setAttribute('viewBox', '0 0 24 24');
+    chevron.setAttribute('aria-hidden', 'true');
+    const path = document.createElementNS(chevron.namespaceURI, 'path');
+    path.setAttribute('d', 'm6 9 6 6 6-6');
+    chevron.append(path);
+    summary.append(chevron);
+    const content = document.createElement('div');
+    content.className = 'demo-settings-fields';
+    details.append(summary, content);
+    region.append(details);
+    return { region, content };
+  };
+  const themeSection = section('Theme');
+  const fontSection = section('Font');
+  const tabSection = section('Tab');
+  const resizeSection = section('Resizing');
+  themeSection.content.append(themeField);
+  tabSection.content.append(placementField, barField, amountField);
+  const resizing = resizeSection.content;
+  settings.prepend(
+    themeSection.region,
+    fontSection.region,
+    tabSection.region,
+    resizeSection.region,
+  );
   for (const [name, initial, min, max, update] of [
     [
       'Resize handle width',
@@ -187,12 +216,21 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
       },
     ],
     [
-      'Header height',
+      'Tab height',
       headerHeight,
       28,
       48,
       (v: number) => {
         headerHeight = v;
+      },
+    ],
+    [
+      'Tab width',
+      headerWidth,
+      28,
+      48,
+      (v: number) => {
+        headerWidth = v;
       },
     ],
     [
@@ -233,15 +271,14 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
     field.classList.add('demo-range');
     input.oninput = () => {
       update(Number(input.value));
-      field.querySelector('span')!.textContent = `${name}: ${input.value}px`;
+      field.querySelector('span')!.textContent =
+        `${input.getAttribute('aria-label')}: ${input.value}px`;
       applyTheme();
       applyBar();
     };
     if (name === 'Resize handle width') resizing.append(field);
-    else {
-      last.after(field);
-      last = field;
-    }
+    else if (name === 'Text size' || name === 'Icon size') fontSection.content.append(field);
+    else tabSection.content.append(field);
   }
   const disabledLabel = document.createElement('label');
   disabledLabel.className = 'demo-handle-toggle';
@@ -253,20 +290,8 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
     showDisabledHandles = disabledInput.checked;
     applyTheme();
   };
-  const borderLabel = document.createElement('label');
-  borderLabel.className = 'demo-handle-toggle';
-  const borderInput = document.createElement('input');
-  borderInput.type = 'checkbox';
-  borderInput.checked = showFrozenBorders;
-  borderLabel.append(borderInput, 'Show frozen pane borders');
-  borderInput.onchange = () => {
-    showFrozenBorders = borderInput.checked;
-    applyTheme();
-  };
-  resizing.append(collapseField, disabledLabel, borderLabel);
-  last.after(resizing);
-  const source = document.querySelector<HTMLElement>('.source-link');
-  if (source) settings.append(source);
+  resizing.append(collapseField, disabledLabel);
+
   applySettings = () => {
     applyTheme();
     applyBar();

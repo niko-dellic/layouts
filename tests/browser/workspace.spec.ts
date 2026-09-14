@@ -40,6 +40,31 @@ for (const framework of ['vanilla', 'react']) {
       );
       expect(errors).toEqual([]);
     });
+    test('join menu previews affected regions and clears on leave and dismissal', async ({
+      page,
+    }) => {
+      await page.getByRole('button', { name: 'Scene actions', exact: true }).click();
+      const join = page.getByRole('button', { name: 'Join sibling region', exact: true });
+      const preview = page.locator('.layouts-corner-preview');
+      await join.hover();
+      await expect(preview).toHaveCount(2);
+      const target = page.locator('[data-corner-preview="join-target"]');
+      const source = page.locator('[data-corner-preview="join-source"]');
+      expect(await target.boundingBox()).toEqual(
+        await page.locator('[data-node-id="scene-group"]').boundingBox(),
+      );
+      expect(await source.boundingBox()).toEqual(
+        await page.locator('[data-node-id="inspector-group"]').boundingBox(),
+      );
+      await page.getByRole('button', { name: 'Maximize region', exact: true }).hover();
+      await expect(preview).toHaveCount(0);
+      await join.focus();
+      await expect(preview).toHaveCount(2);
+      await page.keyboard.press('Escape');
+      await expect(preview).toHaveCount(0);
+      await expect(page.getByRole('tab', { name: 'Scene', exact: true })).toBeVisible();
+      await expect(page.getByRole('tab', { name: 'Inspector', exact: true })).toBeVisible();
+    });
     test('real popout remounts data and returns it on close', async ({ page }) => {
       await page.getByRole('textbox', { name: 'Working notes' }).fill('Before popout');
       const opened = page.waitForEvent('popup');
@@ -65,6 +90,7 @@ for (const framework of ['vanilla', 'react']) {
       await expect(page.getByRole('tab', { name: 'Notes', exact: true })).toBeVisible();
       await page.getByRole('button', { name: 'Notes actions', exact: true }).click();
       await page.getByRole('button', { name: 'Join sibling region', exact: true }).click();
+      await expect(page.locator('.layouts-corner-overlay')).toHaveCount(0);
       await expect(page.getByRole('tab', { name: 'Scene', exact: true })).toBeVisible();
       await page
         .getByRole('tab', { name: 'Notes', exact: true })

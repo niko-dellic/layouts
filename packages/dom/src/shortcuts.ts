@@ -23,15 +23,8 @@ export function bindShortcuts(
   });
   scope.listen(root.ownerDocument, 'keydown', (event) => {
     const e = event as KeyboardEvent;
-    if (
-      e.defaultPrevented ||
-      e.repeat ||
-      !e.altKey ||
-      e.ctrlKey ||
-      e.metaKey ||
-      e.shiftKey ||
-      e.code !== 'Space'
-    )
+    const maximizeKey = (e.altKey && e.code === 'Space') || (!e.altKey && e.key === '`');
+    if (e.defaultPrevented || e.repeat || !maximizeKey || e.ctrlKey || e.metaKey || e.shiftKey)
       return;
     const target = e.target as HTMLElement | null;
     if (

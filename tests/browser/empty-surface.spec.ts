@@ -62,3 +62,28 @@ test('a completely empty workspace can create content with no source pane', asyn
   await page.getByRole('option', { name: 'New tab', exact: true }).click();
   await expect(group.getByRole('tab', { name: 'C', exact: true })).toBeVisible();
 });
+
+test('outside clicks dismiss search without removing the pane; inside clicks keep it open', async ({
+  page,
+}) => {
+  await page.goto('/tests/browser/harness.html');
+  await page.evaluate(() => window.harness.store.close('a'));
+  const left = page.locator('[data-node-id="left"]');
+  const surface = left.locator('.layouts-empty');
+  await surface.click();
+  const search = page.getByRole('combobox', { name: 'Search tabs' });
+  await expect(search).toBeFocused();
+  await expect(search).toHaveCSS('outline-style', 'none');
+  await expect(search).toHaveCSS('box-shadow', 'none');
+  await search.fill('query');
+  await surface.click({ position: { x: 25, y: 55 } });
+  await expect(search).toHaveValue('query');
+  await page.locator('[data-node-id="right"]').getByRole('textbox').click();
+  await expect(search).toHaveCount(0);
+  await expect(surface).toBeVisible();
+  await surface.click();
+  await expect(search).toBeFocused();
+  await page.getByRole('button', { name: 'Return', exact: true }).click();
+  await expect(search).toHaveCount(0);
+  await expect(surface).toBeVisible();
+});

@@ -138,7 +138,7 @@ describe('constraints', () => {
   it('retains minima in small viewports and caps maxima', () => {
     expect(allocate(100, 0.5, 90, Infinity, 80, Infinity)).toEqual([90, 80]);
     expect(allocate(1000, 0.8, 50, 100, 50, 200)).toEqual([100, 200]);
-    expect(allocate(400, 0.9, 48, 48, 100, Infinity)).toEqual([48, 346]);
+    expect(allocate(400, 0.9, 48, 48, 100, Infinity)).toEqual([48, 348]);
   });
   it('rejects incompatible tab constraints atomically', () => {
     const f = fixture();
@@ -150,7 +150,7 @@ describe('constraints', () => {
     const f = fixture();
     f.panes.a!.size = { minWidth: 100, minHeight: 60 };
     f.panes.c!.size = { minWidth: 200, minHeight: 90 };
-    expect(bounds(f.root, f).minWidth).toBe(306);
+    expect(bounds(f.root, f).minWidth).toBe(304);
     expect(bounds(f.root, f).minHeight).toBe(90);
   });
   it('maintains invariants through repeated operation sequences', () => {

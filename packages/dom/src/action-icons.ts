@@ -3,6 +3,7 @@ const paths = {
   'add-tab': ['M12 5v14M5 12h14'],
   'split-right': ['M3 4h18v16H3z', 'M12 4v16'],
   'split-below': ['M3 4h18v16H3z', 'M3 12h18'],
+  'tab-orientation': ['M3 4h18v16H3z', 'M3 9h18', 'M8 9v11'],
   join: ['M3 4h18v16H3z', 'm7 9 3 3-3 3m10-6-3 3 3 3'],
   maximize: ['M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5'],
   restore: ['M3 8h5V3m13 5h-5V3M8 21v-5H3m13 5v-5h5'],

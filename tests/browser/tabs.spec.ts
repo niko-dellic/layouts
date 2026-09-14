@@ -29,22 +29,24 @@ for (const framework of ['vanilla', 'react']) {
     await page.getByRole('button', { name: 'Close Inspector', exact: true }).click();
     await expect(inspector).toHaveCount(0);
   });
-  test(`${framework}: Option+Space toggles the hovered pane and leaves text entry alone`, async ({
-    page,
-  }) => {
-    await page.goto(`/${framework}.html`);
-    const scene = page.getByRole('tab', { name: 'Scene', exact: true });
-    await scene.hover();
-    await page.keyboard.press('Alt+Space');
-    await expect(page.getByRole('tab', { name: 'Inspector', exact: true })).not.toBeVisible();
-    await page.keyboard.press('Alt+Space');
-    await page.getByRole('tab', { name: 'Inspector', exact: true }).click();
-    const input = page.getByRole('textbox', { name: 'Working notes' });
-    await input.click();
-    await page.keyboard.press('Alt+Space');
-    await expect(scene).toBeVisible();
-    await expect(input).toBeVisible();
-  });
+  for (const shortcut of ['Alt+Space', '`']) {
+    test(`${framework}: ${shortcut} toggles the hovered pane and leaves text entry alone`, async ({
+      page,
+    }) => {
+      await page.goto(`/${framework}.html`);
+      const scene = page.getByRole('tab', { name: 'Scene', exact: true });
+      await scene.hover();
+      await page.keyboard.press(shortcut);
+      await expect(page.getByRole('tab', { name: 'Inspector', exact: true })).not.toBeVisible();
+      await page.keyboard.press(shortcut);
+      await page.getByRole('tab', { name: 'Inspector', exact: true }).click();
+      const input = page.getByRole('textbox', { name: 'Working notes' });
+      await input.click();
+      await page.keyboard.press(shortcut);
+      await expect(scene).toBeVisible();
+      await expect(input).toBeVisible();
+    });
+  }
 }
 
 test('compact tabs retain icons, active close, labels for accessibility, and mounted views', async ({
@@ -81,8 +83,10 @@ test('shortcuts are disabled by default and close capability is respected', asyn
   await page.goto('/tests/browser/harness.html');
   const a = page.getByRole('tab', { name: 'A', exact: true });
   await a.hover();
-  await page.keyboard.press('Alt+Space');
-  expect(await page.evaluate(() => window.harness.store.getSnapshot().maximized)).toBeNull();
+  for (const shortcut of ['Alt+Space', '`']) {
+    await page.keyboard.press(shortcut);
+    expect(await page.evaluate(() => window.harness.store.getSnapshot().maximized)).toBeNull();
+  }
   await a.click({ button: 'middle' });
   await expect(a).toBeVisible();
   await page.goto('/tests/browser/harness.html?shortcuts');

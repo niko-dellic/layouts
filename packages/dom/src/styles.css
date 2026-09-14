@@ -100,6 +100,9 @@
   outline: 2px solid var(--layouts-focus, #b3decf);
   outline-offset: -2px;
 }
+.layouts .layouts-menu:focus-visible {
+  outline: none;
+}
 /* Arrow-key navigation activates the focused tab; its background marks selection. */
 .layouts .layouts-tab[aria-selected='true']:focus-visible {
   outline: none;
@@ -500,6 +503,9 @@
   flex-basis: var(--layouts-tab-preferred-width, 180px);
 }
 .layouts-header > .layouts-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
   height: 100%;
   padding: 0 7px;
@@ -577,8 +583,8 @@
 
 .layouts-chrome-icon {
   display: inline-block;
-  width: 16px;
-  height: 16px;
+  width: var(--layouts-icon-size, 16px);
+  height: var(--layouts-icon-size, 16px);
   vertical-align: middle;
   pointer-events: none;
 }
@@ -590,9 +596,9 @@
 .layouts-group[data-tab-placement='left'] > .layouts-header {
   position: relative;
   inset: auto;
-  width: 40px;
+  width: var(--layouts-header-width, 32px);
   height: 100%;
-  flex: 0 0 40px;
+  flex: 0 0 var(--layouts-header-width, 32px);
   flex-direction: column;
   padding: 4px;
   border-bottom: 0;
@@ -700,14 +706,6 @@
   width: 100%;
 }
 
-.layouts-placement {
-  display: grid;
-  gap: 4px;
-  padding: 6px;
-  color: var(--layouts-muted, #a2acba);
-  font-size: 11px;
-}
-
 /* The split owns shared frozen borders; descendants omit those same edges. */
 .layouts-group[data-shared-edges~='top'] {
   --layouts-edge-top: transparent;
@@ -753,4 +751,10 @@
   fill: none;
   stroke: currentColor;
   stroke-width: 1;
+}
+
+.layouts-picker-search:focus,
+.layouts-picker-search:focus-visible {
+  outline: none;
+  box-shadow: none;
 }

@@ -23,8 +23,7 @@ for (const framework of ['vanilla', 'react']) {
     expect((await next.boundingBox())!.y).toBeCloseTo(first.y + first.height, 1);
     const resizing = page.getByRole('region', { name: 'Resizing', exact: true });
     await expect(resizing.getByRole('slider', { name: 'Resize handle width' })).toBeVisible();
-    const borderToggle = resizing.getByRole('checkbox', { name: 'Show frozen pane borders' });
-    await expect(borderToggle).toBeChecked();
+    await expect(resizing.getByRole('checkbox')).toHaveCount(1);
     const boundary = page.locator('[data-node-id="top"]');
     const border = () =>
       boundary.evaluate((element) => {
@@ -38,10 +37,7 @@ for (const framework of ['vanilla', 'react']) {
         theme === 'neutral-light' ? 'rgb(212, 212, 212)' : 'rgb(82, 82, 82)',
       );
     }
-    await borderToggle.uncheck();
-    expect((await border()).color).toBe('rgba(0, 0, 0, 0)');
     expect(await staticPane.boundingBox()).toEqual(first);
-    await borderToggle.check();
     const scene = page.locator('[data-node-id="scene-group"]');
     for (const placement of ['top', 'left']) {
       await page
@@ -68,13 +64,13 @@ for (const framework of ['vanilla', 'react']) {
     await width.press('ArrowRight');
     await expect(page.locator('[data-node-id="tools-split"] > .layouts-divider')).toHaveCSS(
       'width',
-      '7px',
+      '5px',
     );
     await toggle.check();
     await expect(top).toBeVisible();
     await expect(boundary).toHaveAttribute('data-frozen-border', '');
     await expect(scene).not.toHaveAttribute('data-shared-edges', /top/);
-    await expect(top).toHaveCSS('height', '7px');
+    await expect(top).toHaveCSS('height', '5px');
     await expect(top).toHaveAttribute('aria-disabled', 'true');
     await top.focus();
     await top.press('ArrowDown');
@@ -82,6 +78,8 @@ for (const framework of ['vanilla', 'react']) {
     await toggle.uncheck();
     await expect(top).toBeHidden();
     await expect(bottom).toBeHidden();
+    await expect(boundary).toHaveAttribute('data-frozen-border', 'vertical');
+    expect((await border()).color).toBe('rgb(82, 82, 82)');
     expect(await readJSON()).toBe(originalJSON);
   });
 }

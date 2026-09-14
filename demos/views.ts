@@ -122,7 +122,7 @@ export const hotkeys: PaneRenderer = ({ element, document: doc }) => {
   const list = field(doc, 'dl', '', 'hotkey-list');
   for (const [keys, description] of [
     ['Drag on canvas', 'Orbit the scene. Scroll to zoom. Double-click to reset.'],
-    ['Alt / Option + Space', 'Maximize or restore the hovered or focused region.'],
+    ['` or Alt / Option + Space', 'Maximize or restore the hovered or focused region.'],
     ['← / → or ↑ / ↓', 'Select the previous or next tab. Use up/down for left-side tabs.'],
     ['Home / End', 'Select the first or last tab when a tab is focused.'],
     ['Arrow keys', 'Resize a focused divider. Hold Shift for larger steps.'],

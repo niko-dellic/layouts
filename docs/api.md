@@ -141,7 +141,7 @@ mountLayout(host, {
 // shortcuts: { maximize: true, middleClickClose: false }
 ```
 
-Option+Space (`Alt+Space`) toggles workspace maximize/restore for the hovered
+Backtick (`` ` ``) or Option+Space (`Alt+Space`) toggles workspace maximize/restore for the hovered
 pane region, falling back to the keyboard-focused region. This fills the layout
 host; it does not invoke the browser Fullscreen API. Text inputs, editable
 content, dialogs, and repeated key events are left alone. Some operating systems
@@ -186,9 +186,8 @@ remains atomic, so a rejected creation preserves the workspace.
 
 Add tab and split actions open a searchable combobox tray. Search matches titles,
 descriptions, and keywords. Arrow keys move selection, Enter creates, and Escape
-cancels modal choosers. With autoCollapse disabled, a new split’s chooser remains open
-in its region when clicking elsewhere or pressing Escape; choose a tab later or close
-the empty region explicitly. Add tab activates the new tab in the same region. Split creates a new
+cancels modal choosers. With autoCollapse disabled, clicking outside a new split’s region dismisses its chooser while preserving the empty region.
+Click its empty surface to reopen search, or close the region explicitly. Add tab activates the new tab in the same region. Split creates a new
 region containing the selected type. Canvas is an ordinary pane renderer and can
 be added, tabbed, dragged, closed, maximized, and popped out under the same rules.
 

@@ -1,7 +1,7 @@
 import { actionIcon } from './action-icons.js';
 import type { ActionIcon } from './action-icons.js';
 import { fillTabPicker } from './picker.js';
-import { findNode } from 'layouts-core';
+import { findNode, findParent, groups, paneIds } from 'layouts-core';
 import type { Group, Pane } from 'layouts-core';
 import type { LayoutOptions } from './types.js';
 import type { Windows } from './windows.js';
@@ -41,9 +41,14 @@ export function createPaneMenu(
     groupActions = false,
   ) {
     current?.dispose();
+    const latestGroup = findNode(options.store.getSnapshot().root, group.id);
+    if (latestGroup?.kind !== 'group') return;
+    group = latestGroup;
     const local = new Scope();
     current = local;
     const dialog = el(doc, 'dialog', 'layouts-menu');
+    dialog.tabIndex = -1;
+    dialog.autofocus = true;
     dialog.setAttribute(
       'aria-label',
       pane && !groupActions ? `${pane.title} actions` : 'Empty pane actions',
@@ -60,6 +65,7 @@ export function createPaneMenu(
       b.replaceChildren(glyph, el(doc, 'span', '', label.replace(/^\+ /, '')));
       b.disabled = !enabled;
       dialog.append(b);
+      return b;
     };
     const allowed = (cap: 'split' | 'join' | 'move') =>
       group.panes.every((id) => options.store.can(id, cap));
@@ -94,6 +100,14 @@ export function createPaneMenu(
           const picker = el(doc, 'div', 'layouts-menu layouts-picker layouts-picker-persistent');
           picker.setAttribute('role', 'dialog');
           region.append(picker);
+          pickerScope.listen(
+            doc,
+            'pointerdown',
+            (event) => {
+              if (!event.composedPath().includes(region)) pickerScope.dispose();
+            },
+            { capture: true },
+          );
           pickerScope.add(() => {
             picker.remove();
             persistentPickers.delete(destination.id);
@@ -179,46 +193,51 @@ export function createPaneMenu(
       );
       return;
     }
-    const placementLabel = el(doc, 'label', 'layouts-placement', 'Tab orientation');
-    const placement = el(doc, 'select', 'layouts-button');
-    placement.setAttribute('aria-label', 'Tab orientation');
-    for (const [value, label] of [
-      ['', 'Workspace default'],
-      ['top', 'Horizontal (top)'],
-      ['left', 'Vertical (left)'],
-    ]) {
-      const option = el(doc, 'option', '', label);
-      option.value = value!;
-      placement.append(option);
-    }
-    placement.value = group.tabPlacement ?? '';
-    placement.onchange = () =>
-      act(() => {
-        options.store.setTabPlacement(
-          group.id,
-          (placement.value || undefined) as Group['tabPlacement'],
-        );
-        local.dispose();
-      });
-    placementLabel.append(placement);
-    dialog.append(placementLabel);
     add('add-tab', '+ Add tab', available && allowed('move'), () => create());
     const canCreate = options.tabs ? available : Boolean(pane && options.createPane);
-    const split = el(doc, 'div', 'layouts-submenu');
-    const trigger = button('Split ▸', 'Split', () => {
-      flyout.hidden = !flyout.hidden;
-      trigger.setAttribute('aria-expanded', String(!flyout.hidden));
-    });
-    const splitIcon = el(doc, 'span', 'layouts-tab-icon');
-    splitIcon.setAttribute('aria-hidden', 'true');
-    splitIcon.append(actionIcon(doc, 'split-right', options));
-    trigger.prepend(splitIcon);
-    trigger.disabled = !(canCreate && allowed('split'));
-    trigger.setAttribute('aria-haspopup', 'menu');
-    trigger.setAttribute('aria-expanded', 'false');
-    const flyout = el(doc, 'div', 'layouts-submenu-content');
-    flyout.hidden = true;
-    flyout.setAttribute('role', 'menu');
+    function submenu(label: string, icon: ActionIcon, enabled = true) {
+      const container = el(doc, 'div', 'layouts-submenu');
+      const trigger = button(`${label} ▸`, label, () => setOpen(flyout.hidden));
+      const glyph = el(doc, 'span', 'layouts-tab-icon');
+      glyph.setAttribute('aria-hidden', 'true');
+      glyph.append(actionIcon(doc, icon, options));
+      trigger.prepend(glyph);
+      trigger.disabled = !enabled;
+      trigger.setAttribute('aria-haspopup', 'menu');
+      trigger.setAttribute('aria-expanded', 'false');
+      const flyout = el(doc, 'div', 'layouts-submenu-content');
+      flyout.hidden = true;
+      flyout.setAttribute('role', 'menu');
+      flyout.setAttribute('aria-label', label);
+      const setOpen = (open: boolean) => {
+        flyout.hidden = !open;
+        trigger.setAttribute('aria-expanded', String(open));
+      };
+      local.listen(container, 'pointerenter', () => {
+        if (!trigger.disabled) setOpen(true);
+      });
+      local.listen(container, 'pointerleave', () => setOpen(false));
+      local.listen(trigger, 'keydown', (event) => {
+        if ((event as KeyboardEvent).key === 'ArrowRight') {
+          event.preventDefault();
+          setOpen(true);
+          (flyout.firstElementChild as HTMLElement)?.focus();
+        }
+      });
+      local.listen(flyout, 'keydown', (event) => {
+        if ((event as KeyboardEvent).key === 'ArrowLeft') {
+          event.preventDefault();
+          setOpen(false);
+          trigger.focus();
+        }
+      });
+      container.dataset.side =
+        anchor.getBoundingClientRect().right + 220 > win.innerWidth ? 'left' : 'right';
+      container.append(trigger, flyout);
+      dialog.append(container);
+      return flyout;
+    }
+    const flyout = submenu('Split', 'split-right', canCreate && allowed('split'));
     for (const [label, axis, before] of [
       ['Split left', 'horizontal', true],
       ['Split right', 'horizontal', false],
@@ -236,37 +255,73 @@ export function createPaneMenu(
       option.setAttribute('role', 'menuitem');
       flyout.append(option);
     }
-    local.listen(split, 'pointerenter', () => {
-      if (!trigger.disabled) {
-        flyout.hidden = false;
-        trigger.setAttribute('aria-expanded', 'true');
-      }
-    });
-    local.listen(split, 'pointerleave', () => {
-      flyout.hidden = true;
-      trigger.setAttribute('aria-expanded', 'false');
-    });
-    local.listen(trigger, 'keydown', (event) => {
-      if ((event as KeyboardEvent).key === 'ArrowRight') {
-        event.preventDefault();
-        flyout.hidden = false;
-        (flyout.firstElementChild as HTMLElement).focus();
-      }
-    });
-    local.listen(flyout, 'keydown', (event) => {
-      if ((event as KeyboardEvent).key === 'ArrowLeft') {
-        event.preventDefault();
-        flyout.hidden = true;
-        trigger.focus();
-      }
-    });
-    split.dataset.side =
-      anchor.getBoundingClientRect().right + 220 > win.innerWidth ? 'left' : 'right';
-    split.append(trigger, flyout);
-    dialog.append(split);
-    add('join', 'Join sibling region', allowed('join'), () =>
-      options.store.join(group.id, { source: 'user' }),
+    const joinParent = findParent(options.store.getSnapshot().root, group.id);
+    const join = add(
+      'join',
+      'Join sibling region',
+      Boolean(joinParent) && paneIds(joinParent!).every((id) => options.store.can(id, 'join')),
+      () => options.store.join(group.id, { source: 'user' }),
     );
+    let preview: Scope | undefined;
+    const clearPreview = () => {
+      preview?.dispose();
+      preview = undefined;
+    };
+    local.add(clearPreview);
+    const showPreview = () => {
+      clearPreview();
+      const layout = options.store.getSnapshot();
+      const parent = findParent(layout.root, group.id);
+      if (join.disabled || !parent) return;
+      const scope = new Scope();
+      preview = scope;
+      const overlay = el(doc, 'div', 'layouts-corner-overlay');
+      overlay.setAttribute('aria-hidden', 'true');
+      root.append(overlay);
+      scope.add(() => overlay.remove());
+      const targetTitle = layout.panes[group.active ?? '']?.title ?? 'This region';
+      const regions = groups(parent).map((region) => ({
+        region,
+        element: Array.from(root.querySelectorAll<HTMLElement>('[data-node-id]')).find(
+          (element) => element.dataset.nodeId === region.id && element.closest('.layouts') === root,
+        ),
+      }));
+      const position = () => {
+        overlay.replaceChildren();
+        for (const { region, element } of regions) {
+          if (!element || !element.getClientRects().length) continue;
+          const rect = element.getBoundingClientRect();
+          const box = el(doc, 'div', 'layouts-corner-preview');
+          box.dataset.cornerPreview = region.id === group.id ? 'join-target' : 'join-source';
+          Object.assign(box.style, {
+            left: `${rect.left}px`,
+            top: `${rect.top}px`,
+            width: `${rect.width}px`,
+            height: `${rect.height}px`,
+          });
+          box.append(
+            el(
+              doc,
+              'span',
+              'layouts-corner-label',
+              region.id === group.id ? `${targetTitle} keeps all tabs` : `Joins ${targetTitle}`,
+            ),
+          );
+          overlay.append(box);
+        }
+      };
+      position();
+      const observer = new win.ResizeObserver(position);
+      for (const { element } of regions) if (element) observer.observe(element);
+      scope.add(() => observer.disconnect());
+      scope.listen(win, 'resize', position);
+      scope.listen(doc, 'scroll', position, { capture: true });
+      scope.add(options.store.subscribe(clearPreview));
+    };
+    local.listen(join, 'pointerenter', showPreview);
+    local.listen(join, 'pointerleave', clearPreview);
+    local.listen(join, 'focus', showPreview);
+    local.listen(join, 'blur', clearPreview);
     add(
       options.store.getSnapshot().maximized === group.id ? 'restore' : 'maximize',
       options.store.getSnapshot().maximized === group.id ? 'Restore region' : 'Maximize region',
@@ -286,6 +341,26 @@ export function createPaneMenu(
           refresh();
         },
       );
+    }
+    const orientation = submenu('Tab orientation', 'tab-orientation');
+    for (const [value, label] of [
+      [undefined, 'Workspace default'],
+      ['top', 'Horizontal'],
+      ['left', 'Vertical'],
+    ] as const) {
+      const selected = group.tabPlacement === value;
+      const option = button(label, label, () => {
+        options.store.setTabPlacement(group.id, value);
+        local.dispose();
+      });
+      option.setAttribute('role', 'menuitemradio');
+      option.setAttribute('aria-checked', String(selected));
+      const mark = el(doc, 'span', 'layouts-tab-icon', selected ? '✓' : '');
+      mark.setAttribute('aria-hidden', 'true');
+      option.prepend(mark);
+      orientation.append(option);
+    }
+    if (group.panes.length && pane) {
       add('close', 'Close pane', options.store.can(pane.id, 'close'), () =>
         options.store.close(pane.id, { source: 'user' }),
       );
@@ -309,6 +384,7 @@ export function createPaneMenu(
       }
     });
     dialog.showModal();
+    dialog.focus({ preventScroll: true });
   }
   return {
     open,

@@ -196,7 +196,7 @@ export function paneBounds(p: Pane): Bounds {
     maxHeight: p.size?.maxHeight ?? Infinity,
   };
 }
-export const DIVIDER = 6;
+export const DIVIDER = 4;
 export function bounds(node: Node, layout: Layout): Bounds {
   if (node.kind === 'group') {
     const values = node.panes.map((id) => paneBounds(layout.panes[id]!));
