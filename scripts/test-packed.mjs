@@ -102,7 +102,8 @@ try {
         `@types/react@${major}`,
         `@types/react-dom@${major}`,
         '@types/node@22',
-        'typescript@~5.9.3',
+        'typescript@~7.0.2',
+        'typescript-legacy@npm:typescript@~5.9.3',
         ...installFlags,
       ],
       temp,
@@ -110,39 +111,42 @@ try {
     rmSync(join(temp, 'node_modules'), { recursive: true, force: true });
     run('npm', ['ci', ...installFlags], temp);
     run(process.execPath, ['smoke.mjs'], temp);
-    const tsc = join(temp, 'node_modules/typescript/bin/tsc');
-    for (const mode of ['NodeNext', 'Bundler']) {
-      const common = [
-        '--noEmit',
-        '--strict',
-        '--skipLibCheck',
-        'false',
-        '--target',
-        'ES2022',
-        '--module',
-        mode === 'Bundler' ? 'ESNext' : 'NodeNext',
-        '--moduleResolution',
-        mode,
-      ];
-      run(
-        process.execPath,
-        [tsc, ...common, '--lib', 'ES2022', '--types', 'node', 'core-consumer.ts'],
-        temp,
-      );
-      run(
-        process.execPath,
-        [
-          tsc,
-          ...common,
-          '--lib',
-          'ES2022,DOM,DOM.Iterable',
-          '--jsx',
-          'react-jsx',
-          'dom-consumer.ts',
-          'consumer.tsx',
-        ],
-        temp,
-      );
+    for (const compiler of ['typescript-legacy', 'typescript']) {
+      const tsc = join(temp, `node_modules/${compiler}/bin/tsc`);
+      for (const mode of ['NodeNext', 'Bundler']) {
+        const common = [
+          '--noEmit',
+          '--strict',
+          '--noUncheckedSideEffectImports',
+          '--skipLibCheck',
+          'false',
+          '--target',
+          'ES2022',
+          '--module',
+          mode === 'Bundler' ? 'ESNext' : 'NodeNext',
+          '--moduleResolution',
+          mode,
+        ];
+        run(
+          process.execPath,
+          [tsc, ...common, '--lib', 'ES2022', '--types', 'node', 'core-consumer.ts'],
+          temp,
+        );
+        run(
+          process.execPath,
+          [
+            tsc,
+            ...common,
+            '--lib',
+            'ES2022,DOM,DOM.Iterable',
+            '--jsx',
+            'react-jsx',
+            'dom-consumer.ts',
+            'consumer.tsx',
+          ],
+          temp,
+        );
+      }
     }
     for (const p of manifest.packages) {
       const location = realpathSync(join(temp, 'node_modules', p.name));
