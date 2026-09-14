@@ -18,10 +18,10 @@ export function chromeIcon(doc: Document, name: 'close' | 'more'): SVGSVGElement
     path.setAttribute('d', 'M6 6 18 18 M18 6 6 18');
     svg.append(path);
   } else {
-    for (const x of [5, 12, 19]) {
+    for (const y of [5, 12, 19]) {
       const dot = doc.createElementNS(ns, 'circle');
-      dot.setAttribute('cx', String(x));
-      dot.setAttribute('cy', '12');
+      dot.setAttribute('cx', '12');
+      dot.setAttribute('cy', String(y));
       dot.setAttribute('r', '1');
       svg.append(dot);
     }

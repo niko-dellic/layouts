@@ -178,8 +178,6 @@ Companion windows retain their title and Return bar; returning a pane uses the
 destination group's settings. End caps use SVG paths and theme colors, without
 requiring CSS `corner-shape` support.
 
-Use `theme: { tabUnderline: 'transparent' }` for active tabs indicated by their
-background alone. Omit `tabUnderline` to use the accent color, or supply a CSS
-color for a separate underline color. Changing it keeps tab dimensions stable.
-The demos expose this setting alongside header height, text size, control corner
-radius, theme presets, and fitted-bar shape in the right-side Theming pane.
+Active tabs use a rounded, inset background to indicate selection.
+The demos expose header height, text size, control corner radius, theme presets,
+and fitted-bar shape in the right-side Theming tab.

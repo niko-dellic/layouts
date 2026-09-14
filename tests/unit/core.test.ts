@@ -225,3 +225,12 @@ it('creates an empty split before content selection and cancels without losing c
   expect(groups(store.getSnapshot().root).find((g) => g.id === filled)?.panes).toEqual(['chosen']);
   expect(validate(store.export())).toEqual([]);
 });
+
+it('coupled resize ratios validate atomically', () => {
+  const store = new LayoutStore(fixture());
+  const before = store.export();
+  expect(() => store.resizeMany({ root: 0.7, missing: 0.4 })).toThrow();
+  expect(store.export()).toEqual(before);
+  expect(() => store.resizeMany({ root: NaN })).toThrow();
+  expect(store.export()).toEqual(before);
+});

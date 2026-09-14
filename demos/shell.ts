@@ -25,8 +25,7 @@ export function mountTheming(element: HTMLElement) {
 export function setupShell(getMounted: () => MountedLayout | undefined) {
   let headerHeight = 32,
     fontSize = 11,
-    radius = 5,
-    underline = true;
+    radius = 5;
   settings = document.querySelector<HTMLElement>('[aria-label="Workspace controls"]')!;
   settings.remove();
   settingsHost?.append(settings);
@@ -61,7 +60,6 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
       fontSize: `${fontSize}px`,
       headerHeight: `${headerHeight}px`,
       radius: `${radius}px`,
-      tabUnderline: underline ? theme.accent : 'transparent',
     });
   };
   themeSelect.onchange = applyTheme;
@@ -130,18 +128,7 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
   barSelect.onchange = updateAmount;
   themeField.after(barField, amountField);
   updateAmount();
-  const underlineInput = document.createElement('input');
-  underlineInput.type = 'checkbox';
-  underlineInput.checked = underline;
-  const underlineLabel = document.createElement('label');
-  underlineLabel.className = 'demo-toggle';
-  underlineLabel.append(underlineInput, 'Active tab underline');
-  underlineInput.onchange = () => {
-    underline = underlineInput.checked;
-    applyTheme();
-  };
-  amountField.after(underlineLabel);
-  let last: HTMLElement = underlineLabel;
+  let last: HTMLElement = amountField;
   for (const [name, initial, min, max, update] of [
     [
       'Header height',
@@ -215,8 +202,4 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
   settings
     .querySelector('#popout-inspector')!
     .addEventListener('click', () => getMounted()?.popout('notes'));
-  const status = document.querySelector('#layout-status')!;
-  store.subscribe(({ action, layout }) => {
-    status.textContent = `${action} · ${Object.keys(layout.panes).length} panes`;
-  });
 }

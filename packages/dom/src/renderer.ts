@@ -1,3 +1,4 @@
+import { isolatedResize } from './resize.js';
 import { chromeIcon } from './chrome-icons.js';
 import { bindTabBar, validateTabBar } from './tab-bar.js';
 import { bindCorners } from './corners.js';
@@ -156,7 +157,10 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
         dragScope?.dispose();
         const drag = new Scope();
         dragScope = drag;
-        const ratio = n.ratio;
+        const resize = isolatedResize(options.store.getSnapshot(), node.id, (child, axis) => {
+          const rect = regions.get(child.id)!.element.getBoundingClientRect();
+          return axis === 'horizontal' ? rect.width : rect.height;
+        });
         r.divider!.setPointerCapture(e.pointerId);
         root.classList.add('layouts-resizing');
         drag.add(() => {
@@ -173,15 +177,16 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
             (current.axis === 'horizontal' ? rect.width : rect.height) - (current.gap ?? DIVIDER);
           if (available > 0)
             act(() =>
-              options.store.resize(
-                node.id,
-                Math.max(
-                  0.001,
-                  Math.min(
-                    0.999,
-                    (current.axis === 'horizontal'
-                      ? move.clientX - rect.left
-                      : move.clientY - rect.top) / available,
+              options.store.resizeMany(
+                resize.ratios(
+                  Math.max(
+                    0.001,
+                    Math.min(
+                      0.999,
+                      (current.axis === 'horizontal'
+                        ? move.clientX - rect.left
+                        : move.clientY - rect.top) / available,
+                    ),
                   ),
                 ),
                 { source: 'user' },
@@ -193,7 +198,7 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
         drag.listen(r.divider!, 'pointercancel', () => drag.dispose());
         drag.listen(doc, 'keydown', (key) => {
           if ((key as KeyboardEvent).key === 'Escape') {
-            act(() => options.store.resize(node.id, ratio));
+            act(() => options.store.resizeMany(resize.original));
             drag.dispose();
           }
         });
@@ -207,12 +212,20 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
           n.axis === 'horizontal' ? ['ArrowLeft', 'ArrowRight'] : ['ArrowUp', 'ArrowDown'];
         if (keys.includes(e.key)) {
           e.preventDefault();
+          const resize = isolatedResize(options.store.getSnapshot(), node.id, (child, axis) => {
+            const rect = regions.get(child.id)!.element.getBoundingClientRect();
+            return axis === 'horizontal' ? rect.width : rect.height;
+          });
           act(() =>
-            options.store.resize(
-              node.id,
-              Math.max(
-                0.001,
-                Math.min(0.999, n.ratio + (e.key === keys[0] ? -1 : 1) * (e.shiftKey ? 0.1 : 0.02)),
+            options.store.resizeMany(
+              resize.ratios(
+                Math.max(
+                  0.001,
+                  Math.min(
+                    0.999,
+                    n.ratio + (e.key === keys[0] ? -1 : 1) * (e.shiftKey ? 0.1 : 0.02),
+                  ),
+                ),
               ),
               { source: 'user' },
             ),

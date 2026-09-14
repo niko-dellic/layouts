@@ -173,6 +173,17 @@ export class LayoutStore {
       n.ratio = ratio;
     });
   }
+  /** Atomically update coupled split ratios without intermediate layouts. */
+  resizeMany(ratios: Record<string, number>, options: CommandOptions = {}) {
+    this.commit('resize', (d) => {
+      for (const [id, ratio] of Object.entries(ratios)) {
+        const node = findNode(d.root, id);
+        if (node?.kind !== 'split') problem('Split not found');
+        this.permit(d, paneIds(node), 'resize', options);
+        node.ratio = ratio;
+      }
+    });
+  }
   maximize(groupId: string | null) {
     this.commit('maximize', (d) => {
       if (groupId) this.group(d, groupId);

@@ -42,7 +42,7 @@
   align-items: center;
   background: var(--layouts-header, #242a34);
   border-bottom: 1px solid var(--layouts-line, #39414e);
-  padding: 0 4px;
+  padding: 4px 6px;
   gap: 2px;
 }
 .layouts-tabs {
@@ -51,6 +51,8 @@
   min-width: 0;
   overflow: auto;
   scrollbar-width: thin;
+  height: 100%;
+  gap: 3px;
 }
 .layouts-button,
 .layouts-tab {
@@ -74,7 +76,6 @@
 .layouts-tab[aria-selected='true'] {
   color: var(--layouts-text, #e5e9f0);
   background: var(--layouts-panel, #1d222a);
-  border-bottom-color: var(--layouts-tab-underline, var(--layouts-accent, #8bbaaa));
 }
 .layouts-button:hover:not(:disabled),
 .layouts-tab:hover {
@@ -89,7 +90,7 @@
   outline: 2px solid var(--layouts-focus, #b3decf);
   outline-offset: -2px;
 }
-/* Arrow-key navigation activates the focused tab; its underline marks selection. */
+/* Arrow-key navigation activates the focused tab; its background marks selection. */
 .layouts .layouts-tab[aria-selected='true']:focus-visible {
   outline: none;
 }
@@ -218,12 +219,11 @@
   flex: 0 1 180px;
   min-width: 32px;
   container: layouts-tab / inline-size;
-  border-bottom: 2px solid transparent;
+  border-radius: var(--layouts-radius, 5px);
 }
 .layouts-tab-item[data-active='true'] {
   min-width: 56px;
   background: var(--layouts-panel, #1d222a);
-  border-bottom-color: var(--layouts-tab-underline, var(--layouts-accent, #8bbaaa));
 }
 .layouts-tab-item .layouts-tab {
   display: flex;
@@ -233,7 +233,7 @@
   min-width: 0;
   border: 0;
   background: transparent;
-  padding: 5px 8px;
+  padding: 0 8px;
 }
 .layouts-tab-icon {
   flex: 0 0 16px;
@@ -255,7 +255,8 @@
   flex: 0 0 22px;
   align-self: center;
   width: 22px;
-  height: 24px;
+  height: 100%;
+  max-height: 24px;
   padding: 0;
   margin-right: 3px;
 }
@@ -490,6 +491,8 @@
 }
 .layouts-header > .layouts-button {
   flex-shrink: 0;
+  height: 100%;
+  padding: 0 7px;
 }
 .layouts-tab-cap {
   position: absolute;
@@ -535,7 +538,7 @@
   display: block;
 }
 .layouts-group[data-tab-bar-filled='false'] .layouts-tab {
-  padding: 5px 8px;
+  padding: 0 8px;
   justify-content: flex-start;
 }
 

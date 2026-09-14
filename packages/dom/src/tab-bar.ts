@@ -67,8 +67,11 @@ export function bindTabBar(
         );
         const computed = win.getComputedStyle(probe);
         const menu = probe.querySelector<HTMLElement>(':scope > .layouts-button');
+        const tabGap =
+          parseFloat(win.getComputedStyle(probe.querySelector('.layouts-tabs')!).columnGap) || 0;
         const natural = Math.ceil(
           widths.reduce((sum, width) => sum + width, 0) +
+            Math.max(0, widths.length - 1) * tabGap +
             (menu?.getBoundingClientRect().width ?? 0) +
             parseFloat(computed.paddingLeft) +
             parseFloat(computed.paddingRight) +

@@ -7,6 +7,7 @@ for (const framework of ['vanilla', 'react']) {
     const inspector = page.getByRole('tab', { name: 'Inspector', exact: true });
     const activity = page.getByRole('tab', { name: 'Activity', exact: true });
     await expect(inspector.locator('svg')).toHaveCount(1);
+    await inspector.click();
     await page.getByRole('textbox', { name: 'Working notes' }).fill('Retained');
     const group = page.locator('[data-node-id="inspector-group"]');
     const box = await activity.boundingBox();
@@ -15,13 +16,13 @@ for (const framework of ['vanilla', 'react']) {
       await group
         .getByRole('tab')
         .evaluateAll((tabs) => tabs.map((t) => t.getAttribute('aria-label'))),
-    ).toEqual(['Activity', 'Inspector']);
+    ).toEqual(['Theming', 'Activity', 'Inspector']);
     await inspector.dragTo(activity, { targetPosition: { x: 2, y: 10 } });
     expect(
       await group
         .getByRole('tab')
         .evaluateAll((tabs) => tabs.map((t) => t.getAttribute('aria-label'))),
-    ).toEqual(['Inspector', 'Activity']);
+    ).toEqual(['Theming', 'Inspector', 'Activity']);
     await expect(page.getByRole('textbox', { name: 'Working notes' })).toHaveValue('Retained');
     await activity.click({ button: 'middle' });
     await expect(activity).toHaveCount(0);
@@ -37,6 +38,7 @@ for (const framework of ['vanilla', 'react']) {
     await page.keyboard.press('Alt+Space');
     await expect(page.getByRole('tab', { name: 'Inspector', exact: true })).not.toBeVisible();
     await page.keyboard.press('Alt+Space');
+    await page.getByRole('tab', { name: 'Inspector', exact: true }).click();
     const input = page.getByRole('textbox', { name: 'Working notes' });
     await input.click();
     await page.keyboard.press('Alt+Space');

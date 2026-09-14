@@ -170,15 +170,16 @@ for (const framework of ['vanilla', 'react']) {
       0,
     );
     await expect(page.getByRole('button', { name: 'Grid', exact: true })).toHaveCount(0);
-    const underline = page.getByRole('checkbox', { name: 'Active tab underline' });
-    await underline.uncheck();
-    await expect(page.locator('.layouts')).toHaveCSS('--layouts-tab-underline', 'transparent');
+    await expect(page.getByRole('checkbox', { name: 'Active tab underline' })).toHaveCount(0);
+    const activeTab = page.locator(
+      '[data-node-id="inspector-group"] .layouts-tab-item[data-active="true"]',
+    );
+    await expect(activeTab).toHaveCSS('box-shadow', 'none');
     const height = page.getByRole('slider', { name: 'Header height', exact: true });
     await height.focus();
     await height.press('ArrowRight');
     await expect(page.locator('.layouts')).toHaveCSS('--layouts-header-height', '33px');
     await page.getByRole('button', { name: 'Reset', exact: true }).click();
-    await expect(underline).not.toBeChecked();
     await expect(height).toHaveValue('33');
     await expect(page.getByRole('tab', { name: 'Theming', exact: true })).toBeVisible();
   });

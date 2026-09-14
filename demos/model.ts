@@ -12,7 +12,7 @@ export const initial: Layout = {
       title: 'Theming',
       icon: 'theming',
       size: { minWidth: 260, minHeight: 300 },
-      capabilities: { close: false, popout: false },
+      capabilities: { popout: false },
     },
     toolbar: {
       id: 'toolbar',

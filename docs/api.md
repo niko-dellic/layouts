@@ -69,6 +69,7 @@ Capability flags default to true. Group-level operations require permission from
 | `join(groupId, options?)`                            | Collapse its parent split, retaining all sibling content as tabs                                        |
 | `move(paneId, groupId, position?, index?, options?)` | Position is `tab`, `left`, `right`, `top`, or `bottom`; index is a tab insertion index after detachment |
 | `resize(splitId, ratio, options?)`                   | Set a preferred split proportion                                                                        |
+| `resizeMany(ratios, options?)`                       | Atomically update a map of split IDs to preferred proportions                                           |
 | `maximize(groupId \| null)`                          | Maximize or restore a region                                                                            |
 | `close(paneId, options?)`                            | Remove pane and placement                                                                               |
 | `popout(paneId, placement?, options?)`               | Pure model transition; does not open a browser                                                          |
@@ -191,3 +192,9 @@ can override them using `layouts:add-tab`, `layouts:split-right`,
 `layouts:split-below`, `layouts:join`, `layouts:maximize`, `layouts:restore`,
 `layouts:popout`, `layouts:close`, and `layouts:cancel`. Return `undefined` to use
 the built-in icon. Icons inherit text color, including disabled and themed states.
+
+Interactive divider resizing preserves distant pane boundaries. Only branches
+touching the divider absorb the size change, stopping at their minimum or maximum
+sizes. The DOM renderer computes the coupled ratios and commits them through
+`resizeMany`; React shares this behavior. `resize` remains a low-level proportional
+command. Resizing the whole workspace still uses the stored proportions.
