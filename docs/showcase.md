@@ -10,10 +10,6 @@ A 35-second recording of the demo in use, converted to a looping animated WebP a
 
 ## Resizing
 
-![Animated horizontal and vertical divider resizing](media/resizing.gif)
-
-The recording widens the settings pane, increases the timeline height, then returns both dividers to their starting positions. Pane contents remain mounted during resizing; the toolbar and status bar keep their fixed sizes.
-
 **Before:** the default workspace with objects, scene, settings, and timeline.
 
 ![Default workspace in the neutral dark theme](media/workspace-dark.png)
@@ -53,7 +49,7 @@ Use **Default**, **Focus**, and **Review** in the workspace toolbar to switch la
 
 ## Refreshing these captures
 
-Install the repository dependencies and Playwright Chromium. The GIF encoder also needs `ffmpeg` on your PATH.
+Install the repository dependencies and Playwright Chromium.
 
 ```sh
 npm ci
@@ -68,6 +64,6 @@ In another terminal at the repository root:
 node scripts/capture-demos.mjs
 ```
 
-The script uses a fresh browser session, clicks the demo controls, drags real dividers, and writes four PNGs plus a looping GIF into `docs/media`. `DEMO_URL` can override the local server URL. Screenshots use a 1280 × 820 viewport; the GIF is reduced to 960 pixels wide for the README. The images are captured UI, not mockups.
+The script uses a fresh browser session, clicks the demo controls, drags real dividers, and writes four PNGs into `docs/media`. `DEMO_URL` can override the local server URL. Screenshots use a 1280 × 820 viewport. The images are captured UI, not mockups.
 
 The separate `demo-walkthrough.webp` comes from a supplied video recording; the capture script does not regenerate it.
