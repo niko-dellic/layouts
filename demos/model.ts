@@ -6,6 +6,14 @@ export const initial: Layout = {
   maximized: null,
   popouts: [],
   panes: {
+    theming: {
+      id: 'theming',
+      type: 'theming',
+      title: 'Theming',
+      icon: 'theming',
+      size: { minWidth: 260, minHeight: 300 },
+      capabilities: { close: false, popout: false },
+    },
     toolbar: {
       id: 'toolbar',
       type: 'toolbar',
@@ -114,14 +122,14 @@ export const initial: Layout = {
                     kind: 'split',
                     id: 'inspector-split',
                     axis: 'horizontal',
-                    ratio: 0.72,
+                    ratio: 0.65,
                     children: [
                       { kind: 'group', id: 'scene-group', panes: ['canvas'], active: 'canvas' },
                       {
                         kind: 'group',
                         id: 'inspector-group',
-                        panes: ['notes', 'activity'],
-                        active: 'notes',
+                        panes: ['theming', 'notes', 'activity'],
+                        active: 'theming',
                       },
                     ],
                   },

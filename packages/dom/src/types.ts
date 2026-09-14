@@ -16,7 +16,18 @@ export interface PaneView {
   update?(pane: Pane): void;
 }
 export type PaneRenderer = (context: PaneContext) => PaneView;
+export interface TabBarStyle {
+  mode?: 'full' | 'tapered';
+  shape?: 'angle' | 'round' | 'scoop' | 'vertical';
+  /** Positive finite CSS pixels. Omit to match header height. */
+  taperWidth?: number;
+}
+export interface TabBarOptions extends TabBarStyle {
+  /** Partial overrides keyed by stable group ID; not serialized in Layout JSON. */
+  regions?: Record<string, TabBarStyle>;
+}
 export interface LayoutOptions {
+  tabBar?: TabBarOptions;
   store: LayoutStore;
   tabs?: TabRegistry;
   theme?: LayoutTheme;
@@ -35,6 +46,7 @@ export interface LayoutOptions {
   openWindow?: (pane: Pane, placement: WindowPlacement) => Window | null;
 }
 export interface MountedLayout {
+  setTabBar(options: TabBarOptions): void;
   setTheme(theme: LayoutTheme): void;
   popout(paneId: string, placement?: WindowPlacement): boolean;
   returnPane(paneId: string): void;

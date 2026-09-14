@@ -36,7 +36,7 @@ for (const framework of ['vanilla', 'react']) {
     await expect
       .poll(() => canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL()))
       .not.toBe(initial);
-    const controls = page.locator('.demo-top .demo-actions').locator('button, select');
+    const controls = page.locator('.demo-theming .demo-actions').locator('button, select');
     const heights = await controls.evaluateAll((elements) =>
       elements.map((element) => element.getBoundingClientRect().height),
     );
@@ -114,5 +114,72 @@ for (const framework of ['vanilla', 'react']) {
     await expect(hotkeys).toHaveCount(0);
     await page.getByRole('button', { name: 'Reset', exact: true }).click();
     await expect(hotkeys).toHaveAttribute('aria-selected', 'true');
+  });
+}
+
+for (const framework of ['vanilla', 'react']) {
+  test(`${framework}: taper slider updates geometry and remembers shape values`, async ({
+    page,
+  }) => {
+    await page.goto(`/${framework}.html`);
+    const style = page.getByRole('combobox', { name: 'Tab bar style' });
+    const angle = page.getByRole('slider', { name: 'Angle', exact: true });
+    await expect(angle).toHaveValue('60');
+    await angle.focus();
+    await angle.press('ArrowRight');
+    await expect
+      .poll(async () =>
+        parseFloat(
+          await page
+            .locator('.layouts-tab-cap')
+            .last()
+            .evaluate((el) => getComputedStyle(el).width),
+        ),
+      )
+      .toBeCloseTo(32 / Math.tan((61 * Math.PI) / 180), 1);
+    await expect(angle).toHaveAttribute('aria-valuetext', '61 degrees');
+    await style.selectOption('scoop');
+    const scoop = page.getByRole('slider', { name: 'Scoop width' });
+    await scoop.focus();
+    await scoop.press('ArrowRight');
+    await expect(page.locator('.layouts-tab-cap').last()).toHaveCSS('width', '33px');
+    await style.selectOption('vertical');
+    await expect(scoop).toBeHidden();
+    await style.selectOption('angle');
+    await expect(angle).toHaveValue('61');
+    await style.selectOption('scoop');
+    await expect(scoop).toHaveValue('33');
+    await expect(page.locator('.demo-field > span')).toHaveText([
+      'Theme',
+      'Tab bar',
+      'Scoop width: 33px',
+      'Header height: 32px',
+      'Text size: 11px',
+      'Corner radius: 5px',
+    ]);
+  });
+}
+
+for (const framework of ['vanilla', 'react']) {
+  test(`${framework}: theming pane owns controls and preserves settings on reset`, async ({
+    page,
+  }) => {
+    await page.goto(`/${framework}.html`);
+    await expect(page.getByRole('tab', { name: 'Theming', exact: true })).toBeVisible();
+    await expect(page.locator('.demo-top button, .demo-top select, .demo-top input')).toHaveCount(
+      0,
+    );
+    await expect(page.getByRole('button', { name: 'Grid', exact: true })).toHaveCount(0);
+    const underline = page.getByRole('checkbox', { name: 'Active tab underline' });
+    await underline.uncheck();
+    await expect(page.locator('.layouts')).toHaveCSS('--layouts-tab-underline', 'transparent');
+    const height = page.getByRole('slider', { name: 'Header height', exact: true });
+    await height.focus();
+    await height.press('ArrowRight');
+    await expect(page.locator('.layouts')).toHaveCSS('--layouts-header-height', '33px');
+    await page.getByRole('button', { name: 'Reset', exact: true }).click();
+    await expect(underline).not.toBeChecked();
+    await expect(height).toHaveValue('33');
+    await expect(page.getByRole('tab', { name: 'Theming', exact: true })).toBeVisible();
   });
 }

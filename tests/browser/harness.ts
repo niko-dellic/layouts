@@ -63,6 +63,7 @@ document.querySelector('#open')!.addEventListener('click', () => mounted.popout(
 document.querySelector('#return')!.addEventListener('click', () => mounted.returnPane('a'));
 export const harness = {
   tabs,
+  setTabBar: (options: import('layouts').TabBarOptions) => mounted.setTabBar(options),
   setTheme: (theme: import('layouts').LayoutTheme) => mounted.setTheme(theme),
   store,
   stats,

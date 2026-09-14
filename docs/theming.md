@@ -132,3 +132,54 @@ font-role choices should remain outside layout JSON. Copy application content
 variables and font styles to companion documents in `prepareWindow`; the library
 propagates its own resolved chrome tokens on subsequent theme changes. Theme
 updates never reset pane view state, selection, or content renderers.
+
+## Tab bars
+
+The default full-width tab bar reserves a header row. Set `tabBar` on
+`mountLayout` or React's `Layout` to use a content-fitting overlay instead:
+
+```ts
+const tabBar = {
+  mode: 'tapered' as const,
+  shape: 'round' as const,
+  regions: { 'inspector-group': { mode: 'full' as const } },
+};
+```
+
+`TabBarStyle` accepts `mode: 'full' | 'tapered'`,
+`shape: 'angle' | 'round' | 'scoop' | 'vertical'`, and optional `taperWidth` in positive,
+finite CSS pixels. The default shape is `angle`; omitted width matches the
+header height. All curved and angled caps extend farther right at the top than
+at the bottom. Use `{ mode: 'tapered', shape: 'vertical' }` for a fitted bar
+with a straight vertical edge and no cap; `taperWidth` has no effect for this
+shape. `TabBarOptions.regions` supplies partial overrides keyed by
+stable group IDs. New groups inherit the workspace default.
+
+Tapered tabs fit their icon, label, and close button up to 180px. The actions
+button follows the tabs, then the end cap. When that footprint cannot leave 12px clear at the pane edge,
+the cap disappears and the bar fills the region. Tabs use the existing
+compression and scrolling behavior; the menu stays visible. The cap returns
+when space permits. Content remains underneath in either case, so resizing
+or adding tabs does not move the pane content.
+
+The area beside the short bar remains interactive. Applications should keep
+essential content clear of the painted bar. Each region exposes
+`--layouts-tab-bar-width` (including the cap) and `--layouts-tab-bar-height`,
+both in pixels, for positioning content. Hidden headers expose zero values.
+The demos show using the height to inset inspector and help content while
+allowing the scene to fill the region.
+
+Call `mounted.setTabBar(options)` to replace the current configuration without
+remounting pane views. Passing `{}` restores defaults. Invalid shape/mode values
+or nonpositive/nonfinite widths throw without changing the current configuration.
+React prop changes update the same renderer in place; keep other renderer props
+stable as usual. Settings are renderer configuration, not Layout JSON.
+Companion windows retain their title and Return bar; returning a pane uses the
+destination group's settings. End caps use SVG paths and theme colors, without
+requiring CSS `corner-shape` support.
+
+Use `theme: { tabUnderline: 'transparent' }` for active tabs indicated by their
+background alone. Omit `tabUnderline` to use the accent color, or supply a CSS
+color for a separate underline color. Changing it keeps tab dimensions stable.
+The demos expose this setting alongside header height, text size, control corner
+radius, theme presets, and fitted-bar shape in the right-side Theming pane.

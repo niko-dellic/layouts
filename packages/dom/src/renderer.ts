@@ -1,3 +1,5 @@
+import { chromeIcon } from './chrome-icons.js';
+import { bindTabBar, validateTabBar } from './tab-bar.js';
 import { bindCorners } from './corners.js';
 import { applyTheme } from './theme.js';
 import { fillTabs } from './tabs.js';
@@ -18,9 +20,12 @@ interface Region {
   body?: HTMLElement;
   divider?: HTMLElement;
   signature?: string;
+  updateTabBar?: () => void;
 }
 let nextMount = 0;
 export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedLayout {
+  validateTabBar(options.tabBar ?? {});
+  let tabBar = structuredClone(options.tabBar ?? {});
   const prefix = `layouts-${++nextMount}`;
   const doc = host.ownerDocument,
     win = doc.defaultView;
@@ -86,6 +91,10 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
       r.header = el(doc, 'header', 'layouts-header');
       r.body = el(doc, 'div', 'layouts-body');
       r.element.append(r.header, r.body);
+      r.updateTabBar = bindTabBar(r.element, r.header, root, r.scope, () => ({
+        ...tabBar,
+        ...(tabBar.regions?.[node.id] ?? {}),
+      }));
       bindCorners(
         r.element,
         node.id,
@@ -317,12 +326,14 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
       r.header!.append(tabs);
       const active = g.active ? layout.panes[g.active] : undefined;
       if (active) {
-        const more = button('⋯', `${active.title} actions`, () => menu.open(more, active, g));
+        const more = button('', `${active.title} actions`, () => menu.open(more, active, g));
+        more.append(chromeIcon(doc, 'more'));
         more.dataset.focusId = `menu-${active.id}`;
         more.setAttribute('aria-haspopup', 'dialog');
         r.header!.append(more);
       }
     }
+    r.updateTabBar?.();
     const bodies = definitions.map((pane) => {
       const p = content(pane);
       p.element.hidden = pane.id !== g.active;
@@ -498,6 +509,12 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
   });
   render();
   return {
+    setTabBar(next) {
+      if (disposed) return;
+      validateTabBar(next);
+      tabBar = structuredClone(next);
+      for (const region of regions.values()) region.updateTabBar?.();
+    },
     setTheme(theme) {
       applyTheme(root, theme);
     },

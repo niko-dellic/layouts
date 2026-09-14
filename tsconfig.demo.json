@@ -10,6 +10,7 @@
     "demos/**/*.ts",
     "demos/**/*.tsx",
     "tests/**/*.ts",
+    "tests/**/*.tsx",
     "vite.config.ts",
     "playwright.config.ts"
   ]

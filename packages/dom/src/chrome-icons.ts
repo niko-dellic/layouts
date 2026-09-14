@@ -1,0 +1,30 @@
+/** Shared geometry for renderer-owned controls, independent of application icons. */
+export function chromeIcon(doc: Document, name: 'close' | 'more'): SVGSVGElement {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = doc.createElementNS(ns, 'svg');
+  svg.classList.add('layouts-chrome-icon');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('width', '16');
+  svg.setAttribute('height', '16');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '1.75');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  if (name === 'close') {
+    const path = doc.createElementNS(ns, 'path');
+    path.setAttribute('d', 'M6 6 18 18 M18 6 6 18');
+    svg.append(path);
+  } else {
+    for (const x of [5, 12, 19]) {
+      const dot = doc.createElementNS(ns, 'circle');
+      dot.setAttribute('cx', String(x));
+      dot.setAttribute('cy', '12');
+      dot.setAttribute('r', '1');
+      svg.append(dot);
+    }
+  }
+  return svg;
+}

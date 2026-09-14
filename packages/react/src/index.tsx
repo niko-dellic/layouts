@@ -1,3 +1,4 @@
+export type { TabBarOptions, TabBarStyle } from 'layouts';
 import {
   Component,
   createElement,
@@ -80,6 +81,7 @@ export const Layout = forwardRef<MountedLayout, LayoutProps>(function Layout(pro
     store,
     tabs,
     theme,
+    tabBar,
     components,
     getPaneState,
     createPane,
@@ -93,6 +95,11 @@ export const Layout = forwardRef<MountedLayout, LayoutProps>(function Layout(pro
   } = props;
   const host = useRef<HTMLDivElement>(null),
     mounted = useRef<MountedLayout | null>(null);
+  const currentTabBar = useRef(tabBar);
+  currentTabBar.current = tabBar;
+  useLayoutEffect(() => {
+    mounted.current?.setTabBar(tabBar ?? {});
+  }, [tabBar]);
   const currentTheme = useRef(theme);
   currentTheme.current = theme;
   useLayoutEffect(() => {
@@ -105,6 +112,7 @@ export const Layout = forwardRef<MountedLayout, LayoutProps>(function Layout(pro
   useImperativeHandle(
     ref,
     () => ({
+      setTabBar: (options) => mounted.current?.setTabBar(options),
       setTheme: (theme) => mounted.current?.setTheme(theme),
       popout: (...args) => mounted.current?.popout(...args) ?? false,
       returnPane: (id) => mounted.current?.returnPane(id),
@@ -121,6 +129,7 @@ export const Layout = forwardRef<MountedLayout, LayoutProps>(function Layout(pro
       instance = mountLayout(host.current, {
         store,
         renderers,
+        ...(currentTabBar.current ? { tabBar: currentTabBar.current } : {}),
         ...(tabs ? { tabs } : {}),
         ...(currentTheme.current ? { theme: currentTheme.current } : {}),
         ...(getPaneState ? { getPaneState } : {}),

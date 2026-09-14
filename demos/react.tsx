@@ -61,6 +61,7 @@ function Imperative(props: PaneProps) {
 }
 const components = {
   notes: Notes,
+  theming: Imperative,
   canvas: Imperative,
   toolbar: Imperative,
   tools: Imperative,
@@ -69,6 +70,7 @@ const components = {
   activity: Imperative,
   footer: Imperative,
 };
+const demoTabBar = { mode: 'tapered' } as const;
 const ref = createRef<MountedLayout>();
 const root = createRoot(document.querySelector('#workspace')!);
 root.render(
@@ -81,6 +83,7 @@ root.render(
     theme={defaultTheme}
     renderIcon={renderIcon}
     shortcuts
+    tabBar={demoTabBar}
   />,
 );
 setupShell(() => ref.current ?? undefined);

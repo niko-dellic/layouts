@@ -1,3 +1,4 @@
+import { chromeIcon } from './chrome-icons.js';
 import type { Group, Pane } from 'layouts-core';
 import type { LayoutOptions } from './types.js';
 import { el } from './lifetime.js';
@@ -100,7 +101,8 @@ export function fillTabs(tabs: HTMLElement, group: Group, panes: Pane[], deps: T
       });
     item.append(tab);
     if (options.store.can(pane.id, 'close')) {
-      const x = el(doc, 'button', 'layouts-button layouts-tab-close', '×');
+      const x = el(doc, 'button', 'layouts-button layouts-tab-close');
+      x.append(chromeIcon(doc, 'close'));
       x.type = 'button';
       x.title = `Close ${pane.title}`;
       x.setAttribute('aria-label', x.title);

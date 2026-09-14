@@ -13,6 +13,7 @@ const layout = mountLayout(document.querySelector('#workspace')!, {
   theme: defaultTheme,
   renderIcon,
   shortcuts: true,
+  tabBar: { mode: 'tapered' },
 });
 setupShell(() => layout);
 window.addEventListener('pagehide', () => layout.dispose(), { once: true });

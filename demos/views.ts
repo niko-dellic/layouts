@@ -1,3 +1,4 @@
+import { mountTheming } from './shell.js';
 import { canvas } from './scene.js';
 export { canvas } from './scene.js';
 import type { PaneRenderer, PaneContext } from 'layouts';
@@ -60,15 +61,9 @@ export const toolbar: PaneRenderer = ({ element, document: doc }) => {
     field(doc, 'span', 'Spatial study', 'muted'),
   );
   const right = field(doc, 'div', '', 'toolbar-right');
-  const grid = doc.createElement('button');
-  grid.type = 'button';
-  grid.textContent = 'Grid';
-  grid.setAttribute('aria-pressed', String(state.get().grid));
-  grid.onclick = () => state.update({ grid: !state.get().grid });
-  right.append(grid, field(doc, 'span', 'Local session', 'session-dot'));
+  right.append(field(doc, 'span', 'Local session', 'session-dot'));
   element.append(right);
-  const unsub = state.subscribe(() => grid.setAttribute('aria-pressed', String(state.get().grid)));
-  return { dispose: unsub };
+  return { dispose() {} };
 };
 export const tools: PaneRenderer = ({ element, document: doc }) => {
   element.classList.add('demo-tools');
@@ -151,7 +146,18 @@ export const footer: PaneRenderer = ({ element, document: doc }) => {
   element.append(field(doc, 'span', '●  Ready'), field(doc, 'span', 'Local session'));
   return { dispose() {} };
 };
-export const renderers = { notes, canvas, toolbar, tools, timeline, activity, hotkeys, footer };
+export const theming: PaneRenderer = ({ element }) => mountTheming(element);
+export const renderers = {
+  theming,
+  notes,
+  canvas,
+  toolbar,
+  tools,
+  timeline,
+  activity,
+  hotkeys,
+  footer,
+};
 export function imperativeView(context: PaneContext) {
   return renderers[context.pane.type as keyof typeof renderers]?.(context) ?? notes(context);
 }

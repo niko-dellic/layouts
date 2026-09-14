@@ -628,9 +628,105 @@ h1 {
   cursor: grab;
   touch-action: none;
 }
+.layouts .scene-canvas:focus {
+  outline: none;
+}
 .scene-canvas.is-orbiting {
   cursor: grabbing;
 }
 .scene-chip {
   pointer-events: none;
+}
+.layouts-group[data-tab-bar='tapered'] .demo-inspector,
+.layouts-group[data-tab-bar='tapered'] .demo-tools,
+.layouts-group[data-tab-bar='tapered'] .demo-hotkeys,
+.layouts-group[data-tab-bar='tapered'] .demo-timeline {
+  padding-top: calc(var(--layouts-tab-bar-height, 0px) + 16px);
+}
+.scene-chip {
+  top: auto;
+  bottom: 12px;
+}
+
+/* Labels sit across the border without adding height to the toolbar. */
+.demo-field {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+.demo-field[hidden] {
+  display: none;
+}
+.demo-field > span {
+  position: absolute;
+  z-index: 1;
+  top: -6px;
+  left: 9px;
+  padding: 0 4px;
+  background: var(--layouts-panel);
+  color: var(--layouts-muted);
+  font-size: 10px;
+  line-height: 12px;
+  pointer-events: none;
+}
+.demo-range {
+  border: 1px solid var(--layouts-line);
+  border-radius: 5px;
+  background: var(--layouts-panel);
+  padding: 0 10px;
+  height: 34px;
+  align-items: center;
+}
+.demo-range input {
+  width: 130px;
+  margin: 0;
+  accent-color: var(--layouts-accent);
+  cursor: pointer;
+}
+.demo-field input:focus-visible {
+  outline: 2px solid var(--layouts-focus);
+  outline-offset: 3px;
+}
+
+.demo-theming {
+  container-type: inline-size;
+  overflow: auto;
+  height: 100%;
+  padding: 20px 16px;
+}
+.layouts-group[data-tab-bar='tapered'] .demo-theming {
+  padding-top: calc(var(--layouts-tab-bar-height, 0px) + 20px);
+}
+.demo-theming .demo-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 10px;
+}
+.demo-theming .demo-field {
+  min-width: 0;
+}
+.demo-theming .demo-field select {
+  width: 100%;
+}
+.demo-theming .demo-range input {
+  width: 100%;
+  min-width: 0;
+}
+.demo-theming .demo-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.demo-theming .demo-toggle input {
+  accent-color: var(--layouts-accent);
+}
+.demo-theming .source-link {
+  margin: 0;
+  font-size: 12px;
+}
+@container (max-width: 300px) {
+  .demo-theming .demo-actions {
+    grid-template-columns: 1fr;
+  }
 }

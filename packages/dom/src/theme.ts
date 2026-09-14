@@ -12,6 +12,8 @@ export interface LayoutTheme {
   fontFamily?: string;
   fontSize?: string;
   headerHeight?: string;
+  /** Active tab underline color; use transparent for background-only selection. */
+  tabUnderline?: string;
   scrollbarThumb?: string;
   scrollbarTrack?: string;
   scrollbarSize?: string;
@@ -31,6 +33,7 @@ export const themeProperties = {
   fontFamily: '--layouts-font-family',
   fontSize: '--layouts-font-size',
   headerHeight: '--layouts-header-height',
+  tabUnderline: '--layouts-tab-underline',
   scrollbarThumb: '--layouts-scrollbar-thumb',
   scrollbarTrack: '--layouts-scrollbar-track',
   scrollbarSize: '--layouts-scrollbar-size',

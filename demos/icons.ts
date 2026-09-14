@@ -6,6 +6,7 @@ const icons: Record<string, IconNode> = {
   canvas: Box,
   tools: Layers,
   notes: SlidersHorizontal,
+  theming: SlidersHorizontal,
   timeline: Timer,
 };
 /** An application-owned registry; only these Lucide icons enter the demo bundle. */
