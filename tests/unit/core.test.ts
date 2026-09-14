@@ -58,7 +58,7 @@ describe('transactional layout model', () => {
     expect(validate(s.export())).toEqual([]);
   });
   it('moves tabs and edge-docks without creating empty branches', () => {
-    const s = new LayoutStore(fixture());
+    const s = new LayoutStore(fixture(), { autoCollapse: 'enabled' });
     s.move('b', 'c-group', 'tab', 0);
     expect(groups(s.getSnapshot().root).find((g) => g.id === 'c-group')?.panes).toEqual(['b', 'c']);
     s.move('a', 'c-group', 'bottom');
@@ -85,7 +85,7 @@ describe('transactional layout model', () => {
     expect(s.getSnapshot().panes.a).toBeUndefined();
   });
   it('returns a popout after its original group disappears', () => {
-    const s = new LayoutStore(fixture());
+    const s = new LayoutStore(fixture(), { autoCollapse: 'enabled' });
     s.popout('c');
     expect(s.getSnapshot().popouts[0]?.groupId).toBe('c-group');
     s.returnPane('c');
@@ -105,7 +105,7 @@ describe('transactional layout model', () => {
     ).toEqual(['a', 'b', 'c']);
   });
   it('clears maximize if its group is removed', () => {
-    const s = new LayoutStore(fixture());
+    const s = new LayoutStore(fixture(), { autoCollapse: 'enabled' });
     s.maximize('c-group');
     s.close('c');
     expect(s.getSnapshot().maximized).toBe(null);
@@ -233,4 +233,83 @@ it('coupled resize ratios validate atomically', () => {
   expect(store.export()).toEqual(before);
   expect(() => store.resizeMany({ root: NaN })).toThrow();
   expect(store.export()).toEqual(before);
+});
+
+describe('autoCollapse session policy', () => {
+  for (const mode of ['enabled', 'protected', 'disabled'] as const) {
+    for (const action of ['close', 'move', 'popout'] as const) {
+      it(`${mode}: ${action} only collapses the emptied source when permitted`, () => {
+        const s = new LayoutStore(fixture(), { autoCollapse: mode });
+        const unrelated = s.split('a-group', 'vertical', null);
+        s.maximize('c-group');
+        if (action === 'move') s.move('c', 'a-group');
+        else s[action]('c');
+        const preserved = mode === 'disabled' || (mode === 'protected' && action === 'popout');
+        expect(groups(s.getSnapshot().root).some((g) => g.id === 'c-group')).toBe(preserved);
+        expect(groups(s.getSnapshot().root).some((g) => g.id === unrelated)).toBe(true);
+        expect(s.getSnapshot().maximized).toBe(preserved ? 'c-group' : null);
+        if (action === 'popout' && preserved) {
+          s.returnPane('c');
+          expect(groups(s.getSnapshot().root).find((g) => g.id === 'c-group')?.panes).toEqual([
+            'c',
+          ]);
+        }
+        expect(validate(s.export())).toEqual([]);
+      });
+    }
+  }
+  it('defaults to disabled and retains session settings through load and reset', () => {
+    const s = new LayoutStore(fixture());
+    expect(s.getAutoCollapse()).toBe('disabled');
+    s.close('c');
+    expect(groups(s.getSnapshot().root).find((g) => g.id === 'c-group')?.panes).toEqual([]);
+    s.setAutoCollapse('enabled');
+    expect(groups(s.getSnapshot().root)).toHaveLength(2);
+    s.load(fixture());
+    s.reset();
+    expect(s.getAutoCollapse()).toBe('enabled');
+    expect(s.export()).not.toHaveProperty('autoCollapse');
+    const before = s.getSnapshot();
+    // @ts-expect-error Invalid runtime input must be rejected.
+    expect(() => s.setAutoCollapse(false)).toThrow(/autoCollapse/);
+    // @ts-expect-error Invalid constructor input must be rejected.
+    expect(() => new LayoutStore(fixture(), { autoCollapse: 'invalid' })).toThrow(/autoCollapse/);
+    expect(s.getAutoCollapse()).toBe('enabled');
+    expect(s.getSnapshot()).toBe(before);
+  });
+  it('explicit removal preserves detached content and protects the final root', () => {
+    const s = new LayoutStore(fixture());
+    s.popout('c');
+    s.removeEmptyGroup('c-group');
+    expect(s.getSnapshot().panes.c).toBeDefined();
+    s.returnPane('c');
+    for (const id of ['a', 'b', 'c']) s.close(id);
+    const before = s.getSnapshot();
+    s.removeEmptyGroup(before.root.id);
+    expect(s.getSnapshot()).toBe(before);
+  });
+  it('joining and closing detached tabs preserve unrelated empty groups', () => {
+    const s = new LayoutStore(fixture(), { autoCollapse: 'protected' });
+    s.popout('c');
+    s.split('a-group', 'vertical', pane('d'));
+    s.join('a-group');
+    s.close('c');
+    expect(groups(s.getSnapshot().root).find((g) => g.id === 'c-group')?.panes).toEqual([]);
+  });
+});
+
+it('persists region tab placement and rejects invalid updates atomically', () => {
+  const store = new LayoutStore(fixture());
+  store.setTabPlacement('a-group', 'left');
+  const saved = store.export();
+  const restored = new LayoutStore(JSON.parse(JSON.stringify(saved)));
+  expect(groups(restored.getSnapshot().root).map((g) => g.tabPlacement)).toEqual([
+    'left',
+    undefined,
+  ]);
+  expect(() => store.setTabPlacement('root', 'top')).toThrow();
+  expect(() => store.setTabPlacement('a-group', 'invalid' as 'top')).toThrow();
+  expect(store.export()).toEqual(saved);
+  restored.setTabPlacement('a-group', undefined);
+  expect(restored.export()).toEqual(fixture());
 });

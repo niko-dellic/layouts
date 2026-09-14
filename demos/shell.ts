@@ -1,4 +1,5 @@
 import { themes, themeFamilies } from 'layouts';
+import type { AutoCollapse } from 'layouts-core';
 import { store } from './model.js';
 import { defaultThemeName } from './theme.js';
 import type { MountedLayout } from 'layouts';
@@ -25,7 +26,11 @@ export function mountTheming(element: HTMLElement) {
 export function setupShell(getMounted: () => MountedLayout | undefined) {
   let headerHeight = 32,
     fontSize = 11,
-    radius = 5;
+    iconSize = 16,
+    radius = 5,
+    handleWidth = 6,
+    showDisabledHandles = false,
+    showFrozenBorders = true;
   settings = document.querySelector<HTMLElement>('[aria-label="Workspace controls"]')!;
   settings.remove();
   settingsHost?.append(settings);
@@ -58,8 +63,12 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
     getMounted()?.setTheme({
       ...theme,
       fontSize: `${fontSize}px`,
+      iconSize: `${iconSize}px`,
       headerHeight: `${headerHeight}px`,
       radius: `${radius}px`,
+      resizeHandleWidth: `${handleWidth}px`,
+      disabledResizeHandleWidth: showDisabledHandles ? `${handleWidth}px` : '0px',
+      frozenPaneBorder: showFrozenBorders ? 'var(--layouts-line)' : 'transparent',
     });
   };
   themeSelect.onchange = applyTheme;
@@ -74,6 +83,17 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
   };
   const themeField = labelControl(themeSelect, 'Theme');
   settings.prepend(themeField);
+  const collapseSelect = document.createElement('select');
+  collapseSelect.setAttribute('aria-label', 'Auto collapse');
+  for (const mode of ['disabled', 'protected', 'enabled'] as const) {
+    const option = document.createElement('option');
+    option.value = mode;
+    option.textContent = mode[0]!.toUpperCase() + mode.slice(1);
+    collapseSelect.append(option);
+  }
+  collapseSelect.value = store.getAutoCollapse();
+  collapseSelect.onchange = () => store.setAutoCollapse(collapseSelect.value as AutoCollapse);
+  const collapseField = labelControl(collapseSelect, 'Auto collapse');
   const barSelect = document.createElement('select');
   barSelect.setAttribute('aria-label', 'Tab bar style');
   for (const [value, label] of [
@@ -149,8 +169,23 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
   placement.onchange = updateAmount;
   themeField.after(placementField, barField, amountField);
   updateAmount();
+  const resizing = document.createElement('section');
+  resizing.className = 'demo-resizing';
+  resizing.setAttribute('aria-label', 'Resizing');
+  const resizingTitle = document.createElement('h3');
+  resizingTitle.textContent = 'Resizing';
+  resizing.append(resizingTitle);
   let last: HTMLElement = amountField;
   for (const [name, initial, min, max, update] of [
+    [
+      'Resize handle width',
+      handleWidth,
+      2,
+      16,
+      (v: number) => {
+        handleWidth = v;
+      },
+    ],
     [
       'Header height',
       headerHeight,
@@ -167,6 +202,15 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
       16,
       (v: number) => {
         fontSize = v;
+      },
+    ],
+    [
+      'Icon size',
+      iconSize,
+      12,
+      24,
+      (v: number) => {
+        iconSize = v;
       },
     ],
     [
@@ -193,9 +237,34 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
       applyTheme();
       applyBar();
     };
-    last.after(field);
-    last = field;
+    if (name === 'Resize handle width') resizing.append(field);
+    else {
+      last.after(field);
+      last = field;
+    }
   }
+  const disabledLabel = document.createElement('label');
+  disabledLabel.className = 'demo-handle-toggle';
+  const disabledInput = document.createElement('input');
+  disabledInput.type = 'checkbox';
+  disabledInput.checked = showDisabledHandles;
+  disabledLabel.append(disabledInput, 'Show disabled resize handles');
+  disabledInput.onchange = () => {
+    showDisabledHandles = disabledInput.checked;
+    applyTheme();
+  };
+  const borderLabel = document.createElement('label');
+  borderLabel.className = 'demo-handle-toggle';
+  const borderInput = document.createElement('input');
+  borderInput.type = 'checkbox';
+  borderInput.checked = showFrozenBorders;
+  borderLabel.append(borderInput, 'Show frozen pane borders');
+  borderInput.onchange = () => {
+    showFrozenBorders = borderInput.checked;
+    applyTheme();
+  };
+  resizing.append(collapseField, disabledLabel, borderLabel);
+  last.after(resizing);
   const source = document.querySelector<HTMLElement>('.source-link');
   if (source) settings.append(source);
   applySettings = () => {

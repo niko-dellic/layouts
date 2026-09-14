@@ -17,15 +17,14 @@ test('corner split, escape cancellation and sibling join preserve panes', async 
   await page.mouse.move(box.x + 100, box.y + 8);
   const preview = (await page.locator('[data-corner-preview=split]').boundingBox())!;
   await page.mouse.up();
-  const empty = page
-    .locator('.layouts-group')
-    .filter({ has: page.getByText('Empty region', { exact: true }) });
+  const empty = page.locator('.layouts-group').filter({ has: page.locator('.layouts-empty') });
   await expect(empty).toBeVisible();
   const bounds = (await empty.boundingBox())!;
   expect(Math.abs(bounds.width - preview.width)).toBeLessThan(2);
   const picker = (await page.getByRole('dialog', { name: 'Choose a tab' }).boundingBox())!;
   expect(Math.abs(picker.x + picker.width / 2 - bounds.x - bounds.width / 2)).toBeLessThan(2);
-  expect(Math.abs(picker.y + picker.height / 2 - bounds.y - bounds.height / 2)).toBeLessThan(2);
+  expect(picker.y).toBeGreaterThan(bounds.y);
+  expect(picker.y + picker.height).toBeLessThanOrEqual(bounds.y + bounds.height);
   await page.getByRole('option', { name: 'Notes', exact: true }).click();
   const notes = page
     .getByRole('tab', { name: 'Notes', exact: true })
@@ -48,6 +47,7 @@ test('split orientation follows the gesture; cancelling the picker removes only 
   page,
 }) => {
   await page.goto('/vanilla.html');
+  await page.getByRole('combobox', { name: 'Auto collapse', exact: true }).selectOption('enabled');
   const source = page.locator('[data-node-id="scene-group"]');
   const before = (await source.boundingBox())!;
   await source.locator('[data-corner="tl"]').hover();

@@ -53,4 +53,22 @@ The host owns unsaved-work confirmation. For a pane with work that cannot yet be
 
 Corner dragging previews the new region using the same constraint allocation as the renderer. The dominant drag axis chooses split orientation. A gesture into an immediate sibling outlines both regions and labels the receiver; joining retains both regions' content as tabs. Escape and pointer cancellation remove the preview without changing state.
 
-Releasing a split creates an empty group before opening a centered registry chooser. Choosing content adds it to that stable group ID. Cancelling removes only the still-empty group, preserving unrelated edits. Empty groups are valid JSON and provide a chooser if restored after a reload. Applications can use `store.split(groupId, axis, null, options)` and `store.removeEmptyGroup(groupId)` for the same workflow; filled groups are never removed by the latter.
+Releasing a split creates an empty group before opening a centered registry chooser. Choosing content adds it to that stable group ID. With the default `autoCollapse: "disabled"`, the chooser stays open within the new region when focus moves elsewhere or Escape is pressed. Multiple pending regions can coexist; select content later or use the empty tab bar’s “Close empty pane” button. With `"enabled"` or `"protected"`, cancelling removes only the still-empty new group, preserving unrelated edits. Empty groups are valid JSON and provide a chooser if restored after a reload. Applications can use `store.split(groupId, axis, null, options)` and `store.removeEmptyGroup(groupId)` for the same workflow; filled groups are never removed by the latter.
+
+## Automatic collapse
+
+Configure the core store with `new LayoutStore(layout, { autoCollapse: 'disabled' })`.
+`AutoCollapse` accepts `'enabled' | 'protected' | 'disabled'`; omitted means `'disabled'`.
+Read or change it with `store.getAutoCollapse()` and `store.setAutoCollapse(mode)`.
+This is a workspace-wide session setting shared by DOM and React. It is not exported in
+layout JSON and survives `load` and `reset`. The demo Settings pane includes a live selector.
+
+- `enabled`: closing, moving, or popping out the last tab removes its empty source region.
+- `protected`: closing or moving the last tab removes the region; popping it out preserves it.
+- `disabled`: all three operations preserve the empty region, its ID, and its placement.
+
+Only the region emptied by an action is eligible for automatic removal. Switching modes
+never prunes existing empty regions. To retain the previous automatic behavior, opt into
+`enabled`. Empty tab bars provide “Close empty pane”; the final root cannot be removed.
+Removing a region never deletes its detached content. Returning popouts prefer the preserved
+original region, or use the existing fallback placement if it was explicitly removed.

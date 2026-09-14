@@ -73,14 +73,11 @@ textarea:focus-visible {
   gap: 10px;
 }
 .brand-icon {
-  display: grid;
-  place-items: center;
+  display: block;
   width: 29px;
   height: 29px;
-  border-radius: 6px;
-  background: var(--layouts-text);
-  color: var(--layouts-panel);
-  font-size: 22px;
+  flex-shrink: 0;
+  object-fit: contain;
 }
 .version {
   font:
@@ -708,4 +705,31 @@ h1 {
 .layouts-group[data-tab-placement='left'][data-tab-bar='tapered']
   :is(.demo-theming, .demo-inspector, .demo-tools, .demo-hotkeys, .demo-timeline) {
   padding-left: calc(var(--layouts-tab-bar-width, 0px) + 16px);
+}
+
+.demo-handle-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  grid-column: 1 / -1;
+  font-size: 12px;
+}
+.demo-handle-toggle input {
+  accent-color: var(--layouts-accent);
+}
+
+.demo-resizing {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  gap: 16px 10px;
+  border-top: 1px solid var(--layouts-line);
+  padding: 16px 0 8px;
+}
+.demo-resizing h3 {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--layouts-muted);
 }

@@ -11,7 +11,15 @@ export interface LayoutTheme {
   radius?: string;
   fontFamily?: string;
   fontSize?: string;
+  /** Tab and menu icon size (default 16px). */
+  iconSize?: string;
   headerHeight?: string;
+  /** Resize gap in CSS pixels (default 6px). Explicit split gaps take precedence. */
+  resizeHandleWidth?: string;
+  /** Gap for disabled dividers in CSS pixels (default 0px). */
+  disabledResizeHandleWidth?: string;
+  /** Border color at disabled, gapless boundaries; defaults to line. Use transparent to hide. */
+  frozenPaneBorder?: string;
   scrollbarThumb?: string;
   scrollbarTrack?: string;
   scrollbarSize?: string;
@@ -30,7 +38,11 @@ export const themeProperties = {
   radius: '--layouts-radius',
   fontFamily: '--layouts-font-family',
   fontSize: '--layouts-font-size',
+  iconSize: '--layouts-icon-size',
   headerHeight: '--layouts-header-height',
+  resizeHandleWidth: '--layouts-resize-handle-width',
+  disabledResizeHandleWidth: '--layouts-disabled-resize-handle-width',
+  frozenPaneBorder: '--layouts-frozen-pane-border',
   scrollbarThumb: '--layouts-scrollbar-thumb',
   scrollbarTrack: '--layouts-scrollbar-track',
   scrollbarSize: '--layouts-scrollbar-size',

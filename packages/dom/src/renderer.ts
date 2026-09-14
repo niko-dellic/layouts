@@ -92,10 +92,16 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
       r.header = el(doc, 'header', 'layouts-header');
       r.body = el(doc, 'div', 'layouts-body');
       r.element.append(r.header, r.body);
-      r.updateTabBar = bindTabBar(r.element, r.header, root, r.scope, () => ({
-        ...tabBar,
-        ...(tabBar.regions?.[node.id] ?? {}),
-      }));
+      r.updateTabBar = bindTabBar(r.element, r.header, root, r.scope, () => {
+        const current = findNode(options.store.getSnapshot().root, node.id);
+        return {
+          ...tabBar,
+          ...(tabBar.regions?.[node.id] ?? {}),
+          ...(current?.kind === 'group' && current.tabPlacement
+            ? { placement: current.tabPlacement }
+            : {}),
+        };
+      });
       bindCorners(
         r.element,
         node.id,
@@ -151,13 +157,12 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
         const e = event as PointerEvent;
         if (e.button !== 0) return;
         const n = findNode(options.store.getSnapshot().root, node.id);
-        if (n?.kind !== 'split' || !paneIds(n).every((id) => options.store.can(id, 'resize')))
-          return;
+        if (n?.kind !== 'split' || !resizable(n, options.store.getSnapshot())) return;
         e.preventDefault();
         dragScope?.dispose();
         const drag = new Scope();
         dragScope = drag;
-        const resize = isolatedResize(options.store.getSnapshot(), node.id, (child, axis) => {
+        const resize = isolatedResize(geometryLayout(), node.id, (child, axis) => {
           const rect = regions.get(child.id)!.element.getBoundingClientRect();
           return axis === 'horizontal' ? rect.width : rect.height;
         });
@@ -170,7 +175,7 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
           } catch {}
         });
         const set = (move: PointerEvent) => {
-          const current = findNode(options.store.getSnapshot().root, node.id);
+          const current = findNode(geometryLayout().root, node.id);
           if (current?.kind !== 'split') return;
           const rect = r.element.getBoundingClientRect();
           const available =
@@ -207,12 +212,12 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
       r.scope.listen(r.divider, 'keydown', (event) => {
         const e = event as KeyboardEvent;
         const n = findNode(options.store.getSnapshot().root, node.id);
-        if (n?.kind !== 'split') return;
+        if (n?.kind !== 'split' || !resizable(n, options.store.getSnapshot())) return;
         const keys =
           n.axis === 'horizontal' ? ['ArrowLeft', 'ArrowRight'] : ['ArrowUp', 'ArrowDown'];
         if (keys.includes(e.key)) {
           e.preventDefault();
-          const resize = isolatedResize(options.store.getSnapshot(), node.id, (child, axis) => {
+          const resize = isolatedResize(geometryLayout(), node.id, (child, axis) => {
             const rect = regions.get(child.id)!.element.getBoundingClientRect();
             return axis === 'horizontal' ? rect.width : rect.height;
           });
@@ -311,6 +316,7 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
       definitions,
       g.active,
       layout.maximized,
+      layout.root.id === g.id,
       definitions.map((p) => windows.pending.has(p.id)),
     ]);
     if (r.signature !== signature) {
@@ -337,6 +343,16 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
           regions.get(g.id)?.header?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus(),
       });
       r.header!.append(tabs);
+      if (!definitions.length) {
+        const close = button('', 'Close empty pane', () => options.store.removeEmptyGroup(g.id));
+        close.append(chromeIcon(doc, 'close'));
+        close.disabled = layout.root.id === g.id;
+        const settings = button('', 'Empty pane actions', () => menu.openEmpty(settings, g));
+        settings.append(chromeIcon(doc, 'more'));
+        settings.setAttribute('aria-haspopup', 'dialog');
+        settings.dataset.focusId = `menu-${g.id}`;
+        r.header!.append(close, settings);
+      }
       const active = g.active ? layout.panes[g.active] : undefined;
       if (active) {
         const more = button('', `${active.title} actions`, () => menu.open(more, active, g));
@@ -362,12 +378,27 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
       return p.element;
     });
     if (!bodies.length) {
-      const placeholder = el(doc, 'div', 'layouts-placeholder');
-      placeholder.append(el(doc, 'p', '', 'Empty region'));
-      const source = Object.values(layout.panes).find((pane) => pane.header !== false);
-      if (source && options.tabs) {
-        const choose = button('Choose a tab', 'Choose a tab', () => menu.open(choose, source, g));
-        placeholder.append(choose);
+      let placeholder = r.body!.querySelector<HTMLButtonElement>('.layouts-empty');
+      if (!placeholder) {
+        placeholder = button('', 'Choose a tab', () => {
+          const current = options.store.getSnapshot();
+          const source = Object.values(current.panes).find((pane) => pane.header !== false);
+          const group = findNode(current.root, g.id);
+          if (group?.kind === 'group' && !group.panes.length)
+            menu.open(placeholder!, source, group);
+        });
+        placeholder.className = 'layouts-empty';
+        placeholder.disabled = !options.tabs;
+        placeholder.setAttribute('aria-haspopup', 'dialog');
+        const lines = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        lines.setAttribute('viewBox', '0 0 100 100');
+        lines.setAttribute('preserveAspectRatio', 'none');
+        lines.setAttribute('aria-hidden', 'true');
+        const path = doc.createElementNS(lines.namespaceURI, 'path');
+        path.setAttribute('d', 'M0 0 L100 100 M100 0 L0 100');
+        path.setAttribute('vector-effect', 'non-scaling-stroke');
+        lines.append(path);
+        placeholder.append(lines);
       }
       bodies.push(placeholder);
     }
@@ -389,10 +420,7 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
       r.divider!.setAttribute('aria-valuenow', String(Math.round(node.ratio * 100)));
       r.divider!.setAttribute('aria-valuemin', '0');
       r.divider!.setAttribute('aria-valuemax', '100');
-      r.divider!.setAttribute(
-        'aria-disabled',
-        String(!paneIds(node).every((id) => options.store.can(id, 'resize'))),
-      );
+      r.divider!.setAttribute('aria-disabled', String(!resizable(node, layout)));
     }
     return r.element;
   }
@@ -403,9 +431,14 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
     width: number,
     height: number,
     layout: Layout,
+    shared: string[] = [],
   ) {
     const r = regions.get(node.id);
     if (!r) return;
+    if (r.element.dataset.sharedEdges !== shared.join(' ')) {
+      r.element.dataset.sharedEdges = shared.join(' ');
+      r.updateTabBar?.();
+    }
     const b = bounds(node, layout);
     width = Math.max(b.minWidth, Math.min(width, b.maxWidth));
     height = Math.max(b.minHeight, Math.min(height, b.maxHeight));
@@ -429,6 +462,9 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
         horizontal ? b.maxWidth : b.maxHeight,
         gap,
       );
+      const frozen = gap === 0 && !resizable(node, layout);
+      const firstEdge = horizontal ? 'right' : 'bottom';
+      const secondEdge = horizontal ? 'left' : 'top';
       geometry(
         node.children[0],
         0,
@@ -436,6 +472,7 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
         horizontal ? first : width,
         horizontal ? height : first,
         layout,
+        [...shared.filter((edge) => edge !== firstEdge), ...(frozen ? [firstEdge] : [])],
       );
       geometry(
         node.children[1],
@@ -444,8 +481,12 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
         horizontal ? second : width,
         horizontal ? height : second,
         layout,
+        [...shared.filter((edge) => edge !== secondEdge), ...(frozen ? [secondEdge] : [])],
       );
       r.divider!.hidden = gap === 0;
+      // Paint a shared edge without reserving space or adding a resize target.
+      r.element.dataset.frozenBorder = gap === 0 && !resizable(node, layout) ? node.axis : '';
+      r.element.style.setProperty('--layouts-frozen-boundary', `${first}px`);
       Object.assign(
         r.divider!.style,
         horizontal
@@ -454,8 +495,36 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
       );
     }
   }
-  function measure() {
+  function resizable(node: Node, layout: Layout) {
+    if (node.kind !== 'split' || !paneIds(node).every((id) => options.store.can(id, 'resize')))
+      return false;
+    return node.children.every((child) => {
+      const b = bounds(child, layout);
+      return node.axis === 'horizontal' ? b.minWidth < b.maxWidth : b.minHeight < b.maxHeight;
+    });
+  }
+  // Renderer-only gaps participate in bounds/allocation without modifying Layout JSON.
+  function geometryLayout(): Layout {
     const layout = options.store.getSnapshot();
+    const css = win!.getComputedStyle(root);
+    const pixels = (property: string, fallback: number) => {
+      const value = parseFloat(css.getPropertyValue(property));
+      return Number.isFinite(value) && value >= 0 ? value : fallback;
+    };
+    const width = pixels('--layouts-resize-handle-width', DIVIDER);
+    const disabledWidth = pixels('--layouts-disabled-resize-handle-width', 0);
+    const visit = (node: Node): Node =>
+      node.kind === 'group'
+        ? node
+        : {
+            ...node,
+            gap: resizable(node, layout) ? (node.gap ?? width) : disabledWidth,
+            children: [visit(node.children[0]), visit(node.children[1])],
+          };
+    return { ...layout, root: visit(layout.root) };
+  }
+  function measure() {
+    const layout = geometryLayout();
     const node = layout.maximized ? findNode(layout.root, layout.maximized) : layout.root;
     if (node) geometry(node, 0, 0, stage.clientWidth, stage.clientHeight, layout);
   }
@@ -530,6 +599,7 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
     },
     setTheme(theme) {
       applyTheme(root, theme);
+      measure();
     },
     popout(id, placement) {
       const opened = windows.open(id, placement);

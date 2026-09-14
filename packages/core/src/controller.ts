@@ -1,6 +1,8 @@
 import { findNode, findParent, groups, paneIds, parseLayout, validate } from './model.js';
 import { LayoutError } from './types.js';
 import type {
+  AutoCollapse,
+  LayoutStoreOptions,
   Axis,
   Capability,
   Change,
@@ -30,7 +32,9 @@ export class LayoutStore {
   private serial = 0;
   private notifying = false;
   private pending: Change[] = [];
-  constructor(input: unknown) {
+  private autoCollapse: AutoCollapse = 'disabled';
+  constructor(input: unknown, options: LayoutStoreOptions = {}) {
+    this.setAutoCollapse(options.autoCollapse ?? 'disabled');
     this.state = freeze(parseLayout(input));
     this.initial = this.export();
   }
@@ -130,16 +134,25 @@ export class LayoutStore {
     if (g.active === id) g.active = g.panes[Math.min(at, g.panes.length - 1)] ?? null;
     return g;
   }
-  private tidy(draft: Layout) {
-    const prune = (n: Node): Node => {
-      if (n.kind === 'group') return n;
-      n.children = [prune(n.children[0]), prune(n.children[1])];
-      const [a, b] = n.children;
-      if (a.kind === 'group' && !a.panes.length) return b;
-      if (b.kind === 'group' && !b.panes.length) return a;
-      return n;
-    };
-    draft.root = prune(draft.root);
+  getAutoCollapse(): AutoCollapse {
+    return this.autoCollapse;
+  }
+  setAutoCollapse(mode: AutoCollapse): void {
+    this.alive();
+    if (!['enabled', 'protected', 'disabled'].includes(mode)) problem('Invalid autoCollapse mode');
+    this.autoCollapse = mode;
+  }
+  private tidy(draft: Layout, source?: Group, popout = false) {
+    if (
+      source &&
+      !source.panes.length &&
+      this.autoCollapse !== 'disabled' &&
+      (!popout || this.autoCollapse === 'enabled')
+    ) {
+      const parent = findParent(draft.root, source.id);
+      if (parent)
+        this.replace(draft, parent, parent.children[parent.children[0].id === source.id ? 1 : 0]);
+    }
     if (draft.maximized && !findNode(draft.root, draft.maximized)) draft.maximized = null;
   }
   can(paneId: string, capability: Capability): boolean {
@@ -157,6 +170,14 @@ export class LayoutStore {
   }
   reset() {
     this.load(this.initial);
+  }
+  setTabPlacement(groupId: string, placement: Group['tabPlacement']) {
+    this.commit('setTabPlacement', (draft) => {
+      const group = findNode(draft.root, groupId);
+      if (!group || group.kind !== 'group') problem('Expected a group id');
+      if (placement === undefined) delete group.tabPlacement;
+      else group.tabPlacement = placement;
+    });
   }
   activate(groupId: string, paneId: string) {
     this.commit('activate', (d) => {
@@ -296,7 +317,7 @@ export class LayoutStore {
           children: before ? [g, target] : [target, g],
         });
       }
-      this.tidy(d);
+      this.tidy(d, source);
     });
   }
   /** Join the sibling region at this split, retaining its content as tabs. */
@@ -316,11 +337,12 @@ export class LayoutStore {
     this.commit('close', (d) => {
       this.permit(d, [paneId], 'close', options);
       this.pane(d, paneId);
+      let source: Group | undefined;
       if (d.popouts.some((p) => p.paneId === paneId))
         d.popouts = d.popouts.filter((p) => p.paneId !== paneId);
-      else this.detach(d, paneId);
+      else source = this.detach(d, paneId);
       delete d.panes[paneId];
-      this.tidy(d);
+      this.tidy(d, source);
     });
   }
   popout(paneId: string, placement?: WindowPlacement, options: CommandOptions = {}) {
@@ -336,7 +358,7 @@ export class LayoutStore {
       };
       this.detach(d, paneId);
       d.popouts.push(entry);
-      this.tidy(d);
+      this.tidy(d, group, true);
     });
   }
   returnPane(paneId: string) {

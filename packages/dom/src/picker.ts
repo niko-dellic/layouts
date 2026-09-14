@@ -5,13 +5,14 @@ import { el, Scope } from './lifetime.js';
 let sequence = 0;
 /** Search remains focused while aria-activedescendant tracks keyboard selection. */
 export function fillTabPicker(
-  dialog: HTMLDialogElement,
+  dialog: HTMLElement,
   scope: Scope,
   options: LayoutOptions,
-  source: Pane,
+  source: Pane | undefined,
   group: Group,
   choose: (pane: Pane) => void,
   report: (error: unknown) => void,
+  persistent = false,
 ) {
   const doc = dialog.ownerDocument;
   const input = el(doc, 'input', 'layouts-picker-search');
@@ -88,7 +89,10 @@ export function fillTabPicker(
   }
   input.oninput = search;
   input.onkeydown = (e) => {
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    if (persistent && e.key === 'Escape') {
+      e.preventDefault();
+      input.blur();
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
       if (matches.length)
         selected = (selected + (e.key === 'ArrowDown' ? 1 : matches.length - 1)) % matches.length;
@@ -102,7 +106,7 @@ export function fillTabPicker(
   const cancel = el(doc, 'button', 'layouts-button', 'Cancel');
   cancel.type = 'button';
   cancel.onclick = () => scope.dispose();
-  dialog.replaceChildren(input, list, status, cancel);
+  dialog.replaceChildren(input, list, status, ...(persistent ? [] : [cancel]));
   dialog.setAttribute('aria-label', 'Choose a tab');
   if (options.tabs) scope.add(options.tabs.subscribe(search));
   search();

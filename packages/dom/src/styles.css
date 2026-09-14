@@ -32,8 +32,18 @@
   display: flex;
   flex-direction: column;
   background: var(--layouts-panel, #1d222a);
-  outline: 1px solid var(--layouts-line, #39414e);
-  outline-offset: -1px;
+}
+.layouts-group::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  border: 1px solid;
+  border-color: var(--layouts-edge-top, var(--layouts-line, #39414e))
+    var(--layouts-edge-right, var(--layouts-line, #39414e))
+    var(--layouts-edge-bottom, var(--layouts-line, #39414e))
+    var(--layouts-edge-left, var(--layouts-line, #39414e));
 }
 .layouts-header {
   height: var(--layouts-header-height, 34px);
@@ -236,16 +246,16 @@
   padding: 0 8px;
 }
 .layouts-tab-icon {
-  flex: 0 0 16px;
-  width: 16px;
-  height: 16px;
+  flex: 0 0 var(--layouts-icon-size, 16px);
+  width: var(--layouts-icon-size, 16px);
+  height: var(--layouts-icon-size, 16px);
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 .layouts-tab-icon > * {
-  width: 16px;
-  height: 16px;
+  width: var(--layouts-icon-size, 16px);
+  height: var(--layouts-icon-size, 16px);
 }
 .layouts-tab-label {
   overflow: hidden;
@@ -564,10 +574,6 @@
   vector-effect: non-scaling-stroke;
   pointer-events: none;
 }
-.layouts-header[data-tab-bar-empty='true'] {
-  visibility: hidden;
-  pointer-events: none;
-}
 
 .layouts-chrome-icon {
   display: inline-block;
@@ -643,4 +649,108 @@
 }
 .layouts-group[data-tab-placement='left'] > .layouts-header > .layouts-button .layouts-chrome-icon {
   transform: rotate(90deg);
+}
+
+.layouts-picker-persistent {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: calc(50% + var(--layouts-header-height, 32px) / 2);
+  transform: translate(-50%, -50%);
+  width: min(340px, calc(100% - 16px));
+  max-height: calc(100% - var(--layouts-header-height, 32px) - 16px);
+  box-sizing: border-box;
+}
+
+.layouts-tab-tooltip {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+  max-width: min(280px, calc(100vw - 16px));
+  padding: 6px 9px;
+  border: 1px solid var(--layouts-line, #39414e);
+  border-radius: var(--layouts-radius, 5px);
+  background: var(--layouts-panel, #1d222a);
+  color: var(--layouts-text, #e5e9f0);
+  box-shadow: 0 3px 12px #0003;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+/* Gapless frozen boundaries are decorative and never intercept pane input. */
+[data-frozen-border='horizontal']::after,
+[data-frozen-border='vertical']::after {
+  content: '';
+  position: absolute;
+  z-index: 4;
+  pointer-events: none;
+  background: var(--layouts-frozen-pane-border, var(--layouts-line, #39414e));
+}
+[data-frozen-border='horizontal']::after {
+  left: calc(var(--layouts-frozen-boundary) - 1px);
+  top: 0;
+  width: 1px;
+  height: 100%;
+}
+[data-frozen-border='vertical']::after {
+  top: calc(var(--layouts-frozen-boundary) - 1px);
+  left: 0;
+  height: 1px;
+  width: 100%;
+}
+
+.layouts-placement {
+  display: grid;
+  gap: 4px;
+  padding: 6px;
+  color: var(--layouts-muted, #a2acba);
+  font-size: 11px;
+}
+
+/* The split owns shared frozen borders; descendants omit those same edges. */
+.layouts-group[data-shared-edges~='top'] {
+  --layouts-edge-top: transparent;
+}
+.layouts-group[data-shared-edges~='right'] {
+  --layouts-edge-right: transparent;
+}
+.layouts-group[data-shared-edges~='bottom'] {
+  --layouts-edge-bottom: transparent;
+}
+.layouts-group[data-shared-edges~='left'] {
+  --layouts-edge-left: transparent;
+}
+
+.layouts-tabs:empty {
+  display: none;
+}
+
+.layouts-empty {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--layouts-line, #39414e);
+  cursor: pointer;
+}
+.layouts-empty:disabled {
+  cursor: default;
+}
+.layouts-empty:focus-visible {
+  outline: 1px solid var(--layouts-accent, #8bbaaa);
+  outline-offset: -3px;
+}
+.layouts-empty > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
 }

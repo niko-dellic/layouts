@@ -5,8 +5,9 @@ export interface TabRegistration {
   description?: string;
   icon?: string;
   keywords?: readonly string[];
-  /** Return a fresh pane with a unique id; undefined cancels creation. */
-  create: (context: { source: Pane; groupId: string }) => Pane | undefined;
+  /** Source is undefined when creating content in a completely empty workspace.
+   * Return a fresh pane with a unique id; undefined cancels creation. */
+  create: (context: { source: Pane | undefined; groupId: string }) => Pane | undefined;
 }
 /** Available content types, independent of open pane instances and layout JSON. */
 export class TabRegistry {

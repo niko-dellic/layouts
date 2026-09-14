@@ -183,8 +183,45 @@ The demos expose header height, text size, control corner radius, theme presets,
 and fitted-bar shape in the right-side Theming tab.
 
 Set `tabBar: { placement: 'left' }` for a 40px icon-only rail. Full mode reserves this space; fitted styles overlay the content and taper at the bottom, with the same 12px edge clearance as top tabs. Hovering
-an icon shows the browser's built-in tooltip with the full tab name. Up/Down
+an icon shows the renderer's tooltip with the full tab name. Up/Down
 arrows navigate the tabs; Home/End and vertical drag reordering are supported.
 The actions menu includes Close, and middle-click closing remains available when
 enabled. `placement: 'top'` restores top tabs; mode and shape apply in both placements.
 Placement supports region overrides and live changes through `setTabBar`.
+
+`resizeHandleWidth` sets the default divider gap in CSS pixels (default `'6px'`).
+Explicit split gaps still take precedence for resizable dividers.
+Disabled dividers have no gap by default. Set `disabledResizeHandleWidth` to a
+CSS pixel width to show their space without enabling resizing. The demo's
+“Show disabled resize handles” switch uses the selected handle width. These
+renderer settings affect allocation and resize limits without modifying Layout JSON.
+
+When a disabled divider has no gap, a 1px decorative border marks its shared
+edge by default. It uses the theme's `line` color, takes no layout space, and
+never intercepts input. Set `frozenPaneBorder` (CSS: `--layouts-frozen-pane-border`)
+to `'transparent'` to hide it or another CSS color to override it. Borders are
+omitted when disabled resize gaps are shown. Both demos group handle width,
+auto collapse, disabled handles, and the frozen border toggle under **Resizing**.
+
+### Saved orientation per region
+
+Each pane region's actions menu includes **Tab orientation**: horizontal (top),
+vertical (left), or workspace default. Tabs sharing a region share its orientation.
+The choice is saved as the optional group field `tabPlacement: 'top' | 'left'`
+in Layout JSON v1. Existing JSON without this field continues to inherit renderer
+settings. A saved choice takes precedence over global and region `tabBar.placement`
+settings; other bar settings still apply normally.
+
+Use `store.setTabPlacement(groupId, 'left')` (or `'top'`) to change it live without
+remounting content. Pass `undefined` to remove the saved override. Moving a tab
+into another region adopts that destination's orientation; preserved regions
+retain their setting through popout and return.
+
+`iconSize` (`--layouts-icon-size`, default `16px`) controls tab and menu icons in
+both tab orientations. Both demos expose an **Icon size** slider from 12–24px.
+Close and overflow action icons retain their compact size.
+
+A gapless frozen boundary has one border owner: its split. Descendant pane frames
+and tab outlines omit that shared edge, including across nested splits. This
+avoids doubled lines with either tab orientation and every bar shape. The border
+toggle controls the shared separator; it does not alter content or control bounds.

@@ -16,6 +16,7 @@ export function createPaneMenu(
   const doc = root.ownerDocument,
     win = doc.defaultView!;
   let current: Scope | undefined;
+  const persistentPickers = new Map<string, Scope>();
   const act = (fn: () => void) => {
     try {
       fn();
@@ -33,16 +34,20 @@ export function createPaneMenu(
   }
   function open(
     anchor: HTMLElement,
-    pane: Pane,
+    pane: Pane | undefined,
     group: Group,
     direction?: 'left' | 'right' | 'top' | 'bottom',
     ratio = 0.5,
+    groupActions = false,
   ) {
     current?.dispose();
     const local = new Scope();
     current = local;
     const dialog = el(doc, 'dialog', 'layouts-menu');
-    dialog.setAttribute('aria-label', `${pane.title} actions`);
+    dialog.setAttribute(
+      'aria-label',
+      pane && !groupActions ? `${pane.title} actions` : 'Empty pane actions',
+    );
     local.add(() => dialog.remove());
     const add = (icon: ActionIcon, label: string, enabled: boolean, fn: () => void) => {
       const b = button(label, label, () => {
@@ -60,6 +65,7 @@ export function createPaneMenu(
       group.panes.every((id) => options.store.can(id, cap));
     const available = Boolean(options.tabs?.list().length);
     const create = (axis?: 'horizontal' | 'vertical', before = false) => {
+      if (!pane && !options.tabs) return;
       let destination = group;
       if (axis && options.tabs) {
         const id = options.store.split(group.id, axis, null, { source: 'user', before, ratio });
@@ -71,10 +77,44 @@ export function createPaneMenu(
           ? options.store.split(group.id, axis, fresh, { source: 'user', before, ratio })
           : options.store.add(fresh, destination.id, { source: 'user' });
       if (options.tabs) {
+        if ((axis || !group.panes.length) && options.store.getAutoCollapse() === 'disabled') {
+          if (persistentPickers.has(destination.id)) {
+            const region = Array.from(root.querySelectorAll<HTMLElement>('[data-node-id]')).find(
+              (element) => element.dataset.nodeId === destination.id,
+            );
+            region?.querySelector<HTMLInputElement>('.layouts-picker-search')?.focus();
+            return;
+          }
+          const region = Array.from(root.querySelectorAll<HTMLElement>('[data-node-id]')).find(
+            (element) => element.dataset.nodeId === destination.id,
+          );
+          if (!region) return;
+          const pickerScope = new Scope();
+          persistentPickers.set(destination.id, pickerScope);
+          const picker = el(doc, 'div', 'layouts-menu layouts-picker layouts-picker-persistent');
+          picker.setAttribute('role', 'dialog');
+          region.append(picker);
+          pickerScope.add(() => {
+            picker.remove();
+            persistentPickers.delete(destination.id);
+          });
+          pickerScope.add(
+            options.store.subscribe(() => {
+              const group = findNode(options.store.getSnapshot().root, destination.id);
+              if (group?.kind !== 'group' || group.panes.length) pickerScope.dispose();
+            }),
+          );
+          fillTabPicker(picker, pickerScope, options, pane, destination, commit, report, true);
+          return;
+        }
         const pickerScope = new Scope();
         current = pickerScope;
         const picker = el(doc, 'dialog', 'layouts-menu layouts-picker');
-        if (axis) pickerScope.add(() => options.store.removeEmptyGroup(destination.id));
+        if (axis)
+          pickerScope.add(() => {
+            if (options.store.getAutoCollapse() !== 'disabled')
+              options.store.removeEmptyGroup(destination.id);
+          });
         pickerScope.add(() => picker.remove());
         pickerScope.listen(picker, 'close', () => pickerScope.dispose());
         root.append(picker);
@@ -122,11 +162,11 @@ export function createPaneMenu(
           }
         }
       } else if (axis) {
-        const fresh = options.createPane?.(pane);
+        const fresh = pane ? options.createPane?.(pane) : undefined;
         if (fresh) commit(fresh);
       }
     };
-    if (!group.panes.length) {
+    if (!group.panes.length && !groupActions) {
       local.dispose();
       create();
       return;
@@ -139,8 +179,31 @@ export function createPaneMenu(
       );
       return;
     }
+    const placementLabel = el(doc, 'label', 'layouts-placement', 'Tab orientation');
+    const placement = el(doc, 'select', 'layouts-button');
+    placement.setAttribute('aria-label', 'Tab orientation');
+    for (const [value, label] of [
+      ['', 'Workspace default'],
+      ['top', 'Horizontal (top)'],
+      ['left', 'Vertical (left)'],
+    ]) {
+      const option = el(doc, 'option', '', label);
+      option.value = value!;
+      placement.append(option);
+    }
+    placement.value = group.tabPlacement ?? '';
+    placement.onchange = () =>
+      act(() => {
+        options.store.setTabPlacement(
+          group.id,
+          (placement.value || undefined) as Group['tabPlacement'],
+        );
+        local.dispose();
+      });
+    placementLabel.append(placement);
+    dialog.append(placementLabel);
     add('add-tab', '+ Add tab', available && allowed('move'), () => create());
-    const canCreate = options.tabs ? available : Boolean(options.createPane);
+    const canCreate = options.tabs ? available : Boolean(pane && options.createPane);
     const split = el(doc, 'div', 'layouts-submenu');
     const trigger = button('Split ▸', 'Split', () => {
       flyout.hidden = !flyout.hidden;
@@ -213,18 +276,24 @@ export function createPaneMenu(
           options.store.getSnapshot().maximized === group.id ? null : group.id,
         ),
     );
-    add(
-      'popout',
-      windows.pending.has(pane.id) ? 'Reopen window' : 'Open in window',
-      options.store.can(pane.id, 'popout'),
-      () => {
-        windows.open(pane.id, windows.pending.get(pane.id));
-        refresh();
-      },
-    );
-    add('close', 'Close pane', options.store.can(pane.id, 'close'), () =>
-      options.store.close(pane.id, { source: 'user' }),
-    );
+    if (group.panes.length && pane) {
+      add(
+        'popout',
+        windows.pending.has(pane.id) ? 'Reopen window' : 'Open in window',
+        options.store.can(pane.id, 'popout'),
+        () => {
+          windows.open(pane.id, windows.pending.get(pane.id));
+          refresh();
+        },
+      );
+      add('close', 'Close pane', options.store.can(pane.id, 'close'), () =>
+        options.store.close(pane.id, { source: 'user' }),
+      );
+    } else {
+      add('close', 'Close empty pane', options.store.getSnapshot().root.id !== group.id, () =>
+        options.store.removeEmptyGroup(group.id),
+      );
+    }
     add('cancel', 'Cancel', true, () => {});
     root.append(dialog);
     const rect = anchor.getBoundingClientRect();
@@ -243,8 +312,15 @@ export function createPaneMenu(
   }
   return {
     open,
+    openEmpty(anchor: HTMLElement, group: Group) {
+      const source = Object.values(options.store.getSnapshot().panes).find(
+        (pane) => pane.header !== false,
+      );
+      open(anchor, source, group, undefined, 0.5, true);
+    },
     dispose() {
       current?.dispose();
+      for (const picker of persistentPickers.values()) picker.dispose();
     },
   };
 }

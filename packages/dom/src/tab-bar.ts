@@ -1,3 +1,4 @@
+import { bindTabTooltip } from './tab-tooltip.js';
 import type { TabBarOptions, TabBarStyle } from './types.js';
 import type { Scope } from './lifetime.js';
 
@@ -76,9 +77,21 @@ export function bindTabBar(
         : `V${bottom}`;
     edge.setAttribute('d', `M0.5 0.5 H${right} ${curve} H0.5 Z`);
     if (left) edge.setAttribute('transform', 'matrix(0 1 1 0 0 0)');
+    const shared = region.dataset.sharedEdges?.split(' ') ?? [];
+    const w = left ? height : occupied;
+    const h = left ? occupied : height;
+    // Clip only decorative strokes on edges owned by an ancestor split.
+    const insets = [
+      shared.includes('top') ? 1 : 0,
+      shared.includes('right') && w >= region.clientWidth - 0.5 ? 1 : 0,
+      shared.includes('bottom') && h >= region.clientHeight - 0.5 ? 1 : 0,
+      shared.includes('left') ? 1 : 0,
+    ];
+    outline.style.clipPath = `inset(${insets.map((value) => `${value}px`).join(' ')})`;
     outline.append(edge);
     header.append(outline);
   };
+  const refreshTooltip = bindTabTooltip(region, header, root, scope);
   let frame = 0,
     disposed = false;
   const measure = () => {
@@ -89,6 +102,11 @@ export function bindTabBar(
     const tapered = style.mode === 'tapered';
     if (!left) header.style.removeProperty('height');
     region.dataset.tabPlacement = left ? 'left' : 'top';
+    for (const tab of header.querySelectorAll<HTMLElement>('.layouts-tab')) {
+      if (left) tab.removeAttribute('title');
+      else tab.title = tab.getAttribute('aria-label') ?? '';
+    }
+    refreshTooltip();
     header
       .querySelector('[role=tablist]')
       ?.setAttribute('aria-orientation', left ? 'vertical' : 'horizontal');
@@ -109,14 +127,18 @@ export function bindTabBar(
       const width = header.hidden ? 0 : header.getBoundingClientRect().width;
       const regionHeight = parseFloat(win.getComputedStyle(region).height);
       let occupiedHeight = regionHeight;
-      if (tapered && width && items.length) {
+      if (tapered && width) {
         const computed = win.getComputedStyle(header);
         const list = header.querySelector<HTMLElement>('.layouts-tabs')!;
-        const menu = header.querySelector<HTMLElement>(':scope > .layouts-button');
+        const controls = Array.from(
+          header.querySelectorAll<HTMLElement>(':scope > .layouts-button'),
+        );
         const natural =
           items.reduce((sum, item) => sum + parseFloat(win.getComputedStyle(item).flexBasis), 0) +
           Math.max(0, items.length - 1) * (parseFloat(win.getComputedStyle(list).rowGap) || 0) +
-          (menu ? menu.getBoundingClientRect().height + (parseFloat(computed.rowGap) || 0) : 0) +
+          controls.reduce((sum, control) => sum + control.getBoundingClientRect().height, 0) +
+          Math.max(0, controls.length - (items.length ? 0 : 1)) *
+            (parseFloat(computed.rowGap) || 0) +
           parseFloat(computed.paddingTop) +
           parseFloat(computed.paddingBottom);
         const cap = style.shape === 'vertical' ? 0 : (style.taperWidth ?? width);
@@ -128,7 +150,6 @@ export function bindTabBar(
       } else {
         header.style.removeProperty('height');
         delete region.dataset.tabBarFilled;
-        if (tapered && !items.length) occupiedHeight = 0;
       }
       region.style.setProperty('--layouts-tab-bar-width', `${occupiedHeight ? width : 0}px`);
       region.style.setProperty('--layouts-tab-bar-height', `${width ? occupiedHeight : 0}px`);
@@ -138,7 +159,7 @@ export function bindTabBar(
       header.style.removeProperty('width');
       for (const item of items) item.style.removeProperty('--layouts-tab-preferred-width');
       delete region.dataset.tabBarFilled;
-    } else if (!height || !items.length) {
+    } else if (!height) {
       header.style.width = '0px';
       occupied = 0;
       region.dataset.tabBarFilled = 'false';
@@ -157,16 +178,19 @@ export function bindTabBar(
           (item) => Math.ceil(item.getBoundingClientRect().width),
         );
         const computed = win.getComputedStyle(probe);
-        const menu = probe.querySelector<HTMLElement>(':scope > .layouts-button');
+        const controls = Array.from(
+          probe.querySelectorAll<HTMLElement>(':scope > .layouts-button'),
+        );
         const tabGap =
           parseFloat(win.getComputedStyle(probe.querySelector('.layouts-tabs')!).columnGap) || 0;
         const natural = Math.ceil(
           widths.reduce((sum, width) => sum + width, 0) +
             Math.max(0, widths.length - 1) * tabGap +
-            (menu?.getBoundingClientRect().width ?? 0) +
+            controls.reduce((sum, control) => sum + control.getBoundingClientRect().width, 0) +
             parseFloat(computed.paddingLeft) +
             parseFloat(computed.paddingRight) +
-            (menu ? parseFloat(computed.columnGap) : 0),
+            Math.max(0, controls.length - (items.length ? 0 : 1)) *
+              (parseFloat(computed.columnGap) || 0),
         );
         const capWidth = style.shape === 'vertical' ? 0 : (style.taperWidth ?? height);
         // Leave breathing room at the pane edge instead of showing a nearly
@@ -185,10 +209,7 @@ export function bindTabBar(
       }
     }
     region.style.setProperty('--layouts-tab-bar-width', `${height ? occupied : 0}px`);
-    region.style.setProperty(
-      '--layouts-tab-bar-height',
-      `${items.length || !tapered ? height : 0}px`,
-    );
+    region.style.setProperty('--layouts-tab-bar-height', `${height}px`);
   };
   const schedule = () => {
     if (!disposed && !frame) frame = win.requestAnimationFrame(measure);

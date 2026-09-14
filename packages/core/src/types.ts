@@ -1,3 +1,8 @@
+export type AutoCollapse = 'enabled' | 'protected' | 'disabled';
+export interface LayoutStoreOptions {
+  /** Session policy; omitted defaults to disabled. Not serialized in Layout JSON. */
+  autoCollapse?: AutoCollapse;
+}
 export type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 export type Capability = 'resize' | 'move' | 'split' | 'join' | 'close' | 'popout';
 export type Axis = 'horizontal' | 'vertical';
@@ -18,6 +23,8 @@ export interface Group {
   id: string;
   panes: string[];
   active: string | null;
+  /** Persisted tab orientation for this region; omitted inherits renderer settings. */
+  tabPlacement?: 'top' | 'left';
 }
 export interface Split {
   kind: 'split';

@@ -166,7 +166,7 @@ test('React prop updates retain local pane state', async ({ page }) => {
   await expect(page.locator('output')).toHaveText('1');
 });
 
-test('empty groups have no overlay footprint', async ({ page }) => {
+test('empty groups retain fitted close and settings chrome', async ({ page }) => {
   await page.evaluate(() => {
     const snapshot = window.harness.store.export();
     snapshot.root = { kind: 'group', id: 'empty', panes: [], active: null };
@@ -175,9 +175,13 @@ test('empty groups have no overlay footprint', async ({ page }) => {
     window.harness.setTabBar({ mode: 'tapered' });
   });
   const group = page.locator('[data-node-id="empty"]');
-  await expect(group.locator('.layouts-header')).toBeHidden();
-  await expect(group).toHaveCSS('--layouts-tab-bar-height', '0px');
-  await expect(group).toHaveCSS('--layouts-tab-bar-width', '0px');
+  await expect(group.locator('.layouts-header')).toBeVisible();
+  await expect(group.getByRole('button', { name: 'Close empty pane' })).toBeDisabled();
+  await expect(group).toHaveAttribute('data-tab-bar', 'tapered');
+  await expect(group.getByRole('button', { name: 'Empty pane actions' })).toBeVisible();
+  const header = (await group.locator('.layouts-header').boundingBox())!;
+  const close = (await group.getByRole('button', { name: 'Close empty pane' }).boundingBox())!;
+  expect(close.x + close.width).toBeLessThanOrEqual(header.x + header.width);
 });
 
 test('vertical edge fits controls without reserving cap space and keeps overlay on overflow', async ({
@@ -308,7 +312,10 @@ test('left icon rail reserves space, labels icons, navigates vertically and rest
   await expect(group.getByRole('tablist')).toHaveAttribute('aria-orientation', 'vertical');
   const a = group.getByRole('tab', { name: 'A', exact: true });
   const b = group.getByRole('tab', { name: 'B', exact: true });
-  await expect(a).toHaveAttribute('title', 'A');
+  await a.hover();
+  await expect(page.getByRole('tooltip')).toHaveText('A');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('tooltip')).toHaveCount(0);
   await expect(a.locator('.layouts-tab-label')).toBeHidden();
   await expect(a.locator('.layouts-tab-icon')).toBeVisible();
   const header = (await group.locator('.layouts-header').boundingBox())!;

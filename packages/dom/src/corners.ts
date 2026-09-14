@@ -112,6 +112,24 @@ export function bindCorners(
           const min = horizontal ? constraints.minWidth : constraints.minHeight;
           const max = horizontal ? constraints.maxWidth : constraints.maxHeight;
           const total = horizontal ? rect.width : rect.height;
+          const disabled =
+            current.kind === 'group' &&
+            (!current.panes.every((p) => options.store.can(p, 'resize')) || min === max);
+          const configuredGap = parseFloat(
+            doc
+              .defaultView!.getComputedStyle(host.closest('.layouts')!)
+              .getPropertyValue(
+                disabled
+                  ? '--layouts-disabled-resize-handle-width'
+                  : '--layouts-resize-handle-width',
+              ),
+          );
+          const gap =
+            Number.isFinite(configuredGap) && configuredGap >= 0
+              ? configuredGap
+              : disabled
+                ? 0
+                : DIVIDER;
           const [first, second] = allocate(
             total,
             target.ratio,
@@ -119,18 +137,19 @@ export function bindCorners(
             before ? Infinity : max,
             before ? min : 0,
             before ? max : Infinity,
+            gap,
           );
           // Store uses content extents (excluding the divider), matching this preview exactly.
           const newRect = horizontal
             ? {
-                left: rect.left + (before ? 0 : first + DIVIDER),
+                left: rect.left + (before ? 0 : first + gap),
                 top: rect.top,
                 width: before ? first : second,
                 height: rect.height,
               }
             : {
                 left: rect.left,
-                top: rect.top + (before ? 0 : first + DIVIDER),
+                top: rect.top + (before ? 0 : first + gap),
                 width: rect.width,
                 height: before ? first : second,
               };

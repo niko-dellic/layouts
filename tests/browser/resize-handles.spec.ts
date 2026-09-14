@@ -1,0 +1,87 @@
+import { test, expect } from '@playwright/test';
+for (const framework of ['vanilla', 'react']) {
+  test(`${framework}: resize handle settings update gaps without changing layout JSON`, async ({
+    page,
+  }) => {
+    await page.goto(`/${framework}.html`);
+    const readJSON = async () => {
+      await page.getByRole('button', { name: 'Layout JSON', exact: true }).click();
+      const value = await page
+        .getByRole('textbox', { name: 'Layout JSON', exact: true })
+        .inputValue();
+      await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+      return value;
+    };
+    const originalJSON = await readJSON();
+    const top = page.locator('[data-node-id="top"] > .layouts-divider');
+    const bottom = page.locator('[data-node-id="footer-split"] > .layouts-divider');
+    await expect(top).toBeHidden();
+    await expect(bottom).toBeHidden();
+    const staticPane = page.locator('[data-node-id="toolbar-group"]');
+    const next = page.locator('[data-node-id="footer-split"]');
+    const first = (await staticPane.boundingBox())!;
+    expect((await next.boundingBox())!.y).toBeCloseTo(first.y + first.height, 1);
+    const resizing = page.getByRole('region', { name: 'Resizing', exact: true });
+    await expect(resizing.getByRole('slider', { name: 'Resize handle width' })).toBeVisible();
+    const borderToggle = resizing.getByRole('checkbox', { name: 'Show frozen pane borders' });
+    await expect(borderToggle).toBeChecked();
+    const boundary = page.locator('[data-node-id="top"]');
+    const border = () =>
+      boundary.evaluate((element) => {
+        const css = getComputedStyle(element, '::after');
+        return { color: css.backgroundColor, height: css.height, events: css.pointerEvents };
+      });
+    expect(await border()).toMatchObject({ height: '1px', events: 'none' });
+    for (const theme of ['neutral-light', 'neutral-dark']) {
+      await page.getByRole('combobox', { name: 'Workspace theme' }).selectOption(theme);
+      expect((await border()).color).toBe(
+        theme === 'neutral-light' ? 'rgb(212, 212, 212)' : 'rgb(82, 82, 82)',
+      );
+    }
+    await borderToggle.uncheck();
+    expect((await border()).color).toBe('rgba(0, 0, 0, 0)');
+    expect(await staticPane.boundingBox()).toEqual(first);
+    await borderToggle.check();
+    const scene = page.locator('[data-node-id="scene-group"]');
+    for (const placement of ['top', 'left']) {
+      await page
+        .getByRole('combobox', { name: 'Tab placement', exact: true })
+        .selectOption(placement);
+      for (const shape of ['angle', 'round', 'scoop', 'vertical', 'full']) {
+        await page.getByRole('combobox', { name: 'Tab bar style' }).selectOption(shape);
+        await expect(scene).toHaveAttribute('data-shared-edges', /top/);
+        expect(
+          await scene.evaluate((el) =>
+            getComputedStyle(el).getPropertyValue('--layouts-edge-top').trim(),
+          ),
+        ).toBe('transparent');
+        if (shape !== 'full') {
+          await expect(scene.locator('.layouts-tab-outline')).toHaveCSS('clip-path', /^inset\(1px/);
+        }
+      }
+    }
+    await page.getByRole('combobox', { name: 'Tab placement', exact: true }).selectOption('top');
+    const toggle = page.getByRole('checkbox', { name: 'Show disabled resize handles' });
+    await expect(toggle).not.toBeChecked();
+    const width = page.getByRole('slider', { name: 'Resize handle width' });
+    await width.focus();
+    await width.press('ArrowRight');
+    await expect(page.locator('[data-node-id="tools-split"] > .layouts-divider')).toHaveCSS(
+      'width',
+      '7px',
+    );
+    await toggle.check();
+    await expect(top).toBeVisible();
+    await expect(boundary).toHaveAttribute('data-frozen-border', '');
+    await expect(scene).not.toHaveAttribute('data-shared-edges', /top/);
+    await expect(top).toHaveCSS('height', '7px');
+    await expect(top).toHaveAttribute('aria-disabled', 'true');
+    await top.focus();
+    await top.press('ArrowDown');
+    expect((await staticPane.boundingBox())!.height).toBe(first.height);
+    await toggle.uncheck();
+    await expect(top).toBeHidden();
+    await expect(bottom).toBeHidden();
+    expect(await readJSON()).toBe(originalJSON);
+  });
+}

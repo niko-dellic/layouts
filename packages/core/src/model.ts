@@ -97,6 +97,12 @@ export function validate(input: unknown): Issue[] {
     ids.add(node.id);
     if (node.kind === 'group') {
       groups.add(node.id);
+      if (
+        node.tabPlacement !== undefined &&
+        node.tabPlacement !== 'top' &&
+        node.tabPlacement !== 'left'
+      )
+        fail(path + '.tabPlacement', 'Expected top or left');
       if (!Array.isArray(node.panes)) {
         fail(path, 'Expected pane array');
         return;

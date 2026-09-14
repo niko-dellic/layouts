@@ -52,7 +52,16 @@ Capability flags default to true. Group-level operations require permission from
 
 `parseLayout(unknown): Layout` clones and validates or throws `LayoutError`. `validate(unknown): Issue[]` returns `{path, message}` issues. `bounds`, `allocate`, `groups`, `paneIds`, `findNode`, and `findParent` are pure helpers.
 
-`new LayoutStore(input)` creates a single state owner. Commands clone, validate, and commit atomically. A failed command leaves the previous snapshot intact and reports to `onError` subscribers before throwing.
+`new LayoutStore(input, options?)` creates a single state owner. The optional
+`LayoutStoreOptions.autoCollapse` accepts `AutoCollapse` (`'enabled' | 'protected' | 'disabled'`),
+defaulting to `'disabled'`. `getAutoCollapse()` reads the session setting and
+`setAutoCollapse(mode)` validates and updates it without altering the current layout.
+Load/reset preserve this setting; it is not serialized. Enabled collapses regions emptied
+by close, move, or popout; protected exempts popouts; disabled preserves all empty source
+regions. Use `removeEmptyGroup(groupId)` or the empty tab bar’s X to explicitly remove
+an empty region (except the final root).
+
+Commands clone, validate, and commit atomically. A failed command leaves the previous snapshot intact and reports to `onError` subscribers before throwing.
 
 | Method                                               | Behavior                                                                                                |
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
@@ -177,7 +186,9 @@ remains atomic, so a rejected creation preserves the workspace.
 
 Add tab and split actions open a searchable combobox tray. Search matches titles,
 descriptions, and keywords. Arrow keys move selection, Enter creates, and Escape
-cancels. Add tab activates the new tab in the same region. Split creates a new
+cancels modal choosers. With autoCollapse disabled, a new split’s chooser remains open
+in its region when clicking elsewhere or pressing Escape; choose a tab later or close
+the empty region explicitly. Add tab activates the new tab in the same region. Split creates a new
 region containing the selected type. Canvas is an ordinary pane renderer and can
 be added, tabbed, dragged, closed, maximized, and popped out under the same rules.
 
@@ -198,3 +209,7 @@ touching the divider absorb the size change, stopping at their minimum or maximu
 sizes. The DOM renderer computes the coupled ratios and commits them through
 `resizeMany`; React shares this behavior. `resize` remains a low-level proportional
 command. Resizing the whole workspace still uses the stored proportions.
+
+Empty regions display diagonal guide lines. Click the empty content area, or focus it
+and press Enter/Space, to open tab search. Registry factories receive `source: undefined`
+when the workspace has no remaining source pane.
