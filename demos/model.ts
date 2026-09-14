@@ -1,4 +1,4 @@
-import { TabRegistry } from 'quilt-dom';
+import { TabRegistry } from 'quilt-vanilla';
 import { LayoutStore } from 'quilt-core';
 import type { Layout, Node as LayoutNode, Pane } from 'quilt-core';
 export const initial: Layout = {

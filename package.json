@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build -w quilt-core && npm run build -w quilt-dom && npm run build -w quilt-react",
+    "build": "npm run build -w quilt-core && npm run build -w quilt-vanilla && npm run build -w quilt-react",
     "typecheck": "tsc -p tsconfig.demo.json --noEmit",
     "test": "vitest run",
     "test:browser": "playwright test",

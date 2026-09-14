@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "quilt-core": "0.1.0",
-    "quilt-dom": "0.1.0"
+    "quilt-vanilla": "0.1.0"
   },
   "sideEffects": [
     "**/*.css"

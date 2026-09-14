@@ -175,7 +175,7 @@ what is already open. Registering a type does not mount it. Removing a
 registration prevents new instances without closing existing panes.
 
 ```ts
-import { TabRegistry, mountLayout } from 'quilt-dom';
+import { TabRegistry, mountLayout } from 'quilt-vanilla';
 const tabs = new TabRegistry();
 const unregister = tabs.register({
   id: 'canvas',

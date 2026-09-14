@@ -1,4 +1,4 @@
-export type { TabBarOptions, TabBarStyle } from 'quilt-dom';
+export type { TabBarOptions, TabBarStyle } from 'quilt-vanilla';
 import {
   Component,
   createElement,
@@ -12,8 +12,8 @@ import {
 import type { ComponentType, CSSProperties, ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { mountLayout } from 'quilt-dom';
-import type { LayoutOptions, MountedLayout, PaneContext, PaneRenderer } from 'quilt-dom';
+import { mountLayout } from 'quilt-vanilla';
+import type { LayoutOptions, MountedLayout, PaneContext, PaneRenderer } from 'quilt-vanilla';
 import type { Layout as LayoutSnapshot, LayoutStore } from 'quilt-core';
 export type PaneProps = Omit<PaneContext, 'element'>;
 class Boundary extends Component<
@@ -184,7 +184,7 @@ export type {
   Bounds,
   JoinOptions,
 } from 'quilt-core';
-export { TabRegistry, themes, themeFamilies } from 'quilt-dom';
+export { TabRegistry, themes, themeFamilies } from 'quilt-vanilla';
 export type {
   TabRegistration,
   LayoutTheme,
@@ -193,4 +193,4 @@ export type {
   PaneContext,
   PaneView,
   PaneRenderer,
-} from 'quilt-dom';
+} from 'quilt-vanilla';

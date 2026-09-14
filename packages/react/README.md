@@ -60,4 +60,4 @@ Keep the store, components, registry, and adapter callbacks stable. `useLayoutSn
 
 Panes are separate React roots and do not inherit your app's context providers. Wrap pane components with required providers. React-local state does not survive crossing documents: retain data in an application-owned store, and subscribe inside each view when live synchronization is needed. Companion windows are same-origin and depend on the main session.
 
-The stylesheet is identical to `quilt-dom/styles.css`; import either once. See [API](https://github.com/niko-dellic/quilt/blob/main/docs/api.md), [lifecycle](https://github.com/niko-dellic/quilt/blob/main/docs/lifecycle.md), and [migration](https://github.com/niko-dellic/quilt/blob/main/docs/migration.md).
+The stylesheet is identical to `quilt-vanilla/styles.css`; import either once. See [API](https://github.com/niko-dellic/quilt/blob/main/docs/api.md), [lifecycle](https://github.com/niko-dellic/quilt/blob/main/docs/lifecycle.md), and [migration](https://github.com/niko-dellic/quilt/blob/main/docs/migration.md).

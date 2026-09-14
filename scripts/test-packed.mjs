@@ -79,7 +79,7 @@ try {
     for (const [old, key] of [
       ['quilt-core', 'core'],
       ['quilt-react', 'react'],
-      ['quilt-dom', 'dom'],
+      ['quilt-vanilla', 'dom'],
     ])
       source = source
         .replaceAll(`'${old}'`, `'${metadata[key].name}'`)

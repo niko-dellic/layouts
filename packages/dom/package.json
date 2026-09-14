@@ -1,5 +1,5 @@
 {
-  "name": "quilt-dom",
+  "name": "quilt-vanilla",
   "version": "0.1.0",
   "description": "Vanilla DOM split panes, tabs, themes, and same-origin window popouts",
   "type": "module",

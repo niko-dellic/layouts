@@ -1,11 +1,11 @@
-# quilt-dom
+# quilt-vanilla
 
 Vanilla DOM pane layouts, tabs, themes, resizing, and same-origin browser popouts. Includes convenient core exports; does not install React. MIT licensed, ESM and TypeScript.
 
 ## Install
 
 ```sh
-npm install quilt-dom
+npm install quilt-vanilla
 ```
 
 Core is installed automatically; React is not required. Use an ESM-capable bundler with CSS import support, such as Vite. For local archives, see [packaging instructions](https://github.com/niko-dellic/quilt/blob/main/docs/packaging.md).
@@ -15,8 +15,8 @@ Core is installed automatically; React is not required. Use an ESM-capable bundl
 Provide a host in your HTML: `<div id="workspace" style="width:100%;height:600px"></div>`.
 
 ```ts
-import { createLayout, LayoutStore, mountLayout } from 'quilt-dom';
-import 'quilt-dom/styles.css';
+import { createLayout, LayoutStore, mountLayout } from 'quilt-vanilla';
+import 'quilt-vanilla/styles.css';
 
 const store = new LayoutStore(
   createLayout({

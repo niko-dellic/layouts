@@ -1,8 +1,8 @@
 import { LayoutStore } from 'quilt-core';
 import type { Layout } from 'quilt-core';
-import { mountLayout, TabRegistry } from 'quilt-dom';
-import 'quilt-dom/styles.css';
-import type { MountedLayout } from 'quilt-dom';
+import { mountLayout, TabRegistry } from 'quilt-vanilla';
+import 'quilt-vanilla/styles.css';
+import type { MountedLayout } from 'quilt-vanilla';
 const data = { text: 'initial' };
 const stats = { mounts: 0, disposals: 0, live: 0, errors: [] as string[] };
 const fixture: Layout = {
@@ -63,8 +63,8 @@ document.querySelector('#open')!.addEventListener('click', () => mounted.popout(
 document.querySelector('#return')!.addEventListener('click', () => mounted.returnPane('a'));
 export const harness = {
   tabs,
-  setTabBar: (options: import('quilt-dom').TabBarOptions) => mounted.setTabBar(options),
-  setTheme: (theme: import('quilt-dom').LayoutTheme) => mounted.setTheme(theme),
+  setTabBar: (options: import('quilt-vanilla').TabBarOptions) => mounted.setTabBar(options),
+  setTheme: (theme: import('quilt-vanilla').LayoutTheme) => mounted.setTheme(theme),
   store,
   stats,
   fixture,

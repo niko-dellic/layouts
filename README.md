@@ -19,11 +19,11 @@ The React demo uses a React-controlled inspector alongside an imperative canvas.
 
 ## Packages
 
-| Package       | Responsibility                                                    |
-| ------------- | ----------------------------------------------------------------- |
-| `quilt-core`  | Pure model, commands, validation, constraints, change events      |
-| `quilt-dom`   | Vanilla DOM rendering, chrome, gestures, browser-window lifecycle |
-| `quilt-react` | React components and hooks over the same engine and chrome        |
+| Package         | Responsibility                                                    |
+| --------------- | ----------------------------------------------------------------- |
+| `quilt-core`    | Pure model, commands, validation, constraints, change events      |
+| `quilt-vanilla` | Vanilla DOM rendering, chrome, gestures, browser-window lifecycle |
+| `quilt-react`   | React components and hooks over the same engine and chrome        |
 
 All packages ship ESM, declarations, and source maps. React is a peer dependency of the React package only. The vanilla package does not depend on React.
 
@@ -31,7 +31,7 @@ All packages ship ESM, declarations, and source maps. React is a peer dependency
 
 ```sh
 # Vanilla DOM (includes core)
-npm install quilt-dom
+npm install quilt-vanilla
 
 # React (includes core and DOM)
 npm install quilt-react react react-dom
@@ -40,7 +40,7 @@ npm install quilt-react react react-dom
 npm install quilt-core
 ```
 
-Import `quilt-dom/styles.css` for vanilla or `quilt-react/styles.css` for React.
+Import `quilt-vanilla/styles.css` for vanilla or `quilt-react/styles.css` for React.
 Use ESM imports and a bundler with CSS support, such as Vite. TypeScript React
 applications also need matching `@types/react` and `@types/react-dom`.
 
@@ -50,8 +50,8 @@ For checkout builds and local tarball installation, see
 ## Vanilla
 
 ```ts
-import { LayoutStore, mountLayout } from 'quilt-dom';
-import 'quilt-dom/styles.css';
+import { LayoutStore, mountLayout } from 'quilt-vanilla';
+import 'quilt-vanilla/styles.css';
 
 const store = new LayoutStore({
   version: 1,

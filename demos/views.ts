@@ -1,7 +1,7 @@
 import { mountTheming } from './shell.js';
 import { canvas } from './scene.js';
 export { canvas } from './scene.js';
-import type { PaneRenderer, PaneContext } from 'quilt-dom';
+import type { PaneRenderer, PaneContext } from 'quilt-vanilla';
 import { state, workspaces, workspaceSession } from './model.js';
 import { surfaces, swatchBackground } from './surfaces.js';
 export function field(doc: Document, tag: string, text: string, className = '') {

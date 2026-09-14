@@ -3,14 +3,14 @@
 ## Registry installation
 
 ```sh
-npm install quilt-dom
+npm install quilt-vanilla
 # Or, for React:
 npm install quilt-react react react-dom
 # Model only:
 npm install quilt-core
 ```
 
-Adapters install their Quilt dependencies automatically. Import `quilt-dom/styles.css`
+Adapters install their Quilt dependencies automatically. Import `quilt-vanilla/styles.css`
 or `quilt-react/styles.css` in browser applications using a bundler with CSS support.
 
 ## Local development archives
@@ -26,7 +26,7 @@ npm run pack:all
 The `artifacts/packages/` output directory contains:
 
 - `quilt-core-0.1.0.tgz`
-- `quilt-dom-0.1.0.tgz`
+- `quilt-vanilla-0.1.0.tgz`
 - `quilt-react-0.1.0.tgz`
 - `manifest.json` recording repository, source commit, working-tree status, and SHA-256 digests.
 
@@ -36,14 +36,14 @@ For a vanilla consumer, copy the core and DOM tarballs into its own vendor direc
 
 ```sh
 npm install ./vendor/quilt/quilt-core-0.1.0.tgz \
-  ./vendor/quilt/quilt-dom-0.1.0.tgz
+  ./vendor/quilt/quilt-vanilla-0.1.0.tgz
 ```
 
 For React, add the React tarball and the required peers in the same installation:
 
 ```sh
 npm install ./vendor/quilt/quilt-core-0.1.0.tgz \
-  ./vendor/quilt/quilt-dom-0.1.0.tgz \
+  ./vendor/quilt/quilt-vanilla-0.1.0.tgz \
   ./vendor/quilt/quilt-react-0.1.0.tgz react react-dom
 ```
 
@@ -55,7 +55,7 @@ For example, the vanilla consumer's `package.json` records relative archive path
 {
   "dependencies": {
     "quilt-core": "file:vendor/quilt/quilt-core-0.1.0.tgz",
-    "quilt-dom": "file:vendor/quilt/quilt-dom-0.1.0.tgz"
+    "quilt-vanilla": "file:vendor/quilt/quilt-vanilla-0.1.0.tgz"
   }
 }
 ```
@@ -65,8 +65,8 @@ application or original checkout lives:
 
 ```ts
 import { LayoutStore } from 'quilt-core';
-import { mountLayout } from 'quilt-dom';
-import 'quilt-dom/styles.css';
+import { mountLayout } from 'quilt-vanilla';
+import 'quilt-vanilla/styles.css';
 ```
 
 React applications additionally import `Layout` from `quilt-react`.

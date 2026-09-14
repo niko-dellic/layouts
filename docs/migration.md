@@ -2,13 +2,13 @@
 
 The library is now named **Quilt**. Update dependencies and imports together:
 
-| Previous package | New package   |
-| ---------------- | ------------- |
-| `layouts-core`   | `quilt-core`  |
-| `layouts`        | `quilt-dom`   |
-| `layouts-react`  | `quilt-react` |
+| Previous package | New package     |
+| ---------------- | --------------- |
+| `layouts-core`   | `quilt-core`    |
+| `layouts`        | `quilt-vanilla` |
+| `layouts-react`  | `quilt-react`   |
 
-Stylesheet imports are now `quilt-dom/styles.css` or `quilt-react/styles.css`.
+Stylesheet imports are now `quilt-vanilla/styles.css` or `quilt-react/styles.css`.
 The first npm release is `0.1.0`. The existing `.layouts`
 CSS classes, `--layouts-*` theme variables, and `layouts:*` icon keys remain
 unchanged, so application styling and icon overrides continue to work. The GitHub
@@ -22,7 +22,7 @@ released archive under the same version.
 `LayoutOptions.createPane` and the corresponding React prop are removed. Register available content and pass the registry as `tabs` instead:
 
 ```ts
-import { TabRegistry } from 'quilt-dom'; // also exported by quilt-react
+import { TabRegistry } from 'quilt-vanilla'; // also exported by quilt-react
 const tabs = new TabRegistry([
   {
     id: 'notes',
@@ -48,4 +48,4 @@ Both adapters now export `LayoutStore`, `LayoutError`, `createLayout`, `parseLay
 
 Use `new LayoutStore(createLayout())` for an empty workspace, or `createLayout({ pane, groupId })` for a single pane. It clones and validates data, preserves IDs, and defaults the group ID to `main`.
 
-React apps can import `quilt-react/styles.css` instead of `quilt-dom/styles.css`; both contain the same rules. No JSON migration is needed; layout version remains 1.
+React apps can import `quilt-react/styles.css` instead of `quilt-vanilla/styles.css`; both contain the same rules. No JSON migration is needed; layout version remains 1.

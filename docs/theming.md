@@ -44,7 +44,7 @@ floating chrome with one value.
 Use the typed API for presets and runtime changes:
 
 ```ts
-import { mountLayout, themes } from 'quilt-dom';
+import { mountLayout, themes } from 'quilt-vanilla';
 const workspace = mountLayout(host, {
   store,
   renderers,
@@ -97,7 +97,7 @@ and divider gaps remain layout configuration. Font files and licensing belong to
 the consuming application. The library never downloads a font.
 
 ```ts
-import { themeFamilies, type LayoutTheme } from 'quilt-dom';
+import { themeFamilies, type LayoutTheme } from 'quilt-vanilla';
 const myThemes = {
   graphite: { ...themeFamilies.zinc.dark, accent: '#82baff' },
 } satisfies Record<string, LayoutTheme>;
@@ -111,7 +111,7 @@ workspace.setTheme({
 
 ```tsx
 import { Layout } from 'quilt-react';
-import { themeFamilies } from 'quilt-dom';
+import { themeFamilies } from 'quilt-vanilla';
 // Changing this prop updates chrome without remounting registered content.
 <Layout store={store} components={components} theme={themeFamilies.stone.light} />;
 ```
