@@ -9,7 +9,7 @@ export function bindCorners(
   id: string,
   options: LayoutOptions,
   scope: Scope,
-  split: (pane: Pane, group: Group, direction: Direction, ratio: number) => void,
+  split: (pane: Pane | undefined, group: Group, direction: Direction, ratio: number) => void,
   report: (error: unknown) => void,
 ) {
   const doc = host.ownerDocument;
@@ -201,17 +201,16 @@ export function bindCorners(
           );
           target = { kind: 'join', id: receiverId, extents };
           const targetTitle = layout.panes[receiver.active ?? '']?.title ?? 'Empty region';
-          const sourceTitles = range.selected
-            .filter((g) => g.id !== receiverId)
-            .map((g) => layout.panes[g.active ?? '']?.title ?? 'Empty region');
+          const sources = range.selected.filter((g) => g.id !== receiverId);
+          const sourceLabel = sources.every((g) => g.panes.length === 0)
+            ? `${sources.length} empty ${sources.length === 1 ? 'region' : 'regions'}`
+            : sources.map((g) => layout.panes[g.active ?? '']?.title ?? 'Empty region').join(', ');
           for (const group of range.selected) {
             const receiving = group.id === receiverId;
             mark(
               boxes.get(group.id)!,
               receiving ? 'join-target' : 'join-source',
-              receiving
-                ? `${targetTitle} absorbs ${sourceTitles.join(', ')}`
-                : `Joins ${targetTitle}`,
+              receiving ? `${targetTitle} absorbs ${sourceLabel}` : `Joins ${targetTitle}`,
             );
           }
           const left = Math.min(...selectedBoxes.map((box) => box!.left));
@@ -238,8 +237,13 @@ export function bindCorners(
           else {
             const layout = options.store.getSnapshot(),
               group = findNode(layout.root, id);
-            if (group?.kind === 'group' && group.active)
-              split(layout.panes[group.active]!, group, action.direction, action.ratio);
+            if (group?.kind === 'group')
+              split(
+                group.active ? layout.panes[group.active] : undefined,
+                group,
+                action.direction,
+                action.ratio,
+              );
           }
         } catch (error) {
           report(error);

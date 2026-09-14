@@ -72,12 +72,13 @@ export function createPaneMenu(
       group.panes.every((id) => options.store.can(id, cap));
     const available = Boolean(options.tabs?.list().length);
     const create = (axis?: 'horizontal' | 'vertical', before = false) => {
-      if (!pane && !options.tabs) return;
+      if (!axis && !pane && !options.tabs) return;
       let destination = group;
-      if (axis && options.tabs) {
+      if (axis && (options.tabs || !pane)) {
         const id = options.store.split(group.id, axis, null, { source: 'user', before, ratio });
         destination = findNode(options.store.getSnapshot().root, id) as Group;
         refresh();
+        if (!options.tabs) return;
       }
       const commit = (fresh: Pane) =>
         axis && !options.tabs
@@ -176,7 +177,7 @@ export function createPaneMenu(
         if (fresh) commit(fresh);
       }
     };
-    if (addTab || (!group.panes.length && !groupActions)) {
+    if (addTab || (!direction && !group.panes.length && !groupActions)) {
       local.dispose();
       create();
       return;
@@ -190,7 +191,8 @@ export function createPaneMenu(
       return;
     }
     add('add-tab', '+ Add tab', available && allowed('move'), () => create());
-    const canCreate = options.tabs ? available : Boolean(pane && options.createPane);
+    const canCreate =
+      !group.panes.length || (options.tabs ? available : Boolean(pane && options.createPane));
     function submenu(label: string, icon: ActionIcon, enabled = true) {
       const container = el(doc, 'div', 'layouts-submenu');
       const trigger = button(`${label} ▸`, label, () => setOpen(true));

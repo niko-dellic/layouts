@@ -124,7 +124,14 @@ export const initial: Layout = {
                     axis: 'horizontal',
                     ratio: 0.65,
                     children: [
-                      { kind: 'group', id: 'scene-group', panes: ['canvas'], active: 'canvas' },
+                      {
+                        kind: 'group',
+                        id: 'scene-group',
+                        tabPlacement: 'left',
+                        tabDisplay: 'compact',
+                        panes: ['canvas'],
+                        active: 'canvas',
+                      },
                       {
                         kind: 'group',
                         id: 'inspector-group',
@@ -170,7 +177,14 @@ export const workspaces = [
       axis: 'horizontal',
       ratio: 0.76,
       children: [
-        { kind: 'group', id: 'scene-group', panes: ['canvas'], active: 'canvas' },
+        {
+          kind: 'group',
+          id: 'scene-group',
+          tabPlacement: 'left',
+          tabDisplay: 'compact',
+          panes: ['canvas'],
+          active: 'canvas',
+        },
         {
           kind: 'group',
           id: 'inspector-group',
@@ -199,6 +213,8 @@ export const workspaces = [
             {
               kind: 'group',
               id: 'scene-group',
+              tabPlacement: 'left',
+              tabDisplay: 'compact',
               panes: ['canvas', 'tools', 'hotkeys'],
               active: 'canvas',
             },

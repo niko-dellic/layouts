@@ -32,7 +32,7 @@ let fail = false,
 function mount() {
   mounted = mountLayout(document.querySelector('#host')!, {
     store,
-    tabs,
+    ...(new URLSearchParams(location.search).has('no-registry') ? {} : { tabs }),
     shortcuts: new URLSearchParams(location.search).has('shortcuts'),
     getPaneState: () => data,
     onError: (e) => stats.errors.push(String(e)),
