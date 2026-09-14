@@ -1,5 +1,8 @@
+import { canvas } from './scene.js';
+export { canvas } from './scene.js';
 import type { PaneRenderer, PaneContext } from 'layouts';
 import { state } from './model.js';
+import { surfaces, swatchBackground } from './surfaces.js';
 export function field(doc: Document, tag: string, text: string, className = '') {
   const e = doc.createElement(tag);
   e.textContent = text;
@@ -10,18 +13,20 @@ export const notes: PaneRenderer = ({ element, document: doc }) => {
   element.classList.add('demo-inspector');
   const caption = field(doc, 'p', 'SELECTED OBJECT', 'eyebrow'),
     title = field(doc, 'h2', 'Assembly 01');
-  const description = field(doc, 'p', 'A little state. A lot of possibility.', 'muted');
+  const description = field(doc, 'p', '3 objects selected', 'muted');
   const label = field(doc, 'label', 'Working notes', 'field-label');
   const input = doc.createElement('textarea');
   input.setAttribute('aria-label', 'Working notes');
   input.value = state.get().note;
   label.append(input);
   const colors = field(doc, 'div', '', 'swatches');
-  for (const color of ['#91bfa9', '#dfa776', '#95adc8', '#c9a7c0']) {
+  for (const { name, color } of surfaces) {
     const b = doc.createElement('button');
     b.type = 'button';
-    b.style.background = color;
-    b.setAttribute('aria-label', `Use ${color}`);
+    b.style.background = swatchBackground(color);
+    b.setAttribute('aria-label', `Use ${name.toLowerCase()} surface`);
+    b.setAttribute('aria-pressed', String(state.get().color === color));
+    b.dataset.surface = color;
     b.onclick = () => state.update({ color });
     colors.append(b);
   }
@@ -32,94 +37,18 @@ export const notes: PaneRenderer = ({ element, document: doc }) => {
     field(doc, 'div', 'SURFACE', 'eyebrow'),
     colors,
     label,
-    field(doc, 'p', 'App-owned state survives view remounts.', 'footnote'),
+    field(doc, 'p', 'Notes are retained when the pane moves.', 'footnote'),
   );
   input.oninput = () => state.update({ note: input.value });
   const unsubscribe = state.subscribe(() => {
     if (input.value !== state.get().note) input.value = state.get().note;
+    for (const button of colors.querySelectorAll('button')) {
+      button.setAttribute('aria-pressed', String(button.dataset.surface === state.get().color));
+    }
   });
   return {
     dispose() {
       unsubscribe();
-    },
-  };
-};
-export const canvas: PaneRenderer = ({ element, document: doc }) => {
-  const surface = doc.createElement('canvas');
-  surface.className = 'scene-canvas';
-  surface.setAttribute('aria-label', 'Abstract architectural scene');
-  element.append(surface);
-  const chip = field(doc, 'div', 'PERSPECTIVE  /  ORTHOGRAPHIC STUDY', 'scene-chip');
-  element.append(chip);
-  element.classList.add('scene-container');
-  const draw = () => {
-    const w = element.clientWidth,
-      h = element.clientHeight;
-    if (!w || !h) return;
-    const scale = doc.defaultView?.devicePixelRatio ?? 1;
-    surface.width = w * scale;
-    surface.height = h * scale;
-    const c = surface.getContext('2d');
-    if (!c) return;
-    c.scale(scale, scale);
-    c.fillStyle = '#e7e9e2';
-    c.fillRect(0, 0, w, h);
-    const cx = w * 0.5,
-      cy = h * 0.53,
-      s = Math.min(w / 720, h / 500) * 1.05;
-    const point = (x: number, y: number, z = 0): [number, number] => [
-      cx + (x - y) * s,
-      cy + (x + y) * s * 0.48 - z * s,
-    ];
-    const line = (a: [number, number], b: [number, number], color: string) => {
-      c.strokeStyle = color;
-      c.beginPath();
-      c.moveTo(...a);
-      c.lineTo(...b);
-      c.stroke();
-    };
-    if (state.get().grid)
-      for (let i = -600; i <= 600; i += 35) {
-        line(point(i, -600), point(i, 600), '#cdd2c8');
-        line(point(-600, i), point(600, i), '#cdd2c8');
-      }
-    line(point(-550, 0), point(550, 0), '#b29b88');
-    line(point(0, -550), point(0, 550), '#91a796');
-    const face = (pts: [number, number][], fill: string) => {
-      c.fillStyle = fill;
-      c.beginPath();
-      pts.forEach((p, i) => (i ? c.lineTo(...p) : c.moveTo(...p)));
-      c.closePath();
-      c.fill();
-      c.strokeStyle = '#63736e';
-      c.lineWidth = 1;
-      c.stroke();
-    };
-    const box = (x: number, y: number, bw: number, bd: number, bh: number) => {
-      face([point(x, y), point(x + bw, y), point(x + bw, y, bh), point(x, y, bh)], '#688e7f');
-      face(
-        [point(x + bw, y), point(x + bw, y + bd), point(x + bw, y + bd, bh), point(x + bw, y, bh)],
-        '#80a592',
-      );
-      face(
-        [point(x, y, bh), point(x + bw, y, bh), point(x + bw, y + bd, bh), point(x, y + bd, bh)],
-        state.get().color,
-      );
-    };
-    face([point(-170, -145), point(190, -145), point(190, 180), point(-170, 180)], '#d7dcd0');
-    box(-140, -120, 100, 200, 105);
-    box(-10, -120, 155, 80, 155);
-    box(-10, -5, 155, 100, 65);
-    c.fillStyle = '#56665e';
-    c.font = '10px ui-monospace, monospace';
-    c.fillText('X', ...point(230, 0));
-    c.fillText('Y', ...point(0, 235));
-  };
-  const unsub = state.subscribe(draw);
-  return {
-    resize: draw,
-    dispose() {
-      unsub();
     },
   };
 };
@@ -178,7 +107,7 @@ export const timeline: PaneRenderer = ({ element, document: doc }) => {
 };
 export const activity: PaneRenderer = ({ element, document: doc }) => {
   element.classList.add('demo-inspector');
-  element.append(field(doc, 'p', 'SESSION', 'eyebrow'), field(doc, 'h2', 'Every view, connected.'));
+  element.append(field(doc, 'p', 'SESSION', 'eyebrow'), field(doc, 'h2', 'Activity'));
   const count = field(doc, 'p', '', 'activity-count');
   const update = () => (count.textContent = `${state.get().changes} state changes`);
   update();
@@ -193,15 +122,36 @@ export const activity: PaneRenderer = ({ element, document: doc }) => {
   );
   return { dispose: state.subscribe(update) };
 };
-export const footer: PaneRenderer = ({ element, document: doc }) => {
-  element.classList.add('demo-footer');
+export const hotkeys: PaneRenderer = ({ element, document: doc }) => {
+  element.classList.add('demo-hotkeys');
+  const list = field(doc, 'dl', '', 'hotkey-list');
+  for (const [keys, description] of [
+    ['Drag on canvas', 'Orbit the scene. Scroll to zoom. Double-click to reset.'],
+    ['Alt / Option + Space', 'Maximize or restore the hovered or focused region.'],
+    ['← / →', 'Select the previous or next tab when a tab is focused.'],
+    ['Home / End', 'Select the first or last tab when a tab is focused.'],
+    ['Arrow keys', 'Resize a focused divider. Hold Shift for larger steps.'],
+    ['Escape', 'Cancel a resize or corner drag, or close a dialog.'],
+    ['Middle click', 'Close a tab when closing is allowed.'],
+  ]) {
+    const row = field(doc, 'div', '');
+    const term = field(doc, 'dt', '');
+    term.append(field(doc, 'kbd', keys!));
+    row.append(term, field(doc, 'dd', description!));
+    list.append(row);
+  }
   element.append(
-    field(doc, 'span', '●  Ready'),
-    field(doc, 'span', 'TypeScript core · Native windows · Your components'),
+    list,
+    field(doc, 'p', 'Maximize is disabled while typing or when a dialog is open.', 'footnote'),
   );
   return { dispose() {} };
 };
-export const renderers = { notes, canvas, toolbar, tools, timeline, activity, footer };
+export const footer: PaneRenderer = ({ element, document: doc }) => {
+  element.classList.add('demo-footer');
+  element.append(field(doc, 'span', '●  Ready'), field(doc, 'span', 'Local session'));
+  return { dispose() {} };
+};
+export const renderers = { notes, canvas, toolbar, tools, timeline, activity, hotkeys, footer };
 export function imperativeView(context: PaneContext) {
   return renderers[context.pane.type as keyof typeof renderers]?.(context) ?? notes(context);
 }

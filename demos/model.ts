@@ -49,6 +49,13 @@ export const initial: Layout = {
       title: 'Activity',
       size: { minWidth: 220, minHeight: 180 },
     },
+    hotkeys: {
+      id: 'hotkeys',
+      type: 'hotkeys',
+      icon: 'hotkeys',
+      title: 'Hotkeys',
+      size: { minHeight: 200 },
+    },
     timeline: {
       id: 'timeline',
       type: 'timeline',
@@ -97,7 +104,12 @@ export const initial: Layout = {
                 axis: 'horizontal',
                 ratio: 0.19,
                 children: [
-                  { kind: 'group', id: 'tools-group', panes: ['tools'], active: 'tools' },
+                  {
+                    kind: 'group',
+                    id: 'tools-group',
+                    panes: ['hotkeys', 'tools'],
+                    active: 'hotkeys',
+                  },
                   {
                     kind: 'split',
                     id: 'inspector-split',
@@ -115,7 +127,12 @@ export const initial: Layout = {
                   },
                 ],
               },
-              { kind: 'group', id: 'timeline-group', panes: ['timeline'], active: 'timeline' },
+              {
+                kind: 'group',
+                id: 'timeline-group',
+                panes: ['timeline'],
+                active: 'timeline',
+              },
             ],
           },
           { kind: 'group', id: 'footer-group', panes: ['footer'], active: 'footer' },
@@ -132,7 +149,7 @@ export interface DemoData {
   changes: number;
 }
 let data: DemoData = {
-  note: 'A workspace that adapts to your work.\n\nTry opening this inspector in a new window. Your notes will travel with it.',
+  note: 'Edit these notes. Changes are retained when the inspector moves between windows.',
   color: '#91bfa9',
   grid: true,
   changes: 0,
@@ -172,6 +189,7 @@ export const tabs = new TabRegistry([
     ['tools', 'Objects', 'Scene object collection'],
     ['activity', 'Activity', 'Application activity'],
     ['timeline', 'Timeline', 'Animation and playback'],
+    ['hotkeys', 'Hotkeys', 'Keyboard and mouse controls'],
   ].map(([type, title, description]) => ({
     id: type!,
     title: title!,
@@ -186,3 +204,20 @@ export const tabs = new TabRegistry([
     }),
   })),
 ]);
+
+export interface Camera {
+  azimuth: number;
+  elevation: number;
+  zoom: number;
+}
+export const defaultCamera: Readonly<Camera> = { azimuth: Math.PI / 4, elevation: 0.5, zoom: 1 };
+// App-owned view state survives pane remounts and companion-window transfers.
+const cameras = new Map<string, Camera>();
+export function cameraFor(paneId: string): Camera {
+  let camera = cameras.get(paneId);
+  if (!camera) {
+    camera = { ...defaultCamera };
+    cameras.set(paneId, camera);
+  }
+  return camera;
+}

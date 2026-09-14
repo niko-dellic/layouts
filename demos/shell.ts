@@ -1,5 +1,6 @@
 import { themes, themeFamilies } from 'layouts';
 import { store } from './model.js';
+import { defaultThemeName } from './theme.js';
 import type { MountedLayout } from 'layouts';
 export function setupShell(getMounted: () => MountedLayout | undefined) {
   const themeSelect = document.createElement('select');
@@ -15,16 +16,23 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
     option.textContent = name[0]!.toUpperCase() + name.slice(1);
     themeSelect.append(option);
   }
-  themeSelect.onchange = () =>
-    getMounted()?.setTheme({
-      ...(themeSelect.value.includes('-')
-        ? themeFamilies[themeSelect.value.split('-')[0] as keyof typeof themeFamilies][
-            themeSelect.value.split('-')[1] as 'dark' | 'light'
-          ]
-        : themes[themeSelect.value as keyof typeof themes]),
-      fontSize: '11px',
-      headerHeight: '32px',
-    });
+  themeSelect.value = defaultThemeName;
+  const applyTheme = () => {
+    const theme = themeSelect.value.includes('-')
+      ? themeFamilies[themeSelect.value.split('-')[0] as keyof typeof themeFamilies][
+          themeSelect.value.split('-')[1] as 'dark' | 'light'
+        ]
+      : themes[themeSelect.value as keyof typeof themes];
+    for (const [key, value] of Object.entries(theme)) {
+      document.documentElement.style.setProperty(`--layouts-${key}`, value);
+    }
+    document.documentElement.style.colorScheme = themeSelect.value.includes('dark')
+      ? 'dark'
+      : 'light';
+    getMounted()?.setTheme({ ...theme, fontSize: '11px', headerHeight: '32px' });
+  };
+  themeSelect.onchange = applyTheme;
+  applyTheme();
   document.querySelector('.demo-actions')!.prepend(themeSelect);
   const output = document.querySelector<HTMLTextAreaElement>('#layout-json')!;
   const dialog = document.querySelector<HTMLDialogElement>('#json-dialog')!;

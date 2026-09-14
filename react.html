@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <link rel="stylesheet" href="/demos/style.css" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Layouts — React workspace</title>
     <link
@@ -9,7 +10,7 @@
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%23212d28'/%3E%3Cpath d='M9 9h22v22H9zm0 7h22M18 16v15' stroke='%23b8d9c7' fill='none' stroke-width='2'/%3E%3C/svg%3E"
     />
   </head>
-  <body>
+  <body class="demo-page">
     <header class="demo-top">
       <a href="/" class="brand"
         ><span class="brand-icon">▥</span> layouts<span class="version">0.1</span></a
@@ -17,28 +18,23 @@
       <nav aria-label="Demo framework">
         <a href="/vanilla.html">Vanilla TS</a><a href="/react.html" aria-current="page">React</a>
       </nav>
+      <div class="demo-actions" aria-label="Workspace controls">
+        <button id="popout-inspector">Pop out inspector ↗</button>
+        <button id="json-open">Layout JSON</button>
+        <button id="reset">Reset</button>
+      </div>
       <a class="source-link" href="https://github.com/niko-dellic/layouts">Source ↗</a>
     </header>
     <main class="demo-main">
-      <div class="demo-intro">
-        <div>
-          <p class="eyebrow">THE WORKSPACE IS YOURS</p>
-          <h1>A place for every pane.</h1>
-        </div>
-        <div class="demo-actions">
-          <button id="popout-inspector">Pop out inspector ↗</button
-          ><button id="json-open">Layout JSON</button><button id="reset">Reset</button>
-        </div>
-      </div>
       <div id="workspace"></div>
       <footer class="demo-bottom">
-        <span>Split. Arrange. Pop out. Make it yours.</span
+        <span>Split, resize, group tabs, and open companion windows.</span
         ><span id="layout-status">React bindings · Ready</span>
       </footer>
     </main>
     <dialog id="json-dialog" class="json-dialog">
       <h2>Workspace configuration</h2>
-      <p>Serializable structure. Your application decides where it lives.</p>
+      <p>Edit and load the workspace layout as JSON.</p>
       <textarea id="layout-json" aria-label="Layout JSON" spellcheck="false"></textarea>
       <p id="json-error" role="alert"></p>
       <div class="demo-actions">

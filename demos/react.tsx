@@ -1,7 +1,7 @@
-import { themes } from 'layouts';
+import { defaultTheme } from './theme.js';
+import { surfaces, swatchBackground } from './surfaces.js';
 import { renderIcon } from './icons.js';
 import 'layouts/styles.css';
-import './style.css';
 import { createRoot } from 'react-dom/client';
 import { createRef, useLayoutEffect, useRef, useSyncExternalStore } from 'react';
 import { Layout } from 'layouts-react';
@@ -16,15 +16,16 @@ function Notes() {
     <div className="demo-inspector">
       <p className="eyebrow">SELECTED OBJECT</p>
       <h2>Assembly 01</h2>
-      <p className="muted">A little state. A lot of possibility.</p>
+      <p className="muted">3 objects selected</p>
       <div className="eyebrow">SURFACE</div>
       <div className="swatches">
-        {['#91bfa9', '#dfa776', '#95adc8', '#c9a7c0'].map((color) => (
+        {surfaces.map(({ name, color }) => (
           <button
             key={color}
             type="button"
-            aria-label={`Use ${color}`}
-            style={{ background: color }}
+            aria-label={`Use ${name.toLowerCase()} surface`}
+            aria-pressed={data.color === color}
+            style={{ background: swatchBackground(color) }}
             onClick={() => state.update({ color })}
           />
         ))}
@@ -37,7 +38,7 @@ function Notes() {
           onChange={(e) => state.update({ note: e.target.value })}
         />
       </label>
-      <p className="footnote">App-owned state survives view remounts.</p>
+      <p className="footnote">Notes are retained when the pane moves.</p>
     </div>
   );
 }
@@ -64,10 +65,10 @@ const components = {
   toolbar: Imperative,
   tools: Imperative,
   timeline: Imperative,
+  hotkeys: Imperative,
   activity: Imperative,
   footer: Imperative,
 };
-const demoTheme = { ...themes.sage, fontSize: '11px', headerHeight: '32px' };
 const ref = createRef<MountedLayout>();
 const root = createRoot(document.querySelector('#workspace')!);
 root.render(
@@ -77,7 +78,7 @@ root.render(
     components={components}
     getPaneState={getPaneState}
     tabs={tabs}
-    theme={demoTheme}
+    theme={defaultTheme}
     renderIcon={renderIcon}
     shortcuts
   />,
