@@ -30,7 +30,7 @@ The `artifacts/packages/` output directory contains:
 - `quilt-react-0.1.0.tgz`
 - `manifest.json` recording repository, source commit, working-tree status, and SHA-256 digests.
 
-Pack a clean committed checkout for reproducible application integration. A null commit or `dirty: true` indicates development output, not a verified release source. `npm run test:packed` installs archives in an isolated temporary consumer, checks ESM/declarations/styles, and confirms vanilla installation does not bring React along.
+Pack a clean committed checkout for reproducible application integration. A null commit or `dirty: true` indicates development output, not a verified release source. `npm run test:packed` installs archives in an isolated temporary consumer, checks ESM/declarations/styles with TypeScript 5.9 and 7 under NodeNext and Bundler resolution (including checked side-effect imports), and confirms vanilla installation does not bring React along.
 
 For a vanilla consumer, copy the core and DOM tarballs into its own vendor directory and install both together:
 

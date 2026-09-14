@@ -17,9 +17,14 @@ for (const name of packages) {
     [resolve(root, 'node_modules/typescript/bin/tsc'), '-p', resolve(directory, 'tsconfig.json')],
     { stdio: 'inherit' },
   );
-  if (name !== 'core')
+  if (name !== 'core') {
     copyFileSync(
       resolve(root, 'packages/dom/src/styles.css'),
       resolve(directory, 'dist/styles.css'),
     );
+    copyFileSync(
+      resolve(root, 'packages/dom/src/styles.css.d.ts'),
+      resolve(directory, 'dist/styles.css.d.ts'),
+    );
+  }
 }
