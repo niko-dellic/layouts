@@ -2,6 +2,12 @@
 
 These are captures of the working vanilla demo. The [React demo](https://layouts-ruddy.vercel.app/react.html) uses the same layout engine and chrome. Try the controls yourself in the [live vanilla demo](https://layouts-ruddy.vercel.app/vanilla.html).
 
+## Recorded walkthrough
+
+![Recorded Quilt walkthrough with pane arrangements, scene interaction, and workspace presets](media/demo-walkthrough.webp)
+
+A 35-second recording of the demo in use, converted to a looping animated WebP at 1280 pixels wide. The original recording includes its own zooms and cursor movements.
+
 ## Resizing
 
 ![Animated horizontal and vertical divider resizing](media/resizing.gif)
@@ -63,3 +69,5 @@ node scripts/capture-demos.mjs
 ```
 
 The script uses a fresh browser session, clicks the demo controls, drags real dividers, and writes four PNGs plus a looping GIF into `docs/media`. `DEMO_URL` can override the local server URL. Screenshots use a 1280 × 820 viewport; the GIF is reduced to 960 pixels wide for the README. The images are captured UI, not mockups.
+
+The separate `demo-walkthrough.webp` comes from a supplied video recording; the capture script does not regenerate it.

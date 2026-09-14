@@ -13,6 +13,12 @@ Applications own their content and data. Quilt owns arrangement and chrome.
 
 Drag a divider to change pane widths or heights. Nested regions resize together, while the toolbar and status bar stay fixed. [Compare the before and after screenshots](docs/showcase.md#resizing).
 
+**Full demo walkthrough**
+
+![Recorded Quilt walkthrough showing pane arrangements, scene interaction, and workspace preset changes](docs/media/demo-walkthrough.webp)
+
+Explore pane arrangements, interact with the scene, and switch workspace presets in this 35-second recording.
+
 | Light theme · compact vertical tabs                                                                 | Sage theme · anchored, tapered tabs                                                                               |
 | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | ![Focus workspace with a light theme and compact vertical capsule tabs](docs/media/focus-light.png) | ![Review workspace with a sage theme, timeline, inspector, and anchored tapered tabs](docs/media/review-sage.png) |
