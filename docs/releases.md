@@ -7,6 +7,8 @@ All three packages share a stable version. Release creation is explicit; ordinar
 3. Open GitHub Actions → Release → Run workflow on `main`. Enter the committed version and leave **publish** unchecked to rehearse the complete release.
 4. Run again with **publish** checked. Approve the `npm` environment deployment after verification succeeds.
 
+Dry runs are also allowed on development branches and validate archives without contacting npm publication endpoints. Actual publication is restricted to `main`.
+
 The workflow tests and packs once, then publishes those exact archives in core → vanilla → React order. It checks the shared version, changelog, clean source commit, and artifact hashes. A retry accepts already-published packages only if their integrity matches, allowing recovery from a partially completed release. Never change an already-published version; bump again if contents differ. The original manually published 0.1.0 archives cannot be republished by this workflow.
 
 Publishing uses npm trusted publishing with GitHub OIDC and automatic provenance. Each package trusts `niko-dellic/quilt`, workflow `release.yml`, environment `npm`, with direct publishing allowed. No npm token secret is needed. The environment is restricted to `main` and requires maintainer approval; the maintainer may approve their own manually triggered release.

@@ -59,13 +59,9 @@ for (const p of plan) {
   }
   execFileSync(
     'npm',
-    [
-      'publish',
-      p.file,
-      '--access=public',
-      '--registry=https://registry.npmjs.org/',
-      ...(publish ? [] : ['--dry-run']),
-    ],
+    publish
+      ? ['publish', p.file, '--access=public', '--registry=https://registry.npmjs.org/']
+      : ['pack', p.file, '--dry-run', '--ignore-scripts'],
     { stdio: 'inherit' },
   );
 }
