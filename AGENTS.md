@@ -2,7 +2,7 @@
 
 Keep the core package framework-independent and free of browser APIs. The DOM renderer owns chrome and interactions; React bindings reuse it. Applications own pane content and data.
 
-Use strict TypeScript and Node 22. Build before running demos: they resolve compiled package outputs. Keep package imports public; never alias an application to sibling source files.
+Use strict TypeScript and Node 24. Build before running demos: they resolve compiled package outputs. Keep package imports public; never alias an application to sibling source files.
 
 Layout JSON is versioned. Commands validate atomically. Keep pane IDs stable and preserve content when joining or moving regions. Every listener, observer, React root, timer, and companion window needs explicit cleanup.
 

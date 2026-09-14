@@ -22,7 +22,6 @@ export function fillTabs(tabs: HTMLElement, group: Group, panes: Pane[], deps: T
     item.dataset.active = String(active);
     const tab = el(doc, 'button', 'layouts-tab');
     tab.type = 'button';
-    tab.title = pane.title;
     tab.setAttribute('aria-label', pane.title);
     tab.setAttribute('role', 'tab');
     tab.setAttribute('aria-selected', String(active));

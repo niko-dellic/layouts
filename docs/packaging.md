@@ -9,7 +9,6 @@ From a clone of this repository:
 ```sh
 nvm use
 npm ci
-npm run build
 npm run pack:all
 ```
 
@@ -65,3 +64,20 @@ Use an ESM-capable bundler with CSS import support, such as the demos' Vite setu
 Relative paths belong in the installation commands and `file:` dependency values,
 not in cross-package source imports. No TypeScript `paths` mapping, bundler alias,
 or reference to sibling source files is needed.
+
+## Build and consumer guarantees
+
+Every package's `prepack` builds its dependency chain from source in core → DOM → React
+order. Builds first remove that package's old `dist`; CSS is copied with Node filesystem
+operations. Direct `npm pack` from a package directory works after a repository `npm ci`,
+even without existing compiled output. Packing does not invoke another pack operation.
+Source files ship alongside declaration maps for editor navigation; applications still
+import public compiled exports, never source paths.
+
+`npm run test:packed` compiles isolated consumers in NodeNext and Bundler modes with
+full declaration checking. Core compiles without DOM libraries. React 18.3 and 19 use
+matching type packages and exercise mounting, snapshots, popout/return, and cleanup in
+Chromium. CSS exports, map targets, vanilla's absence of React, and lockfile reinstalls
+are verified. Registry access and a Playwright Chromium installation are required.
+React consumers may use `layouts-react/styles.css` and import their store, registry,
+and configuration types directly from `layouts-react`.

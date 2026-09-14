@@ -11,6 +11,7 @@
   },
   "files": [
     "dist",
+    "src",
     "README.md",
     "LICENSE"
   ],
@@ -21,7 +22,8 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "node ../../scripts/build-package.mjs core",
+    "prepack": "node ../../scripts/build-package.mjs core --dependencies"
   },
   "dependencies": {},
   "sideEffects": false

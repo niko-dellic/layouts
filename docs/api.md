@@ -15,11 +15,13 @@ interface Group {
   id: string;
   panes: string[];
   active: string | null;
+  tabPlacement?: 'top' | 'left';
 }
 interface Split {
   kind: 'split';
   id: string;
   axis: 'horizontal' | 'vertical';
+  gap?: number; // pixels; defaults to 4
   ratio: number; // preferred share of the first child, strictly between 0 and 1
   children: [Group | Split, Group | Split];
 }
@@ -44,11 +46,22 @@ interface Popout {
 
 The `version`, `root`, `panes`, `popouts`, and `maximized` properties are required. Node IDs are unique across the tree; pane IDs are unique in their dictionary. Every pane appears exactly once, either in a group or the popout list. Empty groups have `active: null`. Maximum nesting depth is 64. JSON cannot contain cycles, functions, undefined values, nonfinite numbers, or class instances.
 
-Sizes refer to the full pane region, including chrome. Defaults are minimum zero and no maximum. Tab groups satisfy the intersection of their panes' constraints, so incompatible tabs are rejected. Split children may leave unused space when a maximum prevents them filling the cross axis. A six-pixel divider contributes to recursive minimum sizes. Below the combined minimum, the workspace scrolls. Above combined maximums, surplus space stays empty. Split ratios are preferences constrained by these limits, not guaranteed pixel proportions.
+Sizes refer to the full pane region, including chrome. Defaults are minimum zero and no maximum. Tab groups satisfy the intersection of their panes' constraints, so incompatible tabs are rejected. Split children may leave unused space when a maximum prevents them filling the cross axis. A four-pixel divider (overridable with `Split.gap`) contributes to recursive minimum sizes. Below the combined minimum, the workspace scrolls. Above combined maximums, surplus space stays empty. Split ratios are preferences constrained by these limits, not guaranteed pixel proportions.
 
 Capability flags default to true. Group-level operations require permission from affected panes: resizing a split checks both subtrees; tabbing and moving check the dragged pane and destination group; splitting checks the destination; joining checks the sibling region. Fixed bars normally disable all capabilities as well as specify size bounds. Host code can still deliberately reposition them.
 
 ## Core exports
+
+`createLayout(options?: { pane?: Pane; groupId?: string }): Layout` creates validated,
+cloned JSON v1. With no pane it creates an empty group; otherwise it activates the supplied
+pane. The group defaults to `main`; supplied IDs are preserved. Invalid inputs throw
+`LayoutError`. Results have no popouts or maximized region and share no mutable data with inputs.
+
+Both adapter entry points re-export `LayoutStore`, `LayoutError`, `createLayout`,
+`parseLayout`, `validate`, and core types. The model type is named `LayoutSnapshot`
+in adapters to distinguish it from React's `Layout` component. React also exports
+`TabRegistry`, `themes`, `themeFamilies`, and public DOM options/view/handle types.
+See [migration notes](migration.md) for removed pre-release APIs.
 
 `parseLayout(unknown): Layout` clones and validates or throws `LayoutError`. `validate(unknown): Issue[]` returns `{path, message}` issues. `bounds`, `allocate`, `groups`, `paneIds`, `findNode`, and `findParent` are pure helpers.
 
@@ -95,18 +108,19 @@ Options accept `{source: 'user' | 'api'}`; default is `api`. Flags only restrict
 - `store`: externally owned `LayoutStore`.
 - `renderers`: pane-type-to-renderer registry.
 - `getPaneState(id)`: optional application-owned reference for each view mount.
-- `createPane(source)`: synchronous new-pane factory for split-menu commands; returning undefined cancels. IDs must be unique.
+- `tabs`: `TabRegistry` of available content. Factories return fresh panes with unique IDs, or undefined to cancel.
+- `theme` and `tabBar`: theme tokens and workspace/group tab-bar configuration; see [Theming](theming.md).
 - `onError(error)`: mount, interaction, and window failures.
 - `prepareWindow(window, pane)`: copy additional styles/providers/assets into a companion document.
 - `openWindow(pane, placement)`: optional synchronous, same-origin window factory; null means blocked. The library owns this returned window and replaces its body, so do not return an existing unrelated application window.
 
-Returned handle: `popout(id, placement?): boolean`, `returnPane(id)`, `dispose()`. Dispose the mounted view before disposing the externally owned store.
+Returned handle: `setTheme(theme)`, `setTabBar(options)`, `popout(id, placement?): boolean`, `returnPane(id)`, `dispose()`. Dispose the mounted view before disposing the externally owned store.
 
 ## React exports
 
 `Layout` accepts the same options, replacing `renderers` with `components: Record<string, ComponentType<PaneProps>>`, plus `className` and `style`. Its ref exposes the mounted handle. Mounting is deferred one microtask beyond React's commit; ref methods return false/no-op before mounting completes.
 
-`reactRenderer(Component)` adapts a React component for mixed vanilla/React consumers. `useLayoutSnapshot(store)` subscribes with React's external-store API. React 18.3 and 19 are peer-compatible; automated development tests use React 19.
+`reactRenderer(Component)` adapts a React component for mixed vanilla/React consumers. `useLayoutSnapshot(store)` subscribes with React's external-store API. React 18.3 and 19 are peer-compatible; packed-consumer tests compile and exercise both React versions.
 
 `PaneProps` includes `document`, `window`, `pane`, `state`, and `location`; the vanilla renderer also receives `element`.
 
@@ -196,9 +210,7 @@ region containing the selected type. Canvas is an ordinary pane renderer and can
 be added, tabbed, dragged, closed, maximized, and popped out under the same rules.
 
 Pass `tabs` to React `<Layout>` too. Keep the registry object stable and register
-or unregister entries as features mount or unmount. The legacy `createPane`
-callback is supported only for splitting when no registry is supplied; Add tab
-requires registered choices. Existing movement/split capability checks still
+or unregister entries as features mount or unmount. Content creation uses registered choices; the legacy `createPane` callback has been removed. Empty regions can still split into empty regions without a registry. Existing movement/split capability checks still
 apply. See [Theming](theming.md) for the separate theme API.
 
 Menu actions include built-in decorative icons. The optional `renderIcon` resolver

@@ -202,10 +202,6 @@ export function bindTabBar(
         : 'fitted';
     if (!left) header.style.removeProperty('height');
     region.dataset.tabPlacement = left ? 'left' : 'top';
-    for (const tab of header.querySelectorAll<HTMLElement>('.layouts-tab')) {
-      if (left || compact) tab.removeAttribute('title');
-      else tab.title = tab.getAttribute('aria-label') ?? '';
-    }
     refreshTooltip();
     header
       .querySelector('[role=tablist]')

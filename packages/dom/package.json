@@ -11,6 +11,7 @@
   },
   "files": [
     "dist",
+    "src",
     "README.md",
     "LICENSE"
   ],
@@ -22,7 +23,8 @@
     "./styles.css": "./dist/styles.css"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json && cp src/styles.css dist/styles.css"
+    "build": "node ../../scripts/build-package.mjs dom",
+    "prepack": "node ../../scripts/build-package.mjs dom --dependencies"
   },
   "dependencies": {
     "layouts-core": "0.1.0"

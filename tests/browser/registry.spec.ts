@@ -4,6 +4,7 @@ for (const framework of ['vanilla', 'react']) {
     page,
   }) => {
     await page.goto(`/${framework}.html`);
+    await page.getByRole('tab', { name: 'Inspector', exact: true }).click();
     await page.getByRole('button', { name: 'Inspector actions', exact: true }).click();
     await page.getByRole('button', { name: '+ Add tab', exact: true }).click();
     const search = page.getByRole('combobox', { name: 'Search tabs' });
@@ -20,7 +21,9 @@ for (const framework of ['vanilla', 'react']) {
       'true',
     );
     await expect(group.locator('canvas')).toBeVisible();
+    await page.getByRole('tab', { name: 'Theming', exact: true }).click();
     await page.getByRole('button', { name: 'Reset', exact: true }).click();
+    await page.getByRole('tab', { name: 'Inspector', exact: true }).click();
     await page.getByRole('button', { name: 'Inspector actions', exact: true }).click();
     await page.getByRole('button', { name: '+ Add tab', exact: true }).click();
     await search.press('ArrowDown');
@@ -103,4 +106,32 @@ test('container CSS and live themes propagate to popouts without remounting', as
     'rgb(1, 2, 3)',
   );
   await popup.close();
+});
+
+for (const query of ['', '?no-registry']) {
+  test(`populated regions require registered content choices ${query}`, async ({ page }) => {
+    await page.goto(`/tests/browser/harness.html${query}`);
+    const before = await page.evaluate(() => window.harness.store.export());
+    await page.getByRole('button', { name: 'A actions', exact: true }).click();
+    await expect(page.getByRole('button', { name: '+ Add tab', exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Split', exact: true })).toBeDisabled();
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+    expect(await page.evaluate(() => window.harness.store.export())).toEqual(before);
+  });
+}
+
+test('a cancelling registry factory leaves existing content unchanged', async ({ page }) => {
+  await page.goto('/tests/browser/harness.html');
+  await page.evaluate(() =>
+    window.harness.tabs.register({
+      id: 'cancel',
+      title: 'Cancel creation',
+      create: () => undefined,
+    }),
+  );
+  const before = await page.evaluate(() => window.harness.store.export());
+  await page.getByRole('button', { name: 'A actions', exact: true }).click();
+  await page.getByRole('button', { name: '+ Add tab', exact: true }).click();
+  await page.getByRole('option', { name: 'Cancel creation', exact: true }).click();
+  expect(await page.evaluate(() => window.harness.store.export())).toEqual(before);
 });

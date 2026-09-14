@@ -11,7 +11,7 @@ for (const framework of ['vanilla', 'react']) {
     await page.getByRole('textbox', { name: 'Working notes' }).fill('Retained');
     const group = page.locator('[data-node-id="inspector-group"]');
     const box = await activity.boundingBox();
-    await inspector.dragTo(activity, { targetPosition: { x: box!.width - 2, y: 10 } });
+    await inspector.dragTo(activity, { targetPosition: { x: box!.width / 2 + 2, y: 10 } });
     expect(
       await group
         .getByRole('tab')

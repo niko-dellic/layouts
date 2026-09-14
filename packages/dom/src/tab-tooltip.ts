@@ -1,7 +1,7 @@
 import type { Scope } from './lifetime.js';
 
 let nextTooltip = 0;
-/** Shared hints for vertical tabs and empty panes follow the region lifetime. */
+/** Icon-only tab hints and empty-pane hints follow the region lifetime. */
 export function bindTabTooltip(
   region: HTMLElement,
   header: HTMLElement,
@@ -12,24 +12,47 @@ export function bindTabTooltip(
   const win = doc.defaultView!;
   let anchor: HTMLElement | undefined;
   let tooltip: HTMLDivElement | undefined;
-  const hide = () => {
+  const removeTooltip = () => {
     anchor?.removeAttribute('aria-describedby');
     tooltip?.remove();
-    anchor = undefined;
     tooltip = undefined;
   };
+  const resize = new ResizeObserver(() => refresh());
+  const hide = () => {
+    removeTooltip();
+    resize.disconnect();
+    anchor = undefined;
+  };
+  const needsTooltip = (tab: HTMLElement) => {
+    if (tab.matches('.layouts-empty'))
+      return !tab.matches(':disabled') && !region.querySelector('.layouts-picker');
+    const label = tab.querySelector<HTMLElement>('.layouts-tab-label');
+    if (!label || !label.getClientRects().length) return true;
+    const css = win.getComputedStyle(label);
+    return (
+      !label.clientWidth ||
+      !label.clientHeight ||
+      css.visibility === 'hidden' ||
+      css.opacity === '0'
+    );
+  };
   const refresh = () => {
-    if (!anchor || !tooltip) return;
-    if (
-      (!anchor.matches('.layouts-empty') &&
-        region.dataset.tabPlacement !== 'left' &&
-        region.dataset.tabDisplay !== 'compact') ||
-      (anchor.matches('.layouts-empty') && Boolean(region.querySelector('.layouts-picker'))) ||
-      !anchor.isConnected ||
-      !anchor.getClientRects().length
-    ) {
+    if (!anchor) return;
+    if (!anchor.isConnected || !anchor.getClientRects().length) {
       hide();
       return;
+    }
+    if (!needsTooltip(anchor)) {
+      removeTooltip();
+      return;
+    }
+    if (!tooltip) {
+      tooltip = doc.createElement('div');
+      tooltip.className = 'layouts-tab-tooltip';
+      tooltip.id = `layouts-tooltip-${++nextTooltip}`;
+      tooltip.setAttribute('role', 'tooltip');
+      anchor.setAttribute('aria-describedby', tooltip.id);
+      root.append(tooltip);
     }
     const empty = anchor.matches('.layouts-empty');
     tooltip.textContent = empty ? 'Click to add a pane' : (anchor.getAttribute('aria-label') ?? '');
@@ -45,23 +68,14 @@ export function bindTabTooltip(
     const target = event.target as Element | null;
     const tab = target?.closest<HTMLElement>('.layouts-tab, .layouts-empty');
     if (!tab || !region.contains(tab)) return;
-    const empty = tab.matches('.layouts-empty');
-    if (
-      empty
-        ? tab.matches(':disabled') || region.querySelector('.layouts-picker')
-        : !header.contains(tab) ||
-          (region.dataset.tabPlacement !== 'left' && region.dataset.tabDisplay !== 'compact')
-    )
-      return;
-    if (anchor === tab) return;
-    hide();
-    anchor = tab;
-    tooltip = doc.createElement('div');
-    tooltip.className = 'layouts-tab-tooltip';
-    tooltip.id = `layouts-tooltip-${++nextTooltip}`;
-    tooltip.setAttribute('role', 'tooltip');
-    anchor.setAttribute('aria-describedby', tooltip.id);
-    root.append(tooltip);
+    if (!tab.matches('.layouts-empty') && !header.contains(tab)) return;
+    if (anchor !== tab) {
+      hide();
+      anchor = tab;
+      resize.observe(tab);
+      const label = tab.querySelector('.layouts-tab-label');
+      if (label) resize.observe(label);
+    }
     refresh();
   };
   scope.listen(region, 'pointerover', show);
@@ -73,7 +87,7 @@ export function bindTabTooltip(
   scope.listen(region, 'pointerdown', hide);
   scope.listen(region, 'dragstart', hide);
   scope.listen(root, 'scroll', hide, { capture: true });
-  scope.listen(win, 'resize', hide);
+  scope.listen(win, 'resize', refresh);
   scope.listen(doc, 'keydown', (event) => {
     if ((event as KeyboardEvent).key === 'Escape') hide();
   });

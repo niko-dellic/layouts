@@ -29,7 +29,7 @@ All packages ship ESM, declarations, and source maps. React is a peer dependency
 
 ## Install in your application
 
-In a clone of this repository, use Node 22 and run:
+In a clone of this repository, use Node 24 and run:
 
 ```sh
 npm ci
@@ -66,8 +66,7 @@ verification details.
 ## Vanilla
 
 ```ts
-import { LayoutStore } from 'layouts-core';
-import { mountLayout } from 'layouts';
+import { LayoutStore, mountLayout } from 'layouts';
 import 'layouts/styles.css';
 
 const store = new LayoutStore({
@@ -112,7 +111,7 @@ Give the host an explicit size (`width: 100%; height: 600px`, for example).
 ```tsx
 import { Layout } from 'layouts-react';
 import type { PaneProps } from 'layouts-react';
-import 'layouts/styles.css';
+import 'layouts-react/styles.css';
 
 // Create the store and app state outside the pane component's lifetime.
 function Notes({ state }: PaneProps) {
@@ -156,6 +155,7 @@ Bottom and side bars use the same tree composition. Set a minimum and maximum to
 ## Documentation
 
 - [Configuration and API](docs/api.md)
+- [Pre-release API migration](docs/migration.md)
 - [Pane and window lifecycle](docs/lifecycle.md)
 - [Packaging and integration](docs/packaging.md)
 - [Architecture and contribution](CONTRIBUTING.md)
@@ -184,7 +184,7 @@ Tab creation uses an application-owned `TabRegistry` with a searchable picker, i
 
 ### Directional splits and fixed bars
 
-Split nodes accept an optional nonnegative `gap` in pixels (default 6); use
+Split nodes accept an optional nonnegative `gap` in pixels (default 4); use
 `gap: 0` for fixed application bars. Bounds and allocation honor this value.
 The Split menu has a hover/keyboard submenu for left, right, up and down.
 

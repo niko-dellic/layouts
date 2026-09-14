@@ -1,0 +1,25 @@
+import { execFileSync } from 'node:child_process';
+import { copyFileSync, rmSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
+const root = fileURLToPath(new URL('../', import.meta.url));
+const order = ['core', 'dom', 'react'];
+const target = process.argv[2];
+if (!order.includes(target)) throw new Error('Expected core, dom, or react');
+const packages = process.argv.includes('--dependencies')
+  ? order.slice(0, order.indexOf(target) + 1)
+  : [target];
+for (const name of packages) {
+  const directory = resolve(root, 'packages', name);
+  rmSync(resolve(directory, 'dist'), { recursive: true, force: true });
+  execFileSync(
+    process.execPath,
+    [resolve(root, 'node_modules/typescript/bin/tsc'), '-p', resolve(directory, 'tsconfig.json')],
+    { stdio: 'inherit' },
+  );
+  if (name !== 'core')
+    copyFileSync(
+      resolve(root, 'packages/dom/src/styles.css'),
+      resolve(directory, 'dist/styles.css'),
+    );
+}

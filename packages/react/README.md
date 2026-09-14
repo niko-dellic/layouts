@@ -1,5 +1,65 @@
-# layouts
+# layouts-react
 
-See the [repository documentation](https://github.com/niko-dellic/layouts#readme) for usage, JSON configuration, lifecycle contracts, and local tarball installation.
+React components and hooks over the shared layouts engine and DOM renderer. React 18.3 and 19 are supported peers. MIT licensed; ESM, declarations, and sources included.
 
-MIT licensed. ESM and TypeScript declarations included.
+## Install
+
+Not yet published to npm. Use Node 24 to run `npm ci` and `npm run pack:all` in the repository. Copy all three archives listed in `artifacts/packages/manifest.json` into your application's `vendor/` directory:
+
+```sh
+npm install ./vendor/layouts-core-<version>.tgz ./vendor/layouts-<version>.tgz ./vendor/layouts-react-<version>.tgz react react-dom
+```
+
+Replace `<version>` with the archive version. Keep the archives and lockfile. TypeScript apps also need matching `@types/react` and `@types/react-dom`. Use an ESM-capable bundler with CSS imports.
+
+## Use
+
+Provide `<div id="app"></div>` in your HTML.
+
+```tsx
+import { createRoot } from 'react-dom/client';
+import { Layout, LayoutStore, createLayout } from 'layouts-react';
+import type { PaneProps } from 'layouts-react';
+import 'layouts-react/styles.css';
+
+const store = new LayoutStore(
+  createLayout({
+    pane: { id: 'notes', type: 'notes', title: 'Notes' },
+  }),
+);
+const data = { text: 'Hello' };
+const getPaneState = () => data;
+function Notes({ state }: PaneProps) {
+  const model = state as typeof data;
+  return (
+    <textarea
+      defaultValue={model.text}
+      onChange={(e) => {
+        model.text = e.target.value;
+      }}
+    />
+  );
+}
+const components = { notes: Notes };
+const root = createRoot(document.getElementById('app')!);
+root.render(
+  <Layout
+    store={store}
+    components={components}
+    getPaneState={getPaneState}
+    style={{ width: '100%', height: 600 }}
+  />,
+);
+// Call when removing the workspace:
+function disposeWorkspace() {
+  root.unmount();
+  // The binding queues pane disposal beyond the parent React commit.
+  queueMicrotask(() => store.dispose());
+}
+```
+
+Keep the store, components, registry, and adapter callbacks stable. `useLayoutSnapshot(store)` observes layout changes. The model type is `LayoutSnapshot`; `Layout` is the component. `MountedLayout`, `TabRegistry`, theme presets, and DOM configuration types are available here too. Attach a `MountedLayout` ref to call `popout` from a user gesture; before mounting completes its methods return false/no-op.
+
+Panes are separate React roots and do not inherit your app's context providers. Wrap pane components with required providers. React-local state does not survive crossing documents: retain data in an application-owned store, and subscribe inside each view when live synchronization is needed. Companion windows are same-origin and depend on the main session.
+
+The stylesheet is identical to `layouts/styles.css`; import either once. See [API](https://github.com/niko-dellic/layouts/blob/main/docs/api.md), [lifecycle](https://github.com/niko-dellic/layouts/blob/main/docs/lifecycle.md), and [migration](https://github.com/niko-dellic/layouts/blob/main/docs/migration.md).

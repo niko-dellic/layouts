@@ -4,6 +4,7 @@ for (const framework of ['vanilla', 'react']) {
     test.beforeEach(async ({ page }) => {
       await page.goto(`/${framework}.html`);
       await expect(page.getByRole('tab', { name: 'Scene', exact: true })).toBeVisible();
+      await page.getByRole('tab', { name: 'Inspector', exact: true }).click();
     });
     test('preserves form state through tabs, resize, JSON reload, and maximize', async ({
       page,
@@ -33,8 +34,10 @@ for (const framework of ['vanilla', 'react']) {
       await expect(page.getByRole('textbox', { name: 'Working notes' })).toHaveValue(
         'Persistent application state',
       );
+      await page.getByRole('tab', { name: 'Theming', exact: true }).click();
       await page.getByRole('button', { name: 'Layout JSON', exact: true }).click();
       await page.getByRole('button', { name: 'Load layout', exact: true }).click();
+      await page.getByRole('tab', { name: 'Inspector', exact: true }).click();
       await expect(page.getByRole('textbox', { name: 'Working notes' })).toHaveValue(
         'Persistent application state',
       );
@@ -67,8 +70,9 @@ for (const framework of ['vanilla', 'react']) {
     });
     test('real popout remounts data and returns it on close', async ({ page }) => {
       await page.getByRole('textbox', { name: 'Working notes' }).fill('Before popout');
+      await page.getByRole('button', { name: 'Inspector actions', exact: true }).click();
       const opened = page.waitForEvent('popup');
-      await page.getByRole('button', { name: 'Pop out inspector' }).click();
+      await page.getByRole('button', { name: 'Open in window', exact: true }).click();
       const popup = await opened;
       await expect(popup.getByRole('textbox', { name: 'Working notes' })).toHaveValue(
         'Before popout',
@@ -112,6 +116,7 @@ for (const framework of ['vanilla', 'react']) {
       );
     });
     test('invalid JSON is rejected without destroying the workspace', async ({ page }) => {
+      await page.getByRole('tab', { name: 'Theming', exact: true }).click();
       await page.getByRole('button', { name: 'Layout JSON', exact: true }).click();
       await page.getByRole('textbox', { name: 'Layout JSON', exact: true }).fill('{"version":42}');
       await page.getByRole('button', { name: 'Load layout', exact: true }).click();

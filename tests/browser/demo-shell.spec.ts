@@ -36,7 +36,9 @@ for (const framework of ['vanilla', 'react']) {
     await expect
       .poll(() => canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL()))
       .not.toBe(initial);
-    const controls = page.locator('.demo-theming .demo-actions').locator('button, select');
+    const controls = page
+      .locator('.demo-theming .demo-actions')
+      .locator('button:visible, select:visible');
     const heights = await controls.evaluateAll((elements) =>
       elements.map((element) => element.getBoundingClientRect().height),
     );
@@ -59,27 +61,33 @@ for (const framework of ['vanilla', 'react']) {
     await page.goto(`/${framework}.html`);
     const theme = page.getByRole('combobox', { name: 'Workspace theme' });
     await theme.selectOption('neutral-light');
+    await page.getByRole('tab', { name: 'Inspector', exact: true }).click();
     const blue = page.getByRole('button', { name: 'Use blue surface', exact: true });
     await blue.click();
     await expect(blue).toHaveAttribute('aria-pressed', 'true');
     const lightSwatch = await blue.evaluate((element) => getComputedStyle(element).backgroundColor);
     const canvas = page.locator('.scene-canvas');
     const lightScene = await canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL());
+    await page.getByRole('tab', { name: 'Theming', exact: true }).click();
     await theme.selectOption('neutral-dark');
+    await page.getByRole('tab', { name: 'Inspector', exact: true }).click();
     await expect(blue).not.toHaveCSS('background-color', lightSwatch);
     await expect(blue).toHaveAttribute('aria-pressed', 'true');
     await expect
       .poll(() => canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL()))
       .not.toBe(lightScene);
+    await page.getByRole('button', { name: 'Inspector actions', exact: true }).click();
     const popupEvent = page.waitForEvent('popup');
-    await page.getByRole('button', { name: 'Pop out inspector' }).click();
+    await page.getByRole('button', { name: 'Open in window', exact: true }).click();
     const popup = await popupEvent;
     const popupBlue = popup.getByRole('button', { name: 'Use blue surface', exact: true });
     await expect(popupBlue).toHaveAttribute('aria-pressed', 'true');
+    await page.getByRole('tab', { name: 'Theming', exact: true }).click();
     await theme.selectOption('neutral-light');
     await expect(popupBlue).toHaveCSS('background-color', lightSwatch);
     await popup.getByRole('button', { name: 'Use purple surface', exact: true }).click();
     await popup.close();
+    await page.getByRole('tab', { name: 'Inspector', exact: true }).click();
     await expect(
       page.getByRole('button', { name: 'Use purple surface', exact: true }),
     ).toHaveAttribute('aria-pressed', 'true');
@@ -152,14 +160,8 @@ for (const framework of ['vanilla', 'react']) {
     await expect(angle).toHaveValue('61');
     await style.selectOption('scoop');
     await expect(scoop).toHaveValue('33');
-    await expect(page.locator('.demo-field > span')).toHaveText([
-      'Theme',
-      'Tab bar',
-      'Scoop width: 33px',
-      'Header height: 32px',
-      'Text size: 11px',
-      'Corner radius: 5px',
-    ]);
+    await expect(scoop.locator('..')).toContainText('Scoop width: 33px');
+    await expect(page.getByRole('slider', { name: 'Tab height', exact: true })).toHaveValue('32');
   });
 }
 
@@ -178,7 +180,7 @@ for (const framework of ['vanilla', 'react']) {
       '[data-node-id="inspector-group"] .layouts-tab-item[data-active="true"]',
     );
     await expect(activeTab).toHaveCSS('box-shadow', 'none');
-    const height = page.getByRole('slider', { name: 'Header height', exact: true });
+    const height = page.getByRole('slider', { name: 'Tab height', exact: true });
     await height.focus();
     await height.press('ArrowRight');
     await expect(page.locator('.layouts')).toHaveCSS('--layouts-header-height', '33px');

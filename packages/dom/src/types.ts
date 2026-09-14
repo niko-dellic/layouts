@@ -52,8 +52,6 @@ export interface LayoutOptions {
         restoreClosedTab?: boolean;
       };
   getPaneState?: (paneId: string) => unknown;
-  /** Legacy split factory, used only when no registry is supplied. */
-  createPane?: (source: Pane) => Pane | undefined;
   onError?: (error: unknown) => void;
   /** Copy additional app styles/assets into a same-origin companion document. */
   prepareWindow?: (window: Window, pane: Pane) => void;

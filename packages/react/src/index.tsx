@@ -84,7 +84,6 @@ export const Layout = forwardRef<MountedLayout, LayoutProps>(function Layout(pro
     tabBar,
     components,
     getPaneState,
-    createPane,
     onError,
     prepareWindow,
     openWindow,
@@ -133,7 +132,6 @@ export const Layout = forwardRef<MountedLayout, LayoutProps>(function Layout(pro
         ...(tabs ? { tabs } : {}),
         ...(currentTheme.current ? { theme: currentTheme.current } : {}),
         ...(getPaneState ? { getPaneState } : {}),
-        ...(createPane ? { createPane } : {}),
         ...(onError ? { onError } : {}),
         ...(prepareWindow ? { prepareWindow } : {}),
         ...(openWindow ? { openWindow } : {}),
@@ -153,7 +151,6 @@ export const Layout = forwardRef<MountedLayout, LayoutProps>(function Layout(pro
     renderers,
     tabs,
     getPaneState,
-    createPane,
     onError,
     prepareWindow,
     openWindow,
@@ -167,3 +164,33 @@ export const Layout = forwardRef<MountedLayout, LayoutProps>(function Layout(pro
 export function useLayoutSnapshot(store: LayoutStore): LayoutSnapshot {
   return useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
 }
+export { LayoutStore, LayoutError, createLayout, parseLayout, validate } from 'layouts-core';
+export type {
+  AutoCollapse,
+  LayoutStoreOptions,
+  Json,
+  Capability,
+  Axis,
+  Pane,
+  Group,
+  Split,
+  Node,
+  WindowPlacement,
+  Popout,
+  Layout as LayoutSnapshot,
+  Issue,
+  CommandOptions,
+  Change,
+  Bounds,
+  JoinOptions,
+} from 'layouts-core';
+export { TabRegistry, themes, themeFamilies } from 'layouts';
+export type {
+  TabRegistration,
+  LayoutTheme,
+  LayoutOptions,
+  MountedLayout,
+  PaneContext,
+  PaneView,
+  PaneRenderer,
+} from 'layouts';

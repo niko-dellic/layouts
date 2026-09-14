@@ -3,7 +3,7 @@ import type { Bounds, Group, Issue, Json, Layout, Node, Pane } from './types.js'
 const record = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v);
 const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
-export function isJson(v: unknown, seen = new Set<unknown>(), depth = 0): v is Json {
+function isJson(v: unknown, seen = new Set<unknown>(), depth = 0): v is Json {
   if (depth > 256) return false;
   if (v === null || typeof v === 'string' || typeof v === 'boolean') return true;
   if (typeof v === 'number') return Number.isFinite(v);
@@ -194,7 +194,7 @@ export function groups(root: Node): Group[] {
 export function paneIds(root: Node): string[] {
   return groups(root).flatMap((g) => g.panes);
 }
-export function paneBounds(p: Pane): Bounds {
+function paneBounds(p: Pane): Bounds {
   return {
     minWidth: p.size?.minWidth ?? 0,
     maxWidth: p.size?.maxWidth ?? Infinity,
@@ -245,4 +245,16 @@ export function allocate(
     high = Math.min(maxA, used - minB);
   const a = Math.max(low, Math.min(high, used * ratio));
   return [a, used - a];
+}
+
+/** Create independent, validated JSON for an empty or single-pane workspace. */
+export function createLayout(options: { pane?: Pane; groupId?: string } = {}): Layout {
+  const { pane, groupId = 'main' } = options;
+  return parseLayout({
+    version: 1,
+    root: { kind: 'group', id: groupId, panes: pane ? [pane.id] : [], active: pane?.id ?? null },
+    panes: pane ? { [pane.id]: pane } : {},
+    popouts: [],
+    maximized: null,
+  });
 }

@@ -373,3 +373,40 @@ test('left fitted shapes keep content fixed and collapse with bottom clearance',
     expect(after.y).toBe(body.y);
   }
 });
+
+test('tooltips follow actual label visibility in both orientations', async ({ page }) => {
+  const tab = page.locator('[data-node-id="left"]').getByRole('tab', { name: 'A', exact: true });
+  const label = tab.locator('.layouts-tab-label');
+  for (const placement of ['top', 'left'] as const) {
+    await page.mouse.move(1100, 700);
+    await page.evaluate((placement) => {
+      window.harness.store.resize('split', 0.5);
+      window.harness.setTheme({ headerWidth: '180px' });
+      window.harness.setTabBar({ placement, display: 'automatic' });
+    }, placement);
+    await expect(label).toBeVisible();
+    await tab.focus();
+    await expect(page.getByRole('tooltip')).toHaveCount(0);
+    await expect(tab).not.toHaveAttribute('title');
+    await page.evaluate((placement) => {
+      if (placement === 'top') window.harness.store.resize('split', 0.12);
+      else window.harness.setTheme({ headerWidth: '32px' });
+    }, placement);
+    await expect(label).toBeHidden();
+    await tab.hover();
+    await expect(page.getByRole('tooltip')).toHaveText('A');
+    await page.evaluate((placement) => {
+      if (placement === 'top') window.harness.store.resize('split', 0.5);
+      else window.harness.setTheme({ headerWidth: '180px' });
+    }, placement);
+    await expect(label).toBeVisible();
+    await expect(page.getByRole('tooltip')).toHaveCount(0);
+    await page.evaluate(
+      (placement) => window.harness.setTabBar({ placement, display: 'compact' }),
+      placement,
+    );
+    await tab.hover();
+    await expect(page.getByRole('tooltip')).toHaveText('A');
+    await page.keyboard.press('Escape');
+  }
+});

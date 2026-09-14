@@ -1,5 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { LayoutStore, parseLayout, allocate, bounds, groups, validate } from 'layouts-core';
+import {
+  createLayout,
+  LayoutError,
+  LayoutStore,
+  parseLayout,
+  allocate,
+  bounds,
+  groups,
+  validate,
+} from 'layouts-core';
 import type { Layout, Pane } from 'layouts-core';
 const pane = (id: string): Pane => ({ id, type: 'test', title: id });
 function fixture(): Layout {
@@ -378,4 +387,37 @@ it('closes a region atomically and retains its closed tabs for restore', () => {
   expect(Object.keys(store.getSnapshot().panes).sort()).toEqual(['a', 'b', 'c']);
   store.closeGroup('c-group');
   expect(groups(store.getSnapshot().root)[0]!.panes).toEqual([]);
+});
+
+describe('createLayout', () => {
+  it('creates independent empty layouts with stable group IDs', () => {
+    const first = createLayout();
+    expect(first).toEqual({
+      version: 1,
+      root: { kind: 'group', id: 'main', panes: [], active: null },
+      panes: {},
+      popouts: [],
+      maximized: null,
+    });
+    first.root.id = 'changed';
+    expect(createLayout().root.id).toBe('main');
+    expect(createLayout({ groupId: 'custom' }).root.id).toBe('custom');
+  });
+  it('clones pane metadata and activates the supplied pane', () => {
+    const input: Pane = { ...pane('notes'), params: { text: 'original' } };
+    const layout = createLayout({ pane: input, groupId: 'editor' });
+    expect(layout.root).toEqual({ kind: 'group', id: 'editor', panes: ['notes'], active: 'notes' });
+    expect(layout.panes.notes).toEqual(input);
+    expect(layout.panes.notes).not.toBe(input);
+    layout.panes.notes!.params = 'edited';
+    expect(input.params).toEqual({ text: 'original' });
+    expect(createLayout({ pane: input }).panes.notes!.params).toEqual({ text: 'original' });
+  });
+  it('uses LayoutError for invalid IDs and metadata', () => {
+    expect(() => createLayout({ groupId: '' })).toThrow(LayoutError);
+    expect(() => createLayout({ pane: { ...pane(''), params: NaN } })).toThrow(LayoutError);
+    expect(() => createLayout({ pane: { ...pane('a'), size: { minWidth: -1 } } })).toThrow(
+      LayoutError,
+    );
+  });
 });

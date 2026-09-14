@@ -22,14 +22,15 @@ for (const framework of ['vanilla', 'react']) {
       'Maximize region',
       'Open in window',
       'Tab orientation ▸',
+      'Tab display ▸',
+      'Close active tab',
       'Close pane',
+      'Restore closed tab',
       'Cancel',
     ]);
     await expect(menu).toBeHidden();
     await orientation.hover();
-    await expect(
-      menu.getByRole('menuitemradio', { name: 'Workspace default', exact: true }),
-    ).toBeChecked();
+    await expect(menu.getByRole('menuitemradio', { name: 'Vertical', exact: true })).toBeChecked();
     for (const [value, label] of [
       ['left', 'Vertical'],
       ['top', 'Horizontal'],

@@ -3,6 +3,13 @@ for (const demo of ['vanilla', 'react']) {
   test(`${demo}: floating controls, fit and orientation`, async ({ page }) => {
     await page.goto(`/${demo}.html`);
     const scene = page.locator('[data-node-id="scene-group"]');
+    // Exercise workspace orientation without the demo's persisted Scene override.
+    await scene.getByRole('button', { name: 'Scene actions', exact: true }).click();
+    await page.getByRole('button', { name: 'Tab orientation', exact: true }).click();
+    await page
+      .getByRole('menu', { name: 'Tab orientation', exact: true })
+      .getByRole('menuitemradio', { name: 'Workspace default', exact: true })
+      .click();
     const header = scene.locator(':scope > header');
     const body = scene.locator(':scope > .layouts-body');
     const original = await body.boundingBox();

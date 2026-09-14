@@ -5,6 +5,13 @@ for (const demo of ['vanilla', 'react']) {
   }) => {
     await page.goto(`/${demo}.html`);
     const scene = page.locator('[data-node-id="scene-group"]');
+    // Exercise workspace orientation without the demo's persisted Scene override.
+    await scene.getByRole('button', { name: 'Scene actions', exact: true }).click();
+    await page.getByRole('button', { name: 'Tab orientation', exact: true }).click();
+    await page
+      .getByRole('menu', { name: 'Tab orientation', exact: true })
+      .getByRole('menuitemradio', { name: 'Workspace default', exact: true })
+      .click();
     const theming = page.locator('[data-node-id="inspector-group"]');
     const tab = scene.getByRole('tab', { name: 'Scene', exact: true });
     await scene.getByRole('button', { name: 'Scene actions', exact: true }).click();
@@ -23,6 +30,7 @@ for (const demo of ['vanilla', 'react']) {
       0,
     );
     await page.getByRole('combobox', { name: 'Tab orientation', exact: true }).selectOption('left');
+    await expect(theming).toHaveAttribute('data-tab-placement', 'left');
     const verticalCloses = theming.locator(
       '.layouts-tab-item[data-active="true"] > .layouts-tab-close',
     );

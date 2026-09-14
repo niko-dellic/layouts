@@ -1,6 +1,6 @@
 # Contributing
 
-Use Node 22 and `npm ci`. Build packages in dependency order with `npm run build`; demos consume package output, not sibling source aliases. Rebuild after package edits, and restart Vite after reinstalling dependencies.
+Use Node 24 and `npm ci`. Build packages in dependency order with `npm run build`; demos consume package output, not sibling source aliases. Rebuild after package edits, and restart Vite after reinstalling dependencies.
 
 The core package contains no DOM, React, timers, storage, or browser-window code. The DOM package owns arrangement and chrome, not application data. React bindings reuse the DOM implementation and core store; do not introduce a second layout model. Keep lifetimes explicit and release all listeners, observers, frames, roots, and companion windows.
 

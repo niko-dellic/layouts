@@ -80,10 +80,7 @@ export function createPaneMenu(
         refresh();
         if (!options.tabs) return;
       }
-      const commit = (fresh: Pane) =>
-        axis && !options.tabs
-          ? options.store.split(group.id, axis, fresh, { source: 'user', before, ratio })
-          : options.store.add(fresh, destination.id, { source: 'user' });
+      const commit = (fresh: Pane) => options.store.add(fresh, destination.id, { source: 'user' });
       if (options.tabs) {
         if ((axis || !group.panes.length) && options.store.getAutoCollapse() === 'disabled') {
           if (persistentPickers.has(destination.id)) {
@@ -172,9 +169,6 @@ export function createPaneMenu(
             }),
           );
         }
-      } else if (axis) {
-        const fresh = pane ? options.createPane?.(pane) : undefined;
-        if (fresh) commit(fresh);
       }
     };
     if (addTab || (!direction && !group.panes.length && !groupActions)) {
@@ -191,8 +185,7 @@ export function createPaneMenu(
       return;
     }
     add('add-tab', '+ Add tab', available && allowed('move'), () => create());
-    const canCreate =
-      !group.panes.length || (options.tabs ? available : Boolean(pane && options.createPane));
+    const canCreate = !group.panes.length || available;
     function submenu(label: string, icon: ActionIcon, enabled = true) {
       const container = el(doc, 'div', 'layouts-submenu');
       const trigger = button(`${label} ▸`, label, () => setOpen(true));

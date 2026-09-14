@@ -313,3 +313,8 @@ Applications can use these `LayoutTheme` values (or their corresponding
 
 For example, a dot uses border width `0`, radius `50%`, and a theme color as fill.
 These settings update chrome without remounting pane content or changing JSON.
+
+Tab tooltips depend only on actual label visibility: icon-only tabs show their
+full name, including Automatic tabs compressed by available space. Visible labels
+suppress tooltips. This applies to both orientations and updates as tabs resize.
+Horizontal tooltips appear below the tab; vertical tooltips appear to its right.
