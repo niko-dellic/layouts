@@ -388,6 +388,7 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
             menu.open(placeholder!, source, group);
         });
         placeholder.className = 'layouts-empty';
+        placeholder.removeAttribute('title');
         placeholder.disabled = !options.tabs;
         placeholder.setAttribute('aria-haspopup', 'dialog');
         const lines = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -526,7 +527,22 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
   function measure() {
     const layout = geometryLayout();
     const node = layout.maximized ? findNode(layout.root, layout.maximized) : layout.root;
-    if (node) geometry(node, 0, 0, stage.clientWidth, stage.clientHeight, layout);
+    if (!node) return;
+    // Reparented maximized regions can temporarily overflow their old split.
+    // Discard those stale scrollbars before allocating the restored layout.
+    const overflow = stage.style.overflow;
+    let width: number, height: number;
+    try {
+      stage.style.overflow = 'hidden';
+      width = stage.clientWidth;
+      height = stage.clientHeight;
+      geometry(node, 0, 0, width, height, layout);
+    } finally {
+      stage.style.overflow = overflow;
+    }
+    // Minimum sizes may still require real scrollbars; account for their space.
+    if (stage.clientWidth !== width || stage.clientHeight !== height)
+      geometry(node, 0, 0, stage.clientWidth, stage.clientHeight, layout);
   }
   function render() {
     if (disposed) return;

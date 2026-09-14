@@ -122,7 +122,10 @@ for (const framework of ['vanilla', 'react']) {
     page,
   }) => {
     await page.goto(`/${framework}.html`);
-    const style = page.getByRole('combobox', { name: 'Tab bar style' });
+    await page
+      .getByRole('combobox', { name: 'Tab placement', exact: true })
+      .selectOption('anchored');
+    const style = page.getByRole('combobox', { name: 'Taper options' });
     const angle = page.getByRole('slider', { name: 'Angle', exact: true });
     await expect(angle).toHaveValue('60');
     await angle.focus();

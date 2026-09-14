@@ -38,13 +38,16 @@ for (const framework of ['vanilla', 'react']) {
       );
     }
     expect(await staticPane.boundingBox()).toEqual(first);
+    await page
+      .getByRole('combobox', { name: 'Tab placement', exact: true })
+      .selectOption('anchored');
     const scene = page.locator('[data-node-id="scene-group"]');
     for (const placement of ['top', 'left']) {
       await page
-        .getByRole('combobox', { name: 'Tab placement', exact: true })
+        .getByRole('combobox', { name: 'Tab orientation', exact: true })
         .selectOption(placement);
       for (const shape of ['angle', 'round', 'scoop', 'vertical', 'full']) {
-        await page.getByRole('combobox', { name: 'Tab bar style' }).selectOption(shape);
+        await page.getByRole('combobox', { name: 'Taper options' }).selectOption(shape);
         await expect(scene).toHaveAttribute('data-shared-edges', /top/);
         expect(
           await scene.evaluate((el) =>
@@ -56,7 +59,7 @@ for (const framework of ['vanilla', 'react']) {
         }
       }
     }
-    await page.getByRole('combobox', { name: 'Tab placement', exact: true }).selectOption('top');
+    await page.getByRole('combobox', { name: 'Tab orientation', exact: true }).selectOption('top');
     const toggle = page.getByRole('checkbox', { name: 'Show disabled resize handles' });
     await expect(toggle).not.toBeChecked();
     const width = page.getByRole('slider', { name: 'Resize handle width' });

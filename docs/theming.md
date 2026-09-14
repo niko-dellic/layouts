@@ -230,3 +230,35 @@ The demos always show separate **Tab height** and **Tab width** sliders, both
 defaulting to `32px`, so mixed pane orientations can be configured independently.
 The vertical rail uses `headerWidth` (`--layouts-header-width`, default `32px`);
 top tabs use `headerHeight`. Both dimensions update live, including fitted tab outlines.
+
+### Anchored and floating bars
+
+The demo's **Tab orientation** selects top or vertical tabs. **Tab placement**
+selects anchored (the default) or floating. Floating bars overlay content with
+an 8px inset. Their **Fit** selector offers full-width or fit-width; for vertical
+rails this controls the occupied height. **Corner type** selects fitted (square),
+rounded, or capsule. Floating bars do not use taper settings. Anchored bars expose
+**Taper options**, including `rounded`, a fitted bar with rounded corners and no cap
+(distinct from `round`, the curved end cap).
+
+```ts
+mounted.setTabBar({
+  placement: 'left', // orientation; retained API name for compatibility
+  attachment: 'floating',
+  fit: 'fit', // 'full' fills the available span, keeping the inset
+  corners: 'capsule', // 'fitted' | 'rounded' | 'capsule'
+});
+```
+
+These renderer settings support `regions` overrides and the React `tabBar` prop.
+Saved group `tabPlacement` still overrides orientation. Floating fit defaults to
+`fit` and corners to `rounded`. Overflow fills the inset span while keeping the
+menu available. Content stays mounted and does not move when floating fit changes;
+occupied width/height custom properties include the leading inset.
+
+Both demos start with floating fit-width tabs. Floating bars preserve their inset
+from content scrollbars as well as pane edges, including overlay scrollbars. The
+available span updates when pane content, overflow, or scrollbar sizing changes.
+Scrollbar clearance is reserved symmetrically on the opposite edge too, keeping
+full-span floating bars centered within the pane. Without overflow, both insets
+return to 8px.

@@ -1,6 +1,6 @@
 import { themes, themeFamilies } from 'layouts';
 import type { AutoCollapse } from 'layouts-core';
-import { store } from './model.js';
+import { store, workspaceSession } from './model.js';
 import { defaultThemeName } from './theme.js';
 import type { MountedLayout } from 'layouts';
 // Controls belong to the demo session and survive pane moves and layout resets.
@@ -95,13 +95,14 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
   collapseSelect.onchange = () => store.setAutoCollapse(collapseSelect.value as AutoCollapse);
   const collapseField = labelControl(collapseSelect, 'Auto collapse');
   const barSelect = document.createElement('select');
-  barSelect.setAttribute('aria-label', 'Tab bar style');
+  barSelect.setAttribute('aria-label', 'Taper options');
   for (const [value, label] of [
     ['full', 'Full-width'],
     ['angle', 'Angle'],
     ['round', 'Round'],
     ['scoop', 'Scoop'],
     ['vertical', 'Fitted'],
+    ['rounded', 'Rounded'],
   ]) {
     const option = document.createElement('option');
     option.value = value!;
@@ -109,9 +110,9 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
     barSelect.append(option);
   }
   barSelect.value = 'angle';
-  const barField = labelControl(barSelect, 'Tab bar');
+  const barField = labelControl(barSelect, 'Taper options');
   const placement = document.createElement('select');
-  placement.setAttribute('aria-label', 'Tab placement');
+  placement.setAttribute('aria-label', 'Tab orientation');
   for (const [value, label] of [
     ['top', 'Top'],
     ['left', 'Vertical'],
@@ -121,7 +122,34 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
     option.textContent = label!;
     placement.append(option);
   }
-  const placementField = labelControl(placement, 'Tab placement');
+  const placementField = labelControl(placement, 'Tab orientation');
+  const choice = (label: string, choices: [string, string][]) => {
+    const select = document.createElement('select');
+    select.setAttribute('aria-label', label);
+    for (const [value, text] of choices) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = text;
+      select.append(option);
+    }
+    return { select, field: labelControl(select, label) };
+  };
+  const attachment = choice('Tab placement', [
+    ['anchored', 'Anchored'],
+    ['floating', 'Floating'],
+  ]);
+  const fit = choice('Fit', [
+    ['full', 'Full-width'],
+    ['fit', 'Fit-width'],
+  ]);
+  const corners = choice('Corner type', [
+    ['fitted', 'Fitted'],
+    ['rounded', 'Rounded'],
+    ['capsule', 'Capsule'],
+  ]);
+  attachment.select.value = 'floating';
+  fit.select.value = 'fit';
+  corners.select.value = 'rounded';
   const amount = document.createElement('input');
   amount.type = 'range';
   amount.step = '1';
@@ -129,9 +157,18 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
   amountField.classList.add('demo-range');
   const values = { angle: '60', round: '32', scoop: '32' };
   const applyBar = () => {
-    const shape = barSelect.value as 'angle' | 'round' | 'scoop' | 'vertical' | 'full';
+    const shape = barSelect.value as 'angle' | 'round' | 'scoop' | 'vertical' | 'rounded' | 'full';
     const position = placement.value as 'top' | 'left';
-    if (shape === 'full' || shape === 'vertical') {
+    if (attachment.select.value === 'floating') {
+      getMounted()?.setTabBar({
+        placement: position,
+        attachment: 'floating',
+        fit: fit.select.value as 'full' | 'fit',
+        corners: corners.select.value as 'fitted' | 'rounded' | 'capsule',
+      });
+      return;
+    }
+    if (shape === 'full' || shape === 'vertical' || shape === 'rounded') {
       getMounted()?.setTabBar(
         shape === 'full'
           ? { placement: position, mode: 'full' }
@@ -155,7 +192,14 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
   };
   const updateAmount = () => {
     const shape = barSelect.value as keyof typeof values;
-    amountField.hidden = !(shape in values);
+    const floating = attachment.select.value === 'floating';
+    barField.hidden = floating;
+    barSelect.disabled = floating;
+    fit.field.hidden = !floating;
+    fit.select.disabled = !floating;
+    corners.field.hidden = !floating;
+    corners.select.disabled = !floating;
+    amountField.hidden = floating || !(shape in values);
     amount.disabled = amountField.hidden;
     if (!amountField.hidden) {
       amount.min = '1';
@@ -164,6 +208,9 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
     }
     applyBar();
   };
+  attachment.select.onchange = updateAmount;
+  fit.select.onchange = applyBar;
+  corners.select.onchange = applyBar;
   amount.oninput = applyBar;
   barSelect.onchange = updateAmount;
   placement.onchange = () => {
@@ -197,7 +244,14 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
   const tabSection = section('Tab');
   const resizeSection = section('Resizing');
   themeSection.content.append(themeField);
-  tabSection.content.append(placementField, barField, amountField);
+  tabSection.content.append(
+    placementField,
+    attachment.field,
+    barField,
+    amountField,
+    fit.field,
+    corners.field,
+  );
   const resizing = resizeSection.content;
   settings.prepend(
     themeSection.region,
@@ -313,5 +367,5 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
       error.textContent = e instanceof Error ? e.message : String(e);
     }
   });
-  settings.querySelector('#reset')!.addEventListener('click', () => store.reset());
+  settings.querySelector('#reset')!.addEventListener('click', () => workspaceSession.reset());
 }

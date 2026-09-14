@@ -4,11 +4,23 @@ import type { Scope } from './lifetime.js';
 
 export function validateTabBar(options: TabBarOptions) {
   for (const style of [options, ...Object.values(options.regions ?? {})]) {
+    for (const [key, values] of Object.entries({
+      attachment: ['anchored', 'floating'],
+      fit: ['full', 'fit'],
+      corners: ['fitted', 'rounded', 'capsule'],
+    })) {
+      const value = style[key as keyof TabBarStyle];
+      if (value !== undefined && !values.includes(String(value)))
+        throw new Error(`Unknown tab bar ${key}`);
+    }
     if (style.placement !== undefined && !['top', 'left'].includes(style.placement))
       throw new Error('Unknown tab bar placement');
     if (style.mode !== undefined && !['full', 'tapered'].includes(style.mode))
       throw new Error('Unknown tab bar mode');
-    if (style.shape !== undefined && !['angle', 'round', 'scoop', 'vertical'].includes(style.shape))
+    if (
+      style.shape !== undefined &&
+      !['angle', 'round', 'scoop', 'vertical', 'rounded'].includes(style.shape)
+    )
       throw new Error('Unknown tab bar shape');
     if (
       style.taperWidth !== undefined &&
@@ -37,6 +49,7 @@ export function bindTabBar(
     left: boolean,
     style: TabBarStyle,
   ) => {
+    if (style.attachment === 'floating') return;
     if (fits && capWidth > 0) {
       const svg = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svg.classList.add('layouts-tab-cap');
@@ -75,7 +88,20 @@ export function bindTabBar(
           ? `A${Math.max(0.01, right - end)} ${Math.max(0.01, bottom - 0.5)} 0 0 ${style.shape === 'round' ? 1 : 0} ${end} ${bottom}`
           : `L${end} ${bottom}`
         : `V${bottom}`;
-    edge.setAttribute('d', `M0.5 0.5 H${right} ${curve} H0.5 Z`);
+    if (style.shape === 'rounded') {
+      const radius = Math.max(
+        0,
+        Math.min(
+          parseFloat(win.getComputedStyle(header).borderTopLeftRadius) || 0,
+          (right - 0.5) / 2,
+          (bottom - 0.5) / 2,
+        ),
+      );
+      edge.setAttribute(
+        'd',
+        `M${0.5 + radius} 0.5 H${right - radius} Q${right} 0.5 ${right} ${0.5 + radius} V${bottom - radius} Q${right} ${bottom} ${right - radius} ${bottom} H${0.5 + radius} Q0.5 ${bottom} 0.5 ${bottom - radius} V${0.5 + radius} Q0.5 0.5 ${0.5 + radius} 0.5 Z`,
+      );
+    } else edge.setAttribute('d', `M0.5 0.5 H${right} ${curve} H0.5 Z`);
     if (left) edge.setAttribute('transform', 'matrix(0 1 1 0 0 0)');
     const shared = region.dataset.sharedEdges?.split(' ') ?? [];
     const w = left ? height : occupied;
@@ -94,12 +120,79 @@ export function bindTabBar(
   const refreshTooltip = bindTabTooltip(region, header, root, scope);
   let frame = 0,
     disposed = false;
+  const observedContent = new Set<Element>();
+  const contentResize = new ResizeObserver(() => schedule());
+  const scrollbarClearance = () => {
+    const next = new Set<Element>();
+    const bounds = region.getBoundingClientRect();
+    let right = 0,
+      bottom = 0;
+    const body = region.querySelector<HTMLElement>(':scope > .layouts-body');
+    if (body) {
+      for (const element of [body, ...body.querySelectorAll<HTMLElement>('*')]) {
+        if (!element.clientWidth || !element.clientHeight) continue;
+        const css = win.getComputedStyle(element);
+        if (!/(auto|scroll)/.test(css.overflowX + css.overflowY)) continue;
+        next.add(element);
+        for (const child of element.children) next.add(child);
+        const rect = element.getBoundingClientRect();
+        const fallback = parseFloat(css.getPropertyValue('--layouts-scrollbar-size')) || 6;
+        // Overlay scrollbars report zero gutter: use the themed size then.
+        if (
+          /(auto|scroll)/.test(css.overflowY) &&
+          element.scrollHeight > element.clientHeight &&
+          Math.abs(bounds.right - rect.right) < 1
+        ) {
+          const gutter =
+            element.offsetWidth -
+            element.clientWidth -
+            (parseFloat(css.borderLeftWidth) || 0) -
+            (parseFloat(css.borderRightWidth) || 0);
+          right = Math.max(right, gutter, fallback);
+        }
+        if (
+          /(auto|scroll)/.test(css.overflowX) &&
+          element.scrollWidth > element.clientWidth &&
+          Math.abs(bounds.bottom - rect.bottom) < 1
+        ) {
+          const gutter =
+            element.offsetHeight -
+            element.clientHeight -
+            (parseFloat(css.borderTopWidth) || 0) -
+            (parseFloat(css.borderBottomWidth) || 0);
+          bottom = Math.max(bottom, gutter, fallback);
+        }
+      }
+    }
+    for (const element of observedContent) if (!next.has(element)) contentResize.unobserve(element);
+    for (const element of next) if (!observedContent.has(element)) contentResize.observe(element);
+    observedContent.clear();
+    for (const element of next) observedContent.add(element);
+    return { right, bottom };
+  };
   const measure = () => {
     frame = 0;
     if (disposed || !region.isConnected) return;
     const style = getStyle();
     const left = style.placement === 'left';
-    const tapered = style.mode === 'tapered';
+    const floating = style.attachment === 'floating';
+    const inset = floating ? 8 : 0;
+    const scrollbar = floating ? scrollbarClearance() : { right: 0, bottom: 0 };
+    const insetX = inset + scrollbar.right;
+    const insetY = inset + scrollbar.bottom;
+    header.style.setProperty('--layouts-floating-inset-x', `${insetX}px`);
+    header.style.setProperty('--layouts-floating-inset-y', `${insetY}px`);
+    if (!floating) {
+      contentResize.disconnect();
+      observedContent.clear();
+    }
+    const tapered = floating || style.mode === 'tapered';
+    region.dataset.tabAttachment = floating ? 'floating' : 'anchored';
+    header.dataset.tabCorners = floating
+      ? (style.corners ?? 'rounded')
+      : style.shape === 'rounded'
+        ? 'rounded'
+        : 'fitted';
     if (!left) header.style.removeProperty('height');
     region.dataset.tabPlacement = left ? 'left' : 'top';
     for (const tab of header.querySelectorAll<HTMLElement>('.layouts-tab')) {
@@ -119,13 +212,16 @@ export function bindTabBar(
     const height = header.hidden ? 0 : header.getBoundingClientRect().height;
     // clientWidth rounds fractional split widths up, allowing chrome to spill
     // outside the region and change the stage's scrollbar/resize geometry.
-    const available = parseFloat(win.getComputedStyle(region).width);
+    const available = Math.max(0, parseFloat(win.getComputedStyle(region).width) - insetX * 2);
     let occupied = available;
     if (left) {
       header.style.removeProperty('width');
       for (const item of items) item.style.removeProperty('--layouts-tab-preferred-width');
       const width = header.hidden ? 0 : header.getBoundingClientRect().width;
-      const regionHeight = parseFloat(win.getComputedStyle(region).height);
+      const regionHeight = Math.max(
+        0,
+        parseFloat(win.getComputedStyle(region).height) - insetY * 2,
+      );
       let occupiedHeight = regionHeight;
       if (tapered && width) {
         const computed = win.getComputedStyle(header);
@@ -141,18 +237,29 @@ export function bindTabBar(
             (parseFloat(computed.rowGap) || 0) +
           parseFloat(computed.paddingTop) +
           parseFloat(computed.paddingBottom);
-        const cap = style.shape === 'vertical' ? 0 : (style.taperWidth ?? width);
-        const fits = natural + cap + 12 <= regionHeight;
+        const cap =
+          floating || ['vertical', 'rounded'].includes(style.shape ?? '')
+            ? 0
+            : (style.taperWidth ?? width);
+        const fits =
+          !(floating && style.fit === 'full') &&
+          natural + cap + (floating ? 0 : 12) <= regionHeight;
         occupiedHeight = fits ? natural + cap : regionHeight;
-        header.style.height = fits ? `${natural}px` : '100%';
+        header.style.height = `${fits ? natural : regionHeight}px`;
         region.dataset.tabBarFilled = String(!fits);
         drawChrome(natural, occupiedHeight, width, cap, fits, true, style);
       } else {
         header.style.removeProperty('height');
         delete region.dataset.tabBarFilled;
       }
-      region.style.setProperty('--layouts-tab-bar-width', `${occupiedHeight ? width : 0}px`);
-      region.style.setProperty('--layouts-tab-bar-height', `${width ? occupiedHeight : 0}px`);
+      region.style.setProperty(
+        '--layouts-tab-bar-width',
+        `${occupiedHeight ? width + insetX : 0}px`,
+      );
+      region.style.setProperty(
+        '--layouts-tab-bar-height',
+        `${width ? occupiedHeight + insetY : 0}px`,
+      );
       return;
     }
     if (!tapered) {
@@ -192,23 +299,27 @@ export function bindTabBar(
             Math.max(0, controls.length - (items.length ? 0 : 1)) *
               (parseFloat(computed.columnGap) || 0),
         );
-        const capWidth = style.shape === 'vertical' ? 0 : (style.taperWidth ?? height);
+        const capWidth =
+          floating || ['vertical', 'rounded'].includes(style.shape ?? '')
+            ? 0
+            : (style.taperWidth ?? height);
         // Leave breathing room at the pane edge instead of showing a nearly
         // touching cap. This clearance is not part of the occupied footprint.
-        const edgeClearance = 12;
-        const fits = natural + capWidth + edgeClearance <= available;
+        const edgeClearance = floating ? 0 : 12;
+        const fits =
+          !(floating && style.fit === 'full') && natural + capWidth + edgeClearance <= available;
         items.forEach((item, index) =>
           item.style.setProperty('--layouts-tab-preferred-width', `${widths[index]}px`),
         );
         region.dataset.tabBarFilled = String(!fits);
-        header.style.width = fits ? `${natural}px` : '100%';
+        header.style.width = `${fits ? natural : available}px`;
         occupied = fits ? natural + capWidth : available;
         drawChrome(natural, occupied, height, capWidth, fits, false, style);
       } finally {
         probe.remove();
       }
     }
-    region.style.setProperty('--layouts-tab-bar-width', `${height ? occupied : 0}px`);
+    region.style.setProperty('--layouts-tab-bar-width', `${height ? occupied + insetX : 0}px`);
     region.style.setProperty('--layouts-tab-bar-height', `${height}px`);
   };
   const schedule = () => {
@@ -238,6 +349,18 @@ export function bindTabBar(
   for (let node: HTMLElement | null = root; node; node = node.parentElement)
     mutation.observe(node, { attributes: true, attributeFilter: ['style', 'class'] });
   mutation.observe(doc.head, { subtree: true, childList: true, characterData: true });
+  const body = region.querySelector(':scope > .layouts-body');
+  const contentMutation = new MutationObserver(() => {
+    if (getStyle().attachment === 'floating') schedule();
+  });
+  if (body)
+    contentMutation.observe(body, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ['class', 'style', 'hidden'],
+    });
   scope.listen(doc.fonts, 'loadingdone', schedule);
   void doc.fonts.ready.then(schedule);
   scope.add(() => {
@@ -245,6 +368,9 @@ export function bindTabBar(
     if (frame) win.cancelAnimationFrame(frame);
     resize.disconnect();
     mutation.disconnect();
+    contentMutation.disconnect();
+    contentResize.disconnect();
+    observedContent.clear();
   });
   return schedule;
 }

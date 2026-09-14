@@ -1,7 +1,7 @@
 import type { Scope } from './lifetime.js';
 
 let nextTooltip = 0;
-/** Delegated tooltip ownership follows the region, not disposable tab buttons. */
+/** Shared hints for vertical tabs and empty panes follow the region lifetime. */
 export function bindTabTooltip(
   region: HTMLElement,
   header: HTMLElement,
@@ -21,23 +21,32 @@ export function bindTabTooltip(
   const refresh = () => {
     if (!anchor || !tooltip) return;
     if (
-      region.dataset.tabPlacement !== 'left' ||
+      (!anchor.matches('.layouts-empty') && region.dataset.tabPlacement !== 'left') ||
+      (anchor.matches('.layouts-empty') && Boolean(region.querySelector('.layouts-picker'))) ||
       !anchor.isConnected ||
       !anchor.getClientRects().length
     ) {
       hide();
       return;
     }
-    tooltip.textContent = anchor.getAttribute('aria-label') ?? '';
-    const rect = anchor.getBoundingClientRect();
+    const empty = anchor.matches('.layouts-empty');
+    tooltip.textContent = empty ? 'Click to add a pane' : (anchor.getAttribute('aria-label') ?? '');
+    const rect = (empty ? region : anchor).getBoundingClientRect();
     const size = tooltip.getBoundingClientRect();
-    tooltip.style.left = `${Math.max(8, Math.min(rect.right + 8, win.innerWidth - size.width - 8))}px`;
+    tooltip.style.left = `${Math.max(8, Math.min(empty ? rect.left + (rect.width - size.width) / 2 : rect.right + 8, win.innerWidth - size.width - 8))}px`;
     tooltip.style.top = `${Math.max(8, Math.min(rect.top + (rect.height - size.height) / 2, win.innerHeight - size.height - 8))}px`;
   };
   const show = (event: Event) => {
     const target = event.target as Element | null;
-    const tab = target?.closest<HTMLElement>('.layouts-tab');
-    if (!tab || !header.contains(tab) || region.dataset.tabPlacement !== 'left') return;
+    const tab = target?.closest<HTMLElement>('.layouts-tab, .layouts-empty');
+    if (!tab || !region.contains(tab)) return;
+    const empty = tab.matches('.layouts-empty');
+    if (
+      empty
+        ? tab.matches(':disabled') || region.querySelector('.layouts-picker')
+        : !header.contains(tab) || region.dataset.tabPlacement !== 'left'
+    )
+      return;
     if (anchor === tab) return;
     hide();
     anchor = tab;
@@ -49,14 +58,14 @@ export function bindTabTooltip(
     root.append(tooltip);
     refresh();
   };
-  scope.listen(header, 'pointerover', show);
-  scope.listen(header, 'focusin', show);
-  scope.listen(header, 'pointerout', (event) => {
+  scope.listen(region, 'pointerover', show);
+  scope.listen(region, 'focusin', show);
+  scope.listen(region, 'pointerout', (event) => {
     if (!anchor?.contains((event as PointerEvent).relatedTarget as Node | null)) hide();
   });
-  scope.listen(header, 'focusout', hide);
-  scope.listen(header, 'pointerdown', hide);
-  scope.listen(header, 'dragstart', hide);
+  scope.listen(region, 'focusout', hide);
+  scope.listen(region, 'pointerdown', hide);
+  scope.listen(region, 'dragstart', hide);
   scope.listen(root, 'scroll', hide, { capture: true });
   scope.listen(win, 'resize', hide);
   scope.listen(doc, 'keydown', (event) => {

@@ -212,6 +212,34 @@ h1 {
 .toolbar-right button[aria-pressed='true'] {
   background: color-mix(in srgb, var(--layouts-accent) 18%, var(--layouts-panel));
 }
+.workspace-switcher {
+  display: flex;
+  gap: 4px;
+}
+.workspace-switcher button {
+  cursor: pointer;
+}
+.workspace-switcher button:focus-visible {
+  outline: 2px solid var(--layouts-accent);
+  outline-offset: 2px;
+}
+@media (max-width: 760px) {
+  .demo-toolbar {
+    gap: 8px;
+    padding: 0 8px;
+  }
+  .demo-toolbar > .slash,
+  .demo-toolbar > .muted,
+  .toolbar-right > .session-dot {
+    display: none;
+  }
+  .workspace-switcher button {
+    padding-inline: 8px;
+  }
+  .demo-toolbar .toolbar-right {
+    margin-left: 0;
+  }
+}
 .session-dot {
   font-size: 10px;
   color: var(--layouts-muted);

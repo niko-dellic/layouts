@@ -1,6 +1,6 @@
 import { TabRegistry } from 'layouts';
 import { LayoutStore } from 'layouts-core';
-import type { Layout, Pane } from 'layouts-core';
+import type { Layout, Node as LayoutNode, Pane } from 'layouts-core';
 export const initial: Layout = {
   version: 1,
   maximized: null,
@@ -150,6 +150,104 @@ export const initial: Layout = {
   },
 };
 export const store = new LayoutStore(initial);
+// Presets share pane IDs and application data; each keeps its session layout edits.
+function workspaceLayout(content: LayoutNode): Layout {
+  const layout = structuredClone(initial);
+  if (layout.root.kind === 'split' && layout.root.children[1].kind === 'split') {
+    layout.root.children[1].children[0] = content;
+  }
+  return layout;
+}
+export const workspaces = [
+  { id: 'default', title: 'Default', description: 'The original workspace', layout: initial },
+  {
+    id: 'focus',
+    title: 'Focus',
+    description: 'A large scene with supporting tools in one sidebar',
+    layout: workspaceLayout({
+      kind: 'split',
+      id: 'focus-split',
+      axis: 'horizontal',
+      ratio: 0.76,
+      children: [
+        { kind: 'group', id: 'scene-group', panes: ['canvas'], active: 'canvas' },
+        {
+          kind: 'group',
+          id: 'inspector-group',
+          panes: ['theming', 'notes', 'tools', 'hotkeys', 'activity', 'timeline'],
+          active: 'theming',
+        },
+      ],
+    }),
+  },
+  {
+    id: 'review',
+    title: 'Review',
+    description: 'Scene and timeline beside the inspector and settings',
+    layout: workspaceLayout({
+      kind: 'split',
+      id: 'review-split',
+      axis: 'horizontal',
+      ratio: 0.7,
+      children: [
+        {
+          kind: 'split',
+          id: 'timeline-split',
+          axis: 'vertical',
+          ratio: 0.7,
+          children: [
+            {
+              kind: 'group',
+              id: 'scene-group',
+              panes: ['canvas', 'tools', 'hotkeys'],
+              active: 'canvas',
+            },
+            {
+              kind: 'group',
+              id: 'timeline-group',
+              panes: ['timeline', 'activity'],
+              active: 'timeline',
+            },
+          ],
+        },
+        {
+          kind: 'split',
+          id: 'review-inspector-split',
+          axis: 'vertical',
+          ratio: 0.5,
+          children: [
+            { kind: 'group', id: 'inspector-group', panes: ['notes'], active: 'notes' },
+            { kind: 'group', id: 'theming-group', panes: ['theming'], active: 'theming' },
+          ],
+        },
+      ],
+    }),
+  },
+] as const;
+export type WorkspaceId = (typeof workspaces)[number]['id'];
+let activeWorkspace: WorkspaceId = 'default';
+const workspaceLayouts = new Map<WorkspaceId, Layout>();
+const workspaceListeners = new Set<() => void>();
+export const workspaceSession = {
+  get: () => activeWorkspace,
+  subscribe(listener: () => void) {
+    workspaceListeners.add(listener);
+    return () => {
+      workspaceListeners.delete(listener);
+    };
+  },
+  select(id: WorkspaceId) {
+    if (id === activeWorkspace) return;
+    const preset = workspaces.find((workspace) => workspace.id === id)!;
+    workspaceLayouts.set(activeWorkspace, store.export());
+    store.load(workspaceLayouts.get(id) ?? preset.layout);
+    activeWorkspace = id;
+    workspaceListeners.forEach((listener) => listener());
+  },
+  reset() {
+    store.load(workspaces.find((workspace) => workspace.id === activeWorkspace)!.layout);
+  },
+};
 export interface DemoData {
   note: string;
   color: string;

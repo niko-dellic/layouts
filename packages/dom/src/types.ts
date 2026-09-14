@@ -20,7 +20,11 @@ export interface TabBarStyle {
   /** Left placement uses an icon-only rail; mode and shape apply in either placement. */
   placement?: 'top' | 'left';
   mode?: 'full' | 'tapered';
-  shape?: 'angle' | 'round' | 'scoop' | 'vertical';
+  shape?: 'angle' | 'round' | 'scoop' | 'vertical' | 'rounded';
+  /** Anchored by default; floating bars overlay content with an 8px inset. */
+  attachment?: 'anchored' | 'floating';
+  fit?: 'full' | 'fit';
+  corners?: 'fitted' | 'rounded' | 'capsule';
   /** Positive finite CSS pixels. Omit to match header height. */
   taperWidth?: number;
 }

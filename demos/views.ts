@@ -2,7 +2,7 @@ import { mountTheming } from './shell.js';
 import { canvas } from './scene.js';
 export { canvas } from './scene.js';
 import type { PaneRenderer, PaneContext } from 'layouts';
-import { state } from './model.js';
+import { state, workspaces, workspaceSession } from './model.js';
 import { surfaces, swatchBackground } from './surfaces.js';
 export function field(doc: Document, tag: string, text: string, className = '') {
   const e = doc.createElement(tag);
@@ -61,9 +61,37 @@ export const toolbar: PaneRenderer = ({ element, document: doc }) => {
     field(doc, 'span', 'Spatial study', 'muted'),
   );
   const right = field(doc, 'div', '', 'toolbar-right');
+  const switcher = field(doc, 'div', '', 'workspace-switcher');
+  switcher.setAttribute('role', 'group');
+  switcher.setAttribute('aria-label', 'Workspace configuration');
+  for (const workspace of workspaces) {
+    const button = doc.createElement('button');
+    button.type = 'button';
+    button.textContent = workspace.title;
+    button.title = workspace.description;
+    button.dataset.workspace = workspace.id;
+    button.onclick = () => workspaceSession.select(workspace.id);
+    switcher.append(button);
+  }
+  const update = () => {
+    for (const button of switcher.querySelectorAll('button')) {
+      button.setAttribute(
+        'aria-pressed',
+        String(button.dataset.workspace === workspaceSession.get()),
+      );
+    }
+  };
+  update();
+  const unsubscribe = workspaceSession.subscribe(update);
+  right.append(switcher);
   right.append(field(doc, 'span', 'Local session', 'session-dot'));
   element.append(right);
-  return { dispose() {} };
+  return {
+    dispose() {
+      unsubscribe();
+      for (const button of switcher.querySelectorAll('button')) button.onclick = null;
+    },
+  };
 };
 export const tools: PaneRenderer = ({ element, document: doc }) => {
   element.classList.add('demo-tools');

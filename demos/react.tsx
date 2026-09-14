@@ -70,7 +70,7 @@ const components = {
   activity: Imperative,
   footer: Imperative,
 };
-const demoTabBar = { mode: 'tapered' } as const;
+const demoTabBar = { attachment: 'floating', fit: 'fit' } as const;
 const ref = createRef<MountedLayout>();
 const root = createRoot(document.querySelector('#workspace')!);
 root.render(
