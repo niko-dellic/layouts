@@ -295,3 +295,74 @@ test('fitted bars collapse before their end reaches the pane edge', async ({ pag
     expect((await left.locator('.layouts-body').boundingBox())!.y).toBe(bodyY);
   }
 });
+
+test('left icon rail reserves space, labels icons, navigates vertically and restores top tabs', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    window.harness.store.move('b', 'left');
+    window.harness.setTabBar({ placement: 'left' });
+  });
+  const group = page.locator('[data-node-id="left"]');
+  await expect(group).toHaveAttribute('data-tab-placement', 'left');
+  await expect(group.getByRole('tablist')).toHaveAttribute('aria-orientation', 'vertical');
+  const a = group.getByRole('tab', { name: 'A', exact: true });
+  const b = group.getByRole('tab', { name: 'B', exact: true });
+  await expect(a).toHaveAttribute('title', 'A');
+  await expect(a.locator('.layouts-tab-label')).toBeHidden();
+  await expect(a.locator('.layouts-tab-icon')).toBeVisible();
+  const header = (await group.locator('.layouts-header').boundingBox())!;
+  const body = (await group.locator('.layouts-body').boundingBox())!;
+  expect(header.width).toBe(40);
+  expect(body.x).toBe(header.x + header.width);
+  expect(body.y).toBe(header.y);
+  await a.focus();
+  await a.press('ArrowDown');
+  await expect(b).toBeFocused();
+  await expect(b).toHaveAttribute('aria-selected', 'true');
+  await b.press('ArrowUp');
+  await expect(a).toBeFocused();
+  await group.getByRole('button', { name: 'A actions', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Close pane', exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.evaluate(() => window.harness.setTabBar({ mode: 'tapered' }));
+  await expect(group).toHaveAttribute('data-tab-placement', 'top');
+  await expect(a.locator('.layouts-tab-label')).toBeVisible();
+  expect(await page.evaluate(() => window.harness.stats)).toMatchObject({
+    mounts: 2,
+    disposals: 0,
+  });
+});
+
+test('left fitted shapes keep content fixed and collapse with bottom clearance', async ({
+  page,
+}) => {
+  await page.evaluate(() => window.harness.store.move('b', 'left'));
+  const group = page.locator('[data-node-id="left"]');
+  for (const shape of ['angle', 'round', 'scoop', 'vertical'] as const) {
+    await group.evaluate((el) => {
+      el.style.height = '400px';
+    });
+    await page.evaluate(
+      (shape) =>
+        window.harness.setTabBar({ placement: 'left', mode: 'tapered', shape, taperWidth: 24 }),
+      shape,
+    );
+    await expect(group.locator('.layouts-header')).toHaveAttribute('data-tab-bar-shape', shape);
+    await expect(group).toHaveAttribute('data-tab-bar-filled', 'false');
+    const body = (await group.locator('.layouts-body').boundingBox())!;
+    expect(body.x).toBe((await group.boundingBox())!.x);
+    await expect(group.locator('.layouts-tab-cap')).toHaveCount(shape === 'vertical' ? 0 : 1);
+    const height = await group.evaluate((el) =>
+      parseFloat(el.style.getPropertyValue('--layouts-tab-bar-height')),
+    );
+    await group.evaluate((el, height) => {
+      el.style.height = `${height + 11}px`;
+    }, height);
+    await expect(group).toHaveAttribute('data-tab-bar-filled', 'true');
+    await expect(group.locator('.layouts-tab-cap')).toHaveCount(0);
+    const after = (await group.locator('.layouts-body').boundingBox())!;
+    expect(after.x).toBe(body.x);
+    expect(after.y).toBe(body.y);
+  }
+});

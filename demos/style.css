@@ -620,10 +620,10 @@ h1 {
 .scene-chip {
   pointer-events: none;
 }
-.layouts-group[data-tab-bar='tapered'] .demo-inspector,
-.layouts-group[data-tab-bar='tapered'] .demo-tools,
-.layouts-group[data-tab-bar='tapered'] .demo-hotkeys,
-.layouts-group[data-tab-bar='tapered'] .demo-timeline {
+.layouts-group[data-tab-placement='top'][data-tab-bar='tapered'] .demo-inspector,
+.layouts-group[data-tab-placement='top'][data-tab-bar='tapered'] .demo-tools,
+.layouts-group[data-tab-placement='top'][data-tab-bar='tapered'] .demo-hotkeys,
+.layouts-group[data-tab-placement='top'][data-tab-bar='tapered'] .demo-timeline {
   padding-top: calc(var(--layouts-tab-bar-height, 0px) + 16px);
 }
 .scene-chip {
@@ -677,7 +677,7 @@ h1 {
   height: 100%;
   padding: 20px 16px;
 }
-.layouts-group[data-tab-bar='tapered'] .demo-theming {
+.layouts-group[data-tab-placement='top'][data-tab-bar='tapered'] .demo-theming {
   padding-top: calc(var(--layouts-tab-bar-height, 0px) + 20px);
 }
 .demo-theming .demo-actions {
@@ -703,4 +703,9 @@ h1 {
   .demo-theming .demo-actions {
     grid-template-columns: 1fr;
   }
+}
+
+.layouts-group[data-tab-placement='left'][data-tab-bar='tapered']
+  :is(.demo-theming, .demo-inspector, .demo-tools, .demo-hotkeys, .demo-timeline) {
+  padding-left: calc(var(--layouts-tab-bar-width, 0px) + 16px);
 }

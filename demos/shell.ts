@@ -81,7 +81,7 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
     ['angle', 'Tapered: angle'],
     ['round', 'Tapered: round'],
     ['scoop', 'Tapered: scoop'],
-    ['vertical', 'Fitted: vertical'],
+    ['vertical', 'Fitted'],
   ]) {
     const option = document.createElement('option');
     option.value = value!;
@@ -90,6 +90,18 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
   }
   barSelect.value = 'angle';
   const barField = labelControl(barSelect, 'Tab bar');
+  const placement = document.createElement('select');
+  placement.setAttribute('aria-label', 'Tab placement');
+  for (const [value, label] of [
+    ['top', 'Top'],
+    ['left', 'Left: icons only'],
+  ]) {
+    const option = document.createElement('option');
+    option.value = value!;
+    option.textContent = label!;
+    placement.append(option);
+  }
+  const placementField = labelControl(placement, 'Tab placement');
   const amount = document.createElement('input');
   amount.type = 'range';
   amount.step = '1';
@@ -98,8 +110,13 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
   const values = { angle: '60', round: '32', scoop: '32' };
   const applyBar = () => {
     const shape = barSelect.value as 'angle' | 'round' | 'scoop' | 'vertical' | 'full';
+    const position = placement.value as 'top' | 'left';
     if (shape === 'full' || shape === 'vertical') {
-      getMounted()?.setTabBar(shape === 'full' ? { mode: 'full' } : { mode: 'tapered', shape });
+      getMounted()?.setTabBar(
+        shape === 'full'
+          ? { placement: position, mode: 'full' }
+          : { placement: position, mode: 'tapered', shape },
+      );
       return;
     }
     const value = Number(amount.value);
@@ -110,8 +127,11 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
     amountField.querySelector('span')!.textContent = `${name}: ${value}${unit}`;
     values[shape] = amount.value;
     // Angle is measured from the horizontal.
-    const taperWidth = shape === 'angle' ? headerHeight / Math.tan((value * Math.PI) / 180) : value;
-    getMounted()?.setTabBar({ mode: 'tapered', shape, taperWidth });
+    const taperWidth =
+      shape === 'angle'
+        ? (position === 'left' ? 40 : headerHeight) / Math.tan((value * Math.PI) / 180)
+        : value;
+    getMounted()?.setTabBar({ placement: position, mode: 'tapered', shape, taperWidth });
   };
   const updateAmount = () => {
     const shape = barSelect.value as keyof typeof values;
@@ -126,7 +146,8 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
   };
   amount.oninput = applyBar;
   barSelect.onchange = updateAmount;
-  themeField.after(barField, amountField);
+  placement.onchange = updateAmount;
+  themeField.after(placementField, barField, amountField);
   updateAmount();
   let last: HTMLElement = amountField;
   for (const [name, initial, min, max, update] of [
@@ -199,7 +220,4 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
     }
   });
   settings.querySelector('#reset')!.addEventListener('click', () => store.reset());
-  settings
-    .querySelector('#popout-inspector')!
-    .addEventListener('click', () => getMounted()?.popout('notes'));
 }

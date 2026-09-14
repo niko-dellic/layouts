@@ -3,6 +3,8 @@ import type { Scope } from './lifetime.js';
 
 export function validateTabBar(options: TabBarOptions) {
   for (const style of [options, ...Object.values(options.regions ?? {})]) {
+    if (style.placement !== undefined && !['top', 'left'].includes(style.placement))
+      throw new Error('Unknown tab bar placement');
     if (style.mode !== undefined && !['full', 'tapered'].includes(style.mode))
       throw new Error('Unknown tab bar mode');
     if (style.shape !== undefined && !['angle', 'round', 'scoop', 'vertical'].includes(style.shape))
@@ -25,13 +27,71 @@ export function bindTabBar(
 ) {
   const doc = region.ownerDocument,
     win = doc.defaultView!;
+  const drawChrome = (
+    natural: number,
+    occupied: number,
+    height: number,
+    capWidth: number,
+    fits: boolean,
+    left: boolean,
+    style: TabBarStyle,
+  ) => {
+    if (fits && capWidth > 0) {
+      const svg = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.classList.add('layouts-tab-cap');
+      svg.setAttribute('aria-hidden', 'true');
+      svg.setAttribute('viewBox', '0 0 1 1');
+      svg.setAttribute('preserveAspectRatio', 'none');
+      svg.style.width = `${left ? height : capWidth}px`;
+      if (left) svg.style.height = `${capWidth}px`;
+      const path = doc.createElementNS(svg.namespaceURI, 'path');
+      const curve =
+        style.shape === 'round'
+          ? 'A1 1 0 0 0 1 0'
+          : style.shape === 'scoop'
+            ? 'A1 1 0 0 1 1 0'
+            : 'L1 0';
+      path.setAttribute('d', `M0 1 ${curve} H0 Z`);
+      if (left) path.setAttribute('transform', 'matrix(0 1 1 0 0 0)');
+      svg.append(path);
+      header.append(svg);
+    }
+    // A single closed, inset outline covers the controls and cap. Splitting
+    // this between CSS borders and SVG strokes leaves seams and clipped edges.
+    const outline = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    outline.classList.add('layouts-tab-outline');
+    outline.setAttribute('aria-hidden', 'true');
+    outline.setAttribute('viewBox', `0 0 ${left ? height : occupied} ${left ? occupied : height}`);
+    outline.style.width = `${left ? height : occupied}px`;
+    outline.style.height = `${left ? occupied : height}px`;
+    const edge = doc.createElementNS(outline.namespaceURI, 'path');
+    const right = Math.max(0.5, occupied - 0.5);
+    const bottom = Math.max(0.5, height - 0.5);
+    const end = fits && capWidth > 0 ? natural : right;
+    const curve =
+      fits && capWidth > 0
+        ? style.shape === 'round' || style.shape === 'scoop'
+          ? `A${Math.max(0.01, right - end)} ${Math.max(0.01, bottom - 0.5)} 0 0 ${style.shape === 'round' ? 1 : 0} ${end} ${bottom}`
+          : `L${end} ${bottom}`
+        : `V${bottom}`;
+    edge.setAttribute('d', `M0.5 0.5 H${right} ${curve} H0.5 Z`);
+    if (left) edge.setAttribute('transform', 'matrix(0 1 1 0 0 0)');
+    outline.append(edge);
+    header.append(outline);
+  };
   let frame = 0,
     disposed = false;
   const measure = () => {
     frame = 0;
     if (disposed || !region.isConnected) return;
     const style = getStyle();
+    const left = style.placement === 'left';
     const tapered = style.mode === 'tapered';
+    if (!left) header.style.removeProperty('height');
+    region.dataset.tabPlacement = left ? 'left' : 'top';
+    header
+      .querySelector('[role=tablist]')
+      ?.setAttribute('aria-orientation', left ? 'vertical' : 'horizontal');
     region.dataset.tabBar = tapered ? 'tapered' : 'full';
     header.dataset.tabBarShape = style.shape ?? 'angle';
     header.querySelector('.layouts-tab-cap')?.remove();
@@ -43,6 +103,37 @@ export function bindTabBar(
     // outside the region and change the stage's scrollbar/resize geometry.
     const available = parseFloat(win.getComputedStyle(region).width);
     let occupied = available;
+    if (left) {
+      header.style.removeProperty('width');
+      for (const item of items) item.style.removeProperty('--layouts-tab-preferred-width');
+      const width = header.hidden ? 0 : header.getBoundingClientRect().width;
+      const regionHeight = parseFloat(win.getComputedStyle(region).height);
+      let occupiedHeight = regionHeight;
+      if (tapered && width && items.length) {
+        const computed = win.getComputedStyle(header);
+        const list = header.querySelector<HTMLElement>('.layouts-tabs')!;
+        const menu = header.querySelector<HTMLElement>(':scope > .layouts-button');
+        const natural =
+          items.reduce((sum, item) => sum + parseFloat(win.getComputedStyle(item).flexBasis), 0) +
+          Math.max(0, items.length - 1) * (parseFloat(win.getComputedStyle(list).rowGap) || 0) +
+          (menu ? menu.getBoundingClientRect().height + (parseFloat(computed.rowGap) || 0) : 0) +
+          parseFloat(computed.paddingTop) +
+          parseFloat(computed.paddingBottom);
+        const cap = style.shape === 'vertical' ? 0 : (style.taperWidth ?? width);
+        const fits = natural + cap + 12 <= regionHeight;
+        occupiedHeight = fits ? natural + cap : regionHeight;
+        header.style.height = fits ? `${natural}px` : '100%';
+        region.dataset.tabBarFilled = String(!fits);
+        drawChrome(natural, occupiedHeight, width, cap, fits, true, style);
+      } else {
+        header.style.removeProperty('height');
+        delete region.dataset.tabBarFilled;
+        if (tapered && !items.length) occupiedHeight = 0;
+      }
+      region.style.setProperty('--layouts-tab-bar-width', `${occupiedHeight ? width : 0}px`);
+      region.style.setProperty('--layouts-tab-bar-height', `${width ? occupiedHeight : 0}px`);
+      return;
+    }
     if (!tapered) {
       header.style.removeProperty('width');
       for (const item of items) item.style.removeProperty('--layouts-tab-preferred-width');
@@ -88,45 +179,7 @@ export function bindTabBar(
         region.dataset.tabBarFilled = String(!fits);
         header.style.width = fits ? `${natural}px` : '100%';
         occupied = fits ? natural + capWidth : available;
-        if (fits && capWidth > 0) {
-          const svg = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
-          svg.classList.add('layouts-tab-cap');
-          svg.setAttribute('aria-hidden', 'true');
-          svg.setAttribute('viewBox', '0 0 1 1');
-          svg.setAttribute('preserveAspectRatio', 'none');
-          svg.style.width = `${capWidth}px`;
-          const path = doc.createElementNS(svg.namespaceURI, 'path');
-          const curve =
-            style.shape === 'round'
-              ? 'A1 1 0 0 0 1 0'
-              : style.shape === 'scoop'
-                ? 'A1 1 0 0 1 1 0'
-                : 'L1 0';
-          path.setAttribute('d', `M0 1 ${curve} H0 Z`);
-          svg.append(path);
-          header.append(svg);
-        }
-        // A single closed, inset outline covers the controls and cap. Splitting
-        // this between CSS borders and SVG strokes leaves seams and clipped edges.
-        const outline = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        outline.classList.add('layouts-tab-outline');
-        outline.setAttribute('aria-hidden', 'true');
-        outline.setAttribute('viewBox', `0 0 ${occupied} ${height}`);
-        outline.style.width = `${occupied}px`;
-        outline.style.height = `${height}px`;
-        const edge = doc.createElementNS(outline.namespaceURI, 'path');
-        const right = Math.max(0.5, occupied - 0.5);
-        const bottom = Math.max(0.5, height - 0.5);
-        const end = fits && capWidth > 0 ? natural : right;
-        const curve =
-          fits && capWidth > 0
-            ? style.shape === 'round' || style.shape === 'scoop'
-              ? `A${Math.max(0.01, right - end)} ${Math.max(0.01, bottom - 0.5)} 0 0 ${style.shape === 'round' ? 1 : 0} ${end} ${bottom}`
-              : `L${end} ${bottom}`
-            : `V${bottom}`;
-        edge.setAttribute('d', `M0.5 0.5 H${right} ${curve} H0.5 Z`);
-        outline.append(edge);
-        header.append(outline);
+        drawChrome(natural, occupied, height, capWidth, fits, false, style);
       } finally {
         probe.remove();
       }
@@ -140,13 +193,17 @@ export function bindTabBar(
   const schedule = () => {
     if (!disposed && !frame) frame = win.requestAnimationFrame(measure);
   };
-  let observedHeaderHeight = -1;
+  let observedHeaderCrossSize = -1;
   const resize = new ResizeObserver((entries) => {
     let changed = false;
     for (const entry of entries) {
       if (entry.target === region) changed = true;
-      else if (entry.contentRect.height !== observedHeaderHeight) {
-        observedHeaderHeight = entry.contentRect.height;
+      else if (
+        (getStyle().placement === 'left' ? entry.contentRect.width : entry.contentRect.height) !==
+        observedHeaderCrossSize
+      ) {
+        observedHeaderCrossSize =
+          getStyle().placement === 'left' ? entry.contentRect.width : entry.contentRect.height;
         changed = true;
       }
     }

@@ -50,9 +50,12 @@ export function fillTabs(tabs: HTMLElement, group: Group, panes: Pane[], deps: T
       deps.setDrag(undefined);
       deps.clearDrop();
     };
+    const vertical = () => tabs.getAttribute('aria-orientation') === 'vertical';
     const after = (e: DragEvent) => {
       const rect = item.getBoundingClientRect();
-      return e.clientX > rect.left + rect.width / 2;
+      return vertical()
+        ? e.clientY > rect.top + rect.height / 2
+        : e.clientX > rect.left + rect.width / 2;
     };
     item.ondragover = (e) => {
       const id = deps.getDrag();
@@ -85,8 +88,9 @@ export function fillTabs(tabs: HTMLElement, group: Group, panes: Pane[], deps: T
     };
     tab.onkeydown = (e) => {
       let index = i;
-      if (e.key === 'ArrowRight') index = (i + 1) % panes.length;
-      else if (e.key === 'ArrowLeft') index = (i + panes.length - 1) % panes.length;
+      if (e.key === (vertical() ? 'ArrowDown' : 'ArrowRight')) index = (i + 1) % panes.length;
+      else if (e.key === (vertical() ? 'ArrowUp' : 'ArrowLeft'))
+        index = (i + panes.length - 1) % panes.length;
       else if (e.key === 'Home') index = 0;
       else if (e.key === 'End') index = panes.length - 1;
       else return;

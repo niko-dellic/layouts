@@ -1,11 +1,11 @@
-import { Activity, Keyboard, Box, Layers, SlidersHorizontal, Timer } from 'lucide';
+import { Activity, Search, Keyboard, Box, Layers, SlidersHorizontal, Timer } from 'lucide';
 import type { IconNode } from 'lucide';
 const icons: Record<string, IconNode> = {
   activity: Activity,
   hotkeys: Keyboard,
   canvas: Box,
   tools: Layers,
-  notes: SlidersHorizontal,
+  notes: Search,
   theming: SlidersHorizontal,
   timeline: Timer,
 };

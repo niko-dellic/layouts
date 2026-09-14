@@ -576,3 +576,71 @@
   vertical-align: middle;
   pointer-events: none;
 }
+
+/* A reserved left rail keeps pane content clear of icon-only controls. */
+.layouts-group[data-tab-placement='left'] {
+  flex-direction: row;
+}
+.layouts-group[data-tab-placement='left'] > .layouts-header {
+  position: relative;
+  inset: auto;
+  width: 40px;
+  height: 100%;
+  flex: 0 0 40px;
+  flex-direction: column;
+  padding: 4px;
+  border-bottom: 0;
+  border-right: 1px solid var(--layouts-line, #39414e);
+  min-height: 0;
+  gap: 4px;
+}
+.layouts-group[data-tab-placement='left'] .layouts-tabs {
+  flex-direction: column;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.layouts-group[data-tab-placement='left'] .layouts-tab-item {
+  flex: 0 0 30px;
+  min-width: 0;
+  width: 100%;
+  height: 30px;
+}
+.layouts-group[data-tab-placement='left'] .layouts-tab-item .layouts-tab {
+  padding: 0;
+  justify-content: center;
+  border-radius: var(--layouts-radius, 5px);
+}
+.layouts-group[data-tab-placement='left'] .layouts-tab-label,
+.layouts-group[data-tab-placement='left'] .layouts-tab-item > .layouts-tab-close {
+  display: none;
+}
+.layouts-group[data-tab-placement='left'] > .layouts-header > .layouts-button {
+  flex: 0 0 30px;
+  height: 30px;
+  width: 100%;
+  padding: 0;
+}
+.layouts-group[data-tab-placement='left'] .layouts-tab-item[data-tab-drop]::after {
+  inset: 0 2px auto;
+  width: auto;
+  height: 2px;
+}
+.layouts-group[data-tab-placement='left'] .layouts-tab-item[data-tab-drop='after']::after {
+  inset: auto 2px 0;
+}
+
+.layouts-group[data-tab-placement='left'][data-tab-bar='tapered'] > .layouts-header {
+  position: absolute;
+  inset: 0 auto auto 0;
+  border-right-color: transparent;
+}
+.layouts-group[data-tab-placement='left'] .layouts-tab-cap {
+  left: 0;
+  top: 100%;
+}
+.layouts-group[data-tab-placement='left'] > .layouts-header > .layouts-button .layouts-chrome-icon {
+  transform: rotate(90deg);
+}

@@ -17,6 +17,8 @@ export interface PaneView {
 }
 export type PaneRenderer = (context: PaneContext) => PaneView;
 export interface TabBarStyle {
+  /** Left placement uses an icon-only rail; mode and shape apply in either placement. */
+  placement?: 'top' | 'left';
   mode?: 'full' | 'tapered';
   shape?: 'angle' | 'round' | 'scoop' | 'vertical';
   /** Positive finite CSS pixels. Omit to match header height. */

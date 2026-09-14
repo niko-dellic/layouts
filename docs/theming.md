@@ -181,3 +181,10 @@ requiring CSS `corner-shape` support.
 Active tabs use a rounded, inset background to indicate selection.
 The demos expose header height, text size, control corner radius, theme presets,
 and fitted-bar shape in the right-side Theming tab.
+
+Set `tabBar: { placement: 'left' }` for a 40px icon-only rail. Full mode reserves this space; fitted styles overlay the content and taper at the bottom, with the same 12px edge clearance as top tabs. Hovering
+an icon shows the browser's built-in tooltip with the full tab name. Up/Down
+arrows navigate the tabs; Home/End and vertical drag reordering are supported.
+The actions menu includes Close, and middle-click closing remains available when
+enabled. `placement: 'top'` restores top tabs; mode and shape apply in both placements.
+Placement supports region overrides and live changes through `setTabBar`.
