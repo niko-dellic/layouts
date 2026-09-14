@@ -21,7 +21,9 @@ export function bindTabTooltip(
   const refresh = () => {
     if (!anchor || !tooltip) return;
     if (
-      (!anchor.matches('.layouts-empty') && region.dataset.tabPlacement !== 'left') ||
+      (!anchor.matches('.layouts-empty') &&
+        region.dataset.tabPlacement !== 'left' &&
+        region.dataset.tabDisplay !== 'compact') ||
       (anchor.matches('.layouts-empty') && Boolean(region.querySelector('.layouts-picker'))) ||
       !anchor.isConnected ||
       !anchor.getClientRects().length
@@ -33,8 +35,11 @@ export function bindTabTooltip(
     tooltip.textContent = empty ? 'Click to add a pane' : (anchor.getAttribute('aria-label') ?? '');
     const rect = (empty ? region : anchor).getBoundingClientRect();
     const size = tooltip.getBoundingClientRect();
-    tooltip.style.left = `${Math.max(8, Math.min(empty ? rect.left + (rect.width - size.width) / 2 : rect.right + 8, win.innerWidth - size.width - 8))}px`;
-    tooltip.style.top = `${Math.max(8, Math.min(rect.top + (rect.height - size.height) / 2, win.innerHeight - size.height - 8))}px`;
+    const horizontal = !empty && region.dataset.tabPlacement !== 'left';
+    const x = empty || horizontal ? rect.left + (rect.width - size.width) / 2 : rect.right + 8;
+    const y = horizontal ? rect.bottom + 8 : rect.top + (rect.height - size.height) / 2;
+    tooltip.style.left = `${Math.max(8, Math.min(x, win.innerWidth - size.width - 8))}px`;
+    tooltip.style.top = `${Math.max(8, Math.min(y, win.innerHeight - size.height - 8))}px`;
   };
   const show = (event: Event) => {
     const target = event.target as Element | null;
@@ -44,7 +49,8 @@ export function bindTabTooltip(
     if (
       empty
         ? tab.matches(':disabled') || region.querySelector('.layouts-picker')
-        : !header.contains(tab) || region.dataset.tabPlacement !== 'left'
+        : !header.contains(tab) ||
+          (region.dataset.tabPlacement !== 'left' && region.dataset.tabDisplay !== 'compact')
     )
       return;
     if (anchor === tab) return;

@@ -98,6 +98,12 @@ export function validate(input: unknown): Issue[] {
     if (node.kind === 'group') {
       groups.add(node.id);
       if (
+        node.tabDisplay !== undefined &&
+        node.tabDisplay !== 'automatic' &&
+        node.tabDisplay !== 'compact'
+      )
+        fail(path + '.tabDisplay', 'Expected automatic or compact');
+      if (
         node.tabPlacement !== undefined &&
         node.tabPlacement !== 'top' &&
         node.tabPlacement !== 'left'

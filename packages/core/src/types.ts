@@ -25,6 +25,8 @@ export interface Group {
   active: string | null;
   /** Persisted tab orientation for this region; omitted inherits renderer settings. */
   tabPlacement?: 'top' | 'left';
+  /** Omitted inherits the workspace tab display setting. */
+  tabDisplay?: 'automatic' | 'compact';
 }
 export interface Split {
   kind: 'split';

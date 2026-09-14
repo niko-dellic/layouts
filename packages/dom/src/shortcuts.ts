@@ -1,7 +1,11 @@
+import type { Group } from 'layouts-core';
 import { findNode } from 'layouts-core';
 import type { LayoutOptions } from './types.js';
 import type { Scope } from './lifetime.js';
-export function shortcutEnabled(options: LayoutOptions, key: 'maximize' | 'middleClickClose') {
+export function shortcutEnabled(
+  options: LayoutOptions,
+  key: 'maximize' | 'middleClickClose' | 'addTab' | 'restoreClosedTab',
+) {
   return (
     options.shortcuts === true ||
     (typeof options.shortcuts === 'object' && options.shortcuts[key] === true)
@@ -12,8 +16,14 @@ export function bindShortcuts(
   options: LayoutOptions,
   scope: Scope,
   act: (fn: () => void) => void,
+  addTab: (group: Group) => void,
 ) {
-  if (!shortcutEnabled(options, 'maximize')) return;
+  if (
+    !shortcutEnabled(options, 'maximize') &&
+    !shortcutEnabled(options, 'addTab') &&
+    !shortcutEnabled(options, 'restoreClosedTab')
+  )
+    return;
   let hovered: string | undefined;
   scope.listen(root, 'pointerover', (event) => {
     hovered = (event.target as Element).closest<HTMLElement>('.layouts-group')?.dataset.nodeId;
@@ -24,7 +34,22 @@ export function bindShortcuts(
   scope.listen(root.ownerDocument, 'keydown', (event) => {
     const e = event as KeyboardEvent;
     const maximizeKey = (e.altKey && e.code === 'Space') || (!e.altKey && e.key === '`');
-    if (e.defaultPrevented || e.repeat || !maximizeKey || e.ctrlKey || e.metaKey || e.shiftKey)
+    const addTabKey = !e.metaKey && !e.altKey && e.key.toLowerCase() === 't';
+    const maximize = !e.metaKey && maximizeKey && shortcutEnabled(options, 'maximize');
+    const restore =
+      !e.metaKey &&
+      !e.altKey &&
+      e.key.toLowerCase() === 'r' &&
+      shortcutEnabled(options, 'restoreClosedTab');
+    const create = addTabKey && shortcutEnabled(options, 'addTab');
+    if (
+      e.isComposing ||
+      e.defaultPrevented ||
+      e.repeat ||
+      (!maximize && !create && !restore) ||
+      e.ctrlKey ||
+      e.shiftKey
+    )
       return;
     const target = e.target as HTMLElement | null;
     if (
@@ -34,14 +59,32 @@ export function bindShortcuts(
       root.ownerDocument.querySelector('dialog[open]')
     )
       return;
+    if (restore) {
+      if (options.store.canRestoreClosedTab()) {
+        e.preventDefault();
+        act(() => options.store.restoreClosedTab());
+      }
+      return;
+    }
     const focused =
       target && root.contains(target)
         ? target.closest<HTMLElement>('.layouts-group')?.dataset.nodeId
         : undefined;
-    const id = hovered ?? focused;
+    const id = create ? hovered : (hovered ?? focused);
     const layout = options.store.getSnapshot();
-    if (!id || findNode(layout.root, id)?.kind !== 'group') return;
+    const group = id ? findNode(layout.root, id) : undefined;
+    if (group?.kind !== 'group') return;
+    if (
+      create &&
+      (!options.tabs?.list().length ||
+        !group.panes.every((paneId) => options.store.can(paneId, 'move')))
+    )
+      return;
     e.preventDefault();
-    act(() => options.store.maximize(layout.maximized === id ? null : id));
+    act(() =>
+      create
+        ? addTab(group)
+        : options.store.maximize(layout.maximized === group.id ? null : group.id),
+    );
   });
 }

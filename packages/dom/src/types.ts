@@ -19,6 +19,8 @@ export type PaneRenderer = (context: PaneContext) => PaneView;
 export interface TabBarStyle {
   /** Left placement uses an icon-only rail; mode and shape apply in either placement. */
   placement?: 'top' | 'left';
+  /** Automatic shows labels as width permits; compact always uses icons only. */
+  display?: 'automatic' | 'compact';
   mode?: 'full' | 'tapered';
   shape?: 'angle' | 'round' | 'scoop' | 'vertical' | 'rounded';
   /** Anchored by default; floating bars overlay content with an 8px inset. */
@@ -40,8 +42,15 @@ export interface LayoutOptions {
   renderers: Record<string, PaneRenderer>;
   /** Return a fresh decorative icon element. Unknown keys use a title initial. */
   renderIcon?: (key: string, document: Document) => Element | undefined;
-  /** Opt-in conveniences; omitted and false disable both. */
-  shortcuts?: boolean | { maximize?: boolean; middleClickClose?: boolean };
+  /** Opt-in conveniences; omitted and false disable all. */
+  shortcuts?:
+    | boolean
+    | {
+        maximize?: boolean;
+        middleClickClose?: boolean;
+        addTab?: boolean;
+        restoreClosedTab?: boolean;
+      };
   getPaneState?: (paneId: string) => unknown;
   /** Legacy split factory, used only when no registry is supplied. */
   createPane?: (source: Pane) => Pane | undefined;

@@ -30,6 +30,7 @@ export class LayoutStore {
   private errors = new Set<(error: unknown) => void>();
   private disposed = false;
   private serial = 0;
+  private closedTabs: { pane: Pane; groupId: string; index: number }[] = [];
   private notifying = false;
   private pending: Change[] = [];
   private autoCollapse: AutoCollapse = 'disabled';
@@ -78,6 +79,26 @@ export class LayoutStore {
     } catch (error) {
       this.report(error);
       throw error;
+    }
+    // Update session history only after validation, before notifying subscribers.
+    if (action === 'load') this.closedTabs = [];
+    if (action === 'close' || action === 'closeGroup') {
+      for (const pane of Object.values(this.state.panes)) {
+        if (Object.hasOwn(next.panes, pane.id)) continue;
+        const group = groups(this.state.root).find((g) => g.panes.includes(pane.id));
+        const detached = this.state.popouts.find((p) => p.paneId === pane.id);
+        this.closedTabs.push({
+          pane: structuredClone(pane),
+          groupId: group?.id ?? detached!.groupId,
+          index: group ? group.panes.indexOf(pane.id) : detached!.index,
+        });
+      }
+      this.closedTabs = this.closedTabs.slice(-50);
+    }
+    if (action === 'restoreClosedTab') {
+      this.closedTabs = this.closedTabs.filter(
+        (entry) => !Object.hasOwn(next.panes, entry.pane.id),
+      );
     }
     this.state = freeze(next);
     this.pending.push({ action, layout: this.state });
@@ -170,6 +191,14 @@ export class LayoutStore {
   }
   reset() {
     this.load(this.initial);
+  }
+  setTabDisplay(groupId: string, display: Group['tabDisplay']) {
+    this.commit('setTabDisplay', (draft) => {
+      const group = findNode(draft.root, groupId);
+      if (!group || group.kind !== 'group') problem('Expected a group id');
+      if (display === undefined) delete group.tabDisplay;
+      else group.tabDisplay = display;
+    });
   }
   setTabPlacement(groupId: string, placement: Group['tabPlacement']) {
     this.commit('setTabPlacement', (draft) => {
@@ -333,6 +362,20 @@ export class LayoutStore {
       this.tidy(d);
     });
   }
+  /** Close all docked tabs and remove their region in one atomic command. */
+  closeGroup(groupId: string, options: CommandOptions = {}) {
+    this.commit('closeGroup', (d) => {
+      const group = this.group(d, groupId);
+      this.permit(d, group.panes, 'close', options);
+      for (const id of group.panes) delete d.panes[id];
+      group.panes = [];
+      group.active = null;
+      if (d.maximized === groupId) d.maximized = null;
+      const parent = findParent(d.root, groupId);
+      if (parent)
+        this.replace(d, parent, parent.children[parent.children[0].id === groupId ? 1 : 0]);
+    });
+  }
   close(paneId: string, options: CommandOptions = {}) {
     this.commit('close', (d) => {
       this.permit(d, [paneId], 'close', options);
@@ -344,6 +387,52 @@ export class LayoutStore {
       delete d.panes[paneId];
       this.tidy(d, source);
     });
+  }
+  canRestoreClosedTab(): boolean {
+    return this.closedTabs.some((entry) => !Object.hasOwn(this.state.panes, entry.pane.id));
+  }
+  /** Restore the latest closed tab without undoing unrelated layout changes. */
+  restoreClosedTab(): void {
+    this.alive();
+    const entry = [...this.closedTabs]
+      .reverse()
+      .find((item) => !Object.hasOwn(this.state.panes, item.pane.id));
+    if (!entry) return;
+    this.commit('restoreClosedTab', (d) => {
+      Object.defineProperty(d.panes, entry.pane.id, {
+        value: structuredClone(entry.pane),
+        enumerable: true,
+        writable: true,
+        configurable: true,
+      });
+      this.dockPane(d, entry.pane.id, entry.groupId, entry.index);
+    });
+  }
+  private dockPane(d: Layout, paneId: string, groupId: string, index: number) {
+    const preferred = findNode(d.root, groupId);
+    d.maximized = null;
+    const candidates = [
+      ...(preferred?.kind === 'group' ? [preferred] : []),
+      ...groups(d.root).filter(
+        (g) => g.id !== groupId && g.panes.every((id) => d.panes[id]!.header !== false),
+      ),
+    ];
+    for (const target of candidates) {
+      const previousActive = target.active;
+      target.panes.splice(Math.min(index, target.panes.length), 0, paneId);
+      target.active = paneId;
+      if (!validate(d).length) return;
+      target.panes.splice(target.panes.indexOf(paneId), 1);
+      target.active = previousActive;
+    }
+    const g: Group = { kind: 'group', id: this.id(d), panes: [paneId], active: paneId };
+    d.root = {
+      kind: 'split',
+      id: this.id(d),
+      axis: 'horizontal',
+      ratio: 0.7,
+      children: [d.root, g],
+    };
   }
   popout(paneId: string, placement?: WindowPlacement, options: CommandOptions = {}) {
     this.commit('popout', (d) => {
@@ -365,34 +454,12 @@ export class LayoutStore {
     this.commit('return', (d) => {
       const entry = d.popouts.find((p) => p.paneId === paneId);
       if (!entry) return;
-      const preferred = findNode(d.root, entry.groupId);
       d.popouts = d.popouts.filter((p) => p.paneId !== paneId);
-      d.maximized = null;
-      const candidates = [
-        ...(preferred?.kind === 'group' ? [preferred] : []),
-        ...groups(d.root).filter(
-          (g) => g.id !== entry.groupId && g.panes.every((id) => d.panes[id]!.header !== false),
-        ),
-      ];
-      for (const target of candidates) {
-        const previousActive = target.active;
-        target.panes.splice(Math.min(entry.index, target.panes.length), 0, paneId);
-        target.active = paneId;
-        if (!validate(d).length) return;
-        target.panes.splice(target.panes.indexOf(paneId), 1);
-        target.active = previousActive;
-      }
-      const g: Group = { kind: 'group', id: this.id(d), panes: [paneId], active: paneId };
-      d.root = {
-        kind: 'split',
-        id: this.id(d),
-        axis: 'horizontal',
-        ratio: 0.7,
-        children: [d.root, g],
-      };
+      this.dockPane(d, paneId, entry.groupId, entry.index);
     });
   }
   dispose() {
+    this.closedTabs = [];
     this.listeners.clear();
     this.errors.clear();
     this.pending = [];

@@ -72,6 +72,11 @@ textarea:focus-visible {
   align-items: center;
   gap: 10px;
 }
+.brand-wordmark {
+  line-height: 1;
+  /* Optically center the lowercase lettering against the square icon. */
+  transform: translateY(-1px);
+}
 .brand-icon {
   display: block;
   width: 29px;
@@ -250,7 +255,7 @@ h1 {
   margin-right: 7px;
 }
 .demo-tools {
-  padding: 22px 13px;
+  padding: var(--layouts-panel-padding, 8px);
   position: relative;
 }
 .object-row {
@@ -284,7 +289,7 @@ h1 {
   margin: 28px 9px;
 }
 .demo-inspector {
-  padding: 23px 20px;
+  padding: var(--layouts-panel-padding, 8px);
 }
 .demo-inspector h2 {
   font-size: 20px;
@@ -351,7 +356,7 @@ h1 {
   color: var(--layouts-muted);
 }
 .demo-timeline {
-  padding: 12px 20px;
+  padding: var(--layouts-panel-padding, 8px);
 }
 .ruler {
   display: flex;
@@ -579,35 +584,63 @@ h1 {
   max-width: 100%;
 }
 .demo-hotkeys {
-  padding: 12px 20px;
+  padding: var(--layouts-panel-padding, 8px);
 }
-.hotkey-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
-  gap: 12px 24px;
-  margin: 0;
+.hotkey-table-frame {
+  border: 1px solid var(--layouts-line);
+  border-radius: 6px;
+  overflow: hidden;
 }
-.hotkey-list > div {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.hotkey-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: left;
 }
-.hotkey-list dt {
+.hotkey-table th {
+  padding: 9px 12px;
+  color: var(--layouts-muted);
+  background: var(--layouts-header);
+  font-size: 10px;
   font-weight: 500;
 }
-.hotkey-list dd {
-  margin: 0;
-  color: var(--layouts-muted);
-  line-height: 1.5;
+.hotkey-table th:first-child {
+  width: 42%;
 }
-.hotkey-list kbd {
-  font:
-    10px ui-monospace,
-    monospace;
+.hotkey-table td {
+  padding: 12px;
+  vertical-align: top;
+  border-top: 1px solid var(--layouts-line);
+  overflow-wrap: anywhere;
+}
+.hotkey-table tbody tr:hover {
+  background: color-mix(in srgb, var(--layouts-header) 45%, transparent);
+}
+.hotkey-table kbd {
+  display: inline-block;
+  padding: 2px 6px;
   border: 1px solid var(--layouts-line);
+  border-radius: 4px;
   background: var(--layouts-header);
-  border-radius: 3px;
-  padding: 2px 5px;
+  color: var(--layouts-text);
+  font:
+    10px / 1.6 ui-monospace,
+    monospace;
+  box-shadow: 0 1px 0 var(--layouts-line);
+}
+.hotkey-action,
+.hotkey-description {
+  display: block;
+}
+.hotkey-action {
+  font-weight: 500;
+}
+.hotkey-description {
+  margin-top: 3px;
+  color: var(--layouts-muted);
+  font-size: 10px;
 }
 
 .layouts .toolbar-right button {
@@ -649,7 +682,7 @@ h1 {
 .layouts-group[data-tab-placement='top'][data-tab-bar='tapered'] .demo-tools,
 .layouts-group[data-tab-placement='top'][data-tab-bar='tapered'] .demo-hotkeys,
 .layouts-group[data-tab-placement='top'][data-tab-bar='tapered'] .demo-timeline {
-  padding-top: calc(var(--layouts-tab-bar-height, 0px) + 16px);
+  padding-top: calc(var(--layouts-tab-bar-height, 0px) + var(--layouts-panel-padding, 8px));
 }
 .scene-chip {
   top: auto;
@@ -700,10 +733,10 @@ h1 {
   container-type: inline-size;
   overflow: auto;
   height: 100%;
-  padding: 20px 16px;
+  padding: var(--layouts-panel-padding, 8px);
 }
 .layouts-group[data-tab-placement='top'][data-tab-bar='tapered'] .demo-theming {
-  padding-top: calc(var(--layouts-tab-bar-height, 0px) + 20px);
+  padding-top: calc(var(--layouts-tab-bar-height, 0px) + var(--layouts-panel-padding, 8px));
 }
 .demo-theming .demo-actions {
   display: grid;
@@ -728,7 +761,7 @@ h1 {
 
 .layouts-group[data-tab-placement='left'][data-tab-bar='tapered']
   :is(.demo-theming, .demo-inspector, .demo-tools, .demo-hotkeys, .demo-timeline) {
-  padding-left: calc(var(--layouts-tab-bar-width, 0px) + 16px);
+  padding-left: calc(var(--layouts-tab-bar-width, 0px) + var(--layouts-panel-padding, 8px));
 }
 
 .demo-handle-toggle {

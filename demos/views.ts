@@ -147,26 +147,43 @@ export const activity: PaneRenderer = ({ element, document: doc }) => {
 };
 export const hotkeys: PaneRenderer = ({ element, document: doc }) => {
   element.classList.add('demo-hotkeys');
-  const list = field(doc, 'dl', '', 'hotkey-list');
-  for (const [keys, description] of [
-    ['Drag on canvas', 'Orbit the scene. Scroll to zoom. Double-click to reset.'],
-    ['` or Alt / Option + Space', 'Maximize or restore the hovered or focused region.'],
-    ['← / → or ↑ / ↓', 'Select the previous or next tab. Use up/down for left-side tabs.'],
-    ['Home / End', 'Select the first or last tab when a tab is focused.'],
-    ['Arrow keys', 'Resize a focused divider. Hold Shift for larger steps.'],
-    ['Escape', 'Cancel a resize or corner drag, or close a dialog.'],
-    ['Middle click', 'Close a tab when closing is allowed.'],
-  ]) {
-    const row = field(doc, 'div', '');
-    const term = field(doc, 'dt', '');
-    term.append(field(doc, 'kbd', keys!));
-    row.append(term, field(doc, 'dd', description!));
-    list.append(row);
+  const frame = field(doc, 'div', '', 'hotkey-table-frame');
+  const table = field(doc, 'table', '', 'hotkey-table');
+  table.setAttribute('aria-label', 'Keyboard and mouse shortcuts');
+  const head = doc.createElement('thead');
+  const headings = doc.createElement('tr');
+  for (const label of ['Shortcut', 'Action']) {
+    const cell = field(doc, 'th', label);
+    cell.setAttribute('scope', 'col');
+    headings.append(cell);
   }
-  element.append(
-    list,
-    field(doc, 'p', 'Maximize is disabled while typing or when a dialog is open.', 'footnote'),
-  );
+  head.append(headings);
+  const body = doc.createElement('tbody');
+  for (const [keys, title, description] of [
+    ['Drag on canvas', 'Orbit scene', 'Scroll to zoom. Double-click to reset.'],
+    ['` or Alt / Option + Space', 'Maximize / restore', 'Hovered or focused region.'],
+    ['T', 'Add tab', 'Open the picker in the hovered region.'],
+    ['R', 'Restore closed tab', 'Reopen the most recently closed tab.'],
+    ['← / → or ↑ / ↓', 'Switch tabs', 'Use up/down for left-side tabs.'],
+    ['Home / End', 'First / last tab', 'When a tab is focused.'],
+    ['Arrow keys', 'Resize divider', 'Hold Shift for larger steps.'],
+    ['Escape', 'Cancel', 'Stop a drag or close a dialog.'],
+    ['Middle click', 'Close tab', 'When closing is allowed.'],
+  ]) {
+    const row = doc.createElement('tr');
+    const shortcut = doc.createElement('td');
+    shortcut.append(field(doc, 'kbd', keys!));
+    const action = doc.createElement('td');
+    action.append(
+      field(doc, 'span', title!, 'hotkey-action'),
+      field(doc, 'span', description!, 'hotkey-description'),
+    );
+    row.append(shortcut, action);
+    body.append(row);
+  }
+  table.append(head, body);
+  frame.append(table);
+  element.append(frame);
   return { dispose() {} };
 };
 export const footer: PaneRenderer = ({ element, document: doc }) => {

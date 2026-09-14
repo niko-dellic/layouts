@@ -313,3 +313,69 @@ it('persists region tab placement and rejects invalid updates atomically', () =>
   restored.setTabPlacement('a-group', undefined);
   expect(restored.export()).toEqual(fixture());
 });
+
+it('persists tab display independently of orientation and validates atomically', () => {
+  const store = new LayoutStore(fixture());
+  store.setTabDisplay('a-group', 'compact');
+  store.setTabPlacement('a-group', 'left');
+  const saved = store.export();
+  const restored = new LayoutStore(JSON.parse(JSON.stringify(saved)));
+  expect(groups(restored.getSnapshot().root)[0]).toMatchObject({
+    tabDisplay: 'compact',
+    tabPlacement: 'left',
+  });
+  expect(() => store.setTabDisplay('a-group', 'bad' as 'compact')).toThrow();
+  expect(store.export()).toEqual(saved);
+  restored.setTabDisplay('a-group', undefined);
+  expect(groups(restored.getSnapshot().root)[0]!.tabDisplay).toBeUndefined();
+});
+
+it('restores closed tabs in order without undoing subsequent edits', () => {
+  const store = new LayoutStore(fixture());
+  store.close('a');
+  store.close('b');
+  store.setTabDisplay('a-group', 'compact');
+  store.restoreClosedTab();
+  expect(groups(store.getSnapshot().root)[0]).toMatchObject({
+    panes: ['b'],
+    active: 'b',
+    tabDisplay: 'compact',
+  });
+  store.restoreClosedTab();
+  expect(groups(store.getSnapshot().root)[0]!.panes).toEqual(['a', 'b']);
+  expect(store.canRestoreClosedTab()).toBe(false);
+  store.close('a');
+  store.load(fixture());
+  expect(store.canRestoreClosedTab()).toBe(false);
+});
+it('restores closed tabs after their original region collapses', () => {
+  const store = new LayoutStore(fixture(), { autoCollapse: 'enabled' });
+  store.close('c');
+  store.restoreClosedTab();
+  expect(store.getSnapshot().panes.c).toEqual(pane('c'));
+  expect(groups(store.getSnapshot().root).flatMap((g) => g.panes)).toContain('c');
+});
+it('failed close does not create restore history', () => {
+  const input = fixture();
+  input.panes.a!.capabilities = { close: false };
+  const store = new LayoutStore(input);
+  expect(() => store.close('a', { source: 'user' })).toThrow();
+  expect(store.canRestoreClosedTab()).toBe(false);
+});
+
+it('closes a region atomically and retains its closed tabs for restore', () => {
+  const input = fixture();
+  input.panes.b!.capabilities = { close: false };
+  const store = new LayoutStore(input);
+  expect(() => store.closeGroup('a-group', { source: 'user' })).toThrow();
+  expect(store.export()).toEqual(input);
+  expect(store.canRestoreClosedTab()).toBe(false);
+  store.closeGroup('a-group');
+  expect(store.getSnapshot().root.id).toBe('c-group');
+  expect(Object.keys(store.getSnapshot().panes)).toEqual(['c']);
+  store.restoreClosedTab();
+  store.restoreClosedTab();
+  expect(Object.keys(store.getSnapshot().panes).sort()).toEqual(['a', 'b', 'c']);
+  store.closeGroup('c-group');
+  expect(groups(store.getSnapshot().root)[0]!.panes).toEqual([]);
+});

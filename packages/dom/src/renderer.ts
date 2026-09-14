@@ -62,9 +62,12 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
       error(e);
     }
   };
-  bindShortcuts(root, options, scope, act);
   const windows = new Windows(doc, options, error, root);
   const menu = createPaneMenu(root, options, windows, render, error);
+  bindShortcuts(root, options, scope, act, (group) => {
+    const region = regions.get(group.id);
+    if (region) menu.addTab(region.header ?? region.element, group);
+  });
   const renderOptions = { ...options, onError: error };
   function button(text: string, title: string, action: () => void) {
     const b = el(doc, 'button', 'layouts-button', text);
@@ -97,6 +100,9 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
         return {
           ...tabBar,
           ...(tabBar.regions?.[node.id] ?? {}),
+          ...(current?.kind === 'group' && current.tabDisplay
+            ? { display: current.tabDisplay }
+            : {}),
           ...(current?.kind === 'group' && current.tabPlacement
             ? { placement: current.tabPlacement }
             : {}),

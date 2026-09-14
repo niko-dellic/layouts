@@ -39,6 +39,7 @@ export function createPaneMenu(
     direction?: 'left' | 'right' | 'top' | 'bottom',
     ratio = 0.5,
     groupActions = false,
+    addTab = false,
   ) {
     current?.dispose();
     const latestGroup = findNode(options.store.getSnapshot().root, group.id);
@@ -132,9 +133,6 @@ export function createPaneMenu(
         pickerScope.add(() => picker.remove());
         pickerScope.listen(picker, 'close', () => pickerScope.dispose());
         root.append(picker);
-        const rect = anchor.getBoundingClientRect();
-        picker.style.left = `${Math.max(8, Math.min(rect.right - 340, win.innerWidth - 356))}px`;
-        picker.style.top = `${Math.max(8, Math.min(rect.bottom + 4, win.innerHeight - 380))}px`;
         pickerScope.listen(picker, 'click', (event) => {
           const e = event as MouseEvent;
           const bounds = picker.getBoundingClientRect();
@@ -149,38 +147,36 @@ export function createPaneMenu(
         });
         picker.showModal();
         fillTabPicker(picker, pickerScope, options, pane, destination, commit, report);
-        if (axis || !group.panes.length) {
-          const region = Array.from(root.querySelectorAll<HTMLElement>('[data-node-id]')).find(
-            (element) => element.dataset.nodeId === destination.id,
+        const region = Array.from(root.querySelectorAll<HTMLElement>('[data-node-id]')).find(
+          (element) => element.dataset.nodeId === destination.id,
+        );
+        if (region) {
+          const position = () => {
+            const bounds = region.getBoundingClientRect();
+            picker.style.width = `${Math.max(0, Math.min(340, bounds.width - 16))}px`;
+            picker.style.maxHeight = `${Math.max(0, bounds.height - 16)}px`;
+            picker.style.left = `${bounds.left + (bounds.width - picker.offsetWidth) / 2}px`;
+            picker.style.top = `${bounds.top + (bounds.height - picker.offsetHeight) / 2}px`;
+          };
+          position();
+          const observer = new ResizeObserver(position);
+          observer.observe(region);
+          observer.observe(picker);
+          pickerScope.add(() => observer.disconnect());
+          pickerScope.listen(win, 'resize', position);
+          pickerScope.add(
+            options.store.subscribe(() => {
+              if (!findNode(options.store.getSnapshot().root, destination.id))
+                pickerScope.dispose();
+            }),
           );
-          if (region) {
-            const position = () => {
-              const bounds = region.getBoundingClientRect();
-              picker.style.width = `${Math.max(0, Math.min(340, bounds.width - 16))}px`;
-              picker.style.maxHeight = `${Math.max(0, bounds.height - 16)}px`;
-              picker.style.left = `${bounds.left + (bounds.width - picker.offsetWidth) / 2}px`;
-              picker.style.top = `${bounds.top + (bounds.height - picker.offsetHeight) / 2}px`;
-            };
-            position();
-            const observer = new ResizeObserver(position);
-            observer.observe(region);
-            observer.observe(picker);
-            pickerScope.add(() => observer.disconnect());
-            pickerScope.listen(win, 'resize', position);
-            pickerScope.add(
-              options.store.subscribe(() => {
-                if (!findNode(options.store.getSnapshot().root, destination.id))
-                  pickerScope.dispose();
-              }),
-            );
-          }
         }
       } else if (axis) {
         const fresh = pane ? options.createPane?.(pane) : undefined;
         if (fresh) commit(fresh);
       }
     };
-    if (!group.panes.length && !groupActions) {
+    if (addTab || (!group.panes.length && !groupActions)) {
       local.dispose();
       create();
       return;
@@ -197,7 +193,7 @@ export function createPaneMenu(
     const canCreate = options.tabs ? available : Boolean(pane && options.createPane);
     function submenu(label: string, icon: ActionIcon, enabled = true) {
       const container = el(doc, 'div', 'layouts-submenu');
-      const trigger = button(`${label} ▸`, label, () => setOpen(flyout.hidden));
+      const trigger = button(`${label} ▸`, label, () => setOpen(true));
       const glyph = el(doc, 'span', 'layouts-tab-icon');
       glyph.setAttribute('aria-hidden', 'true');
       glyph.append(actionIcon(doc, icon, options));
@@ -360,15 +356,42 @@ export function createPaneMenu(
       option.prepend(mark);
       orientation.append(option);
     }
+    const display = submenu('Tab display', 'tab-orientation');
+    for (const [value, label] of [
+      [undefined, 'Workspace default'],
+      ['automatic', 'Automatic'],
+      ['compact', 'Compact'],
+    ] as const) {
+      const selected = group.tabDisplay === value;
+      const option = button(label, label, () => {
+        options.store.setTabDisplay(group.id, value);
+        local.dispose();
+      });
+      option.setAttribute('role', 'menuitemradio');
+      option.setAttribute('aria-checked', String(selected));
+      const mark = el(doc, 'span', 'layouts-tab-icon', selected ? '✓' : '');
+      mark.setAttribute('aria-hidden', 'true');
+      option.prepend(mark);
+      display.append(option);
+    }
     if (group.panes.length && pane) {
-      add('close', 'Close pane', options.store.can(pane.id, 'close'), () =>
+      add('close', 'Close active tab', options.store.can(pane.id, 'close'), () =>
         options.store.close(pane.id, { source: 'user' }),
+      );
+      add(
+        'close',
+        'Close pane',
+        group.panes.every((id) => options.store.can(id, 'close')),
+        () => options.store.closeGroup(group.id, { source: 'user' }),
       );
     } else {
       add('close', 'Close empty pane', options.store.getSnapshot().root.id !== group.id, () =>
         options.store.removeEmptyGroup(group.id),
       );
     }
+    add('restore', 'Restore closed tab', options.store.canRestoreClosedTab(), () =>
+      options.store.restoreClosedTab(),
+    );
     add('cancel', 'Cancel', true, () => {});
     root.append(dialog);
     const rect = anchor.getBoundingClientRect();
@@ -388,6 +411,18 @@ export function createPaneMenu(
   }
   return {
     open,
+    addTab(anchor: HTMLElement, group: Group) {
+      const layout = options.store.getSnapshot();
+      open(
+        anchor,
+        group.active ? layout.panes[group.active] : undefined,
+        group,
+        undefined,
+        0.5,
+        false,
+        true,
+      );
+    },
     openEmpty(anchor: HTMLElement, group: Group) {
       const source = Object.values(options.store.getSnapshot().panes).find(
         (pane) => pane.header !== false,

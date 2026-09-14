@@ -33,6 +33,14 @@ fallbacks, so a nested `.layouts` element does not overwrite container values.
 | `fontSize`     | `--layouts-font-size`     | Chrome text size / `13px`                         |
 | `headerHeight` | `--layouts-header-height` | Tab strip height / `34px`                         |
 
+`panelPadding` / `--layouts-panel-padding` sets the shared panel inset (default
+`8px`; use a nonnegative CSS pixel value). Floating tab bars use it for their edge
+inset. Application content can use `padding: var(--layouts-panel-padding, 8px)`;
+the demo uses it for Hotkeys, Objects, Inspector, Timeline, and Theming. Canvas
+content stays edge-to-edge. Table cell padding and control spacing remain separate.
+For example, `workspace.setTheme({ panelPadding: '12px' })` aligns content and
+floating chrome with one value.
+
 Use the typed API for presets and runtime changes:
 
 ```ts
@@ -259,6 +267,49 @@ occupied width/height custom properties include the leading inset.
 Both demos start with floating fit-width tabs. Floating bars preserve their inset
 from content scrollbars as well as pane edges, including overlay scrollbars. The
 available span updates when pane content, overflow, or scrollbar sizing changes.
-Scrollbar clearance is reserved symmetrically on the opposite edge too, keeping
-full-span floating bars centered within the pane. Without overflow, both insets
-return to 8px.
+The leading inset stays at 8px. Scrollbar clearance is reserved only at the
+trailing edge where the scrollbar appears; it does not push the bar inward
+on the opposite side.
+
+### Tab display
+
+`tabBar.display` accepts `automatic` (default) or `compact`, independently of
+orientation. Automatic tabs show labels when their allocated width permits;
+vertical rails can also show labels when widened. Compact tabs always hide labels
+and close buttons, with full-name tooltips. Closing remains available through the
+pane menu and enabled middle-click gestures.
+
+Each region's **Tab display** menu offers Workspace default, Automatic, and Compact.
+Overrides persist as optional group `tabDisplay` in Layout JSON v1. Set them using
+`store.setTabDisplay(groupId, 'compact')`; pass `undefined` to inherit the workspace
+setting again. Orientation and display overrides do not remount pane content.
+The Theming pane exposes the workspace display default and a rail width up to 240px.
+
+Automatic vertical tabs show a close button only for the active tab, at every rail
+width. It sits below the tab, centered in the rail. Only that tab reserves the
+extra height; inactive tabs and Compact mode hide the close button.
+
+### Corner handles
+
+Both demos include a collapsible **Corner handles** section with bracket, rounded
+bracket, square, and dot styles; always/on-hover/hidden visibility; handle size,
+inset, stroke width, idle opacity, and muted/border/accent colors. Hovered handles
+use full opacity. Hidden handles remove pointer targets; menu split/join actions
+remain available. Size includes the drag target, with the mark inset 2px inside it.
+
+Applications can use these `LayoutTheme` values (or their corresponding
+`--layouts-corner-handle-*` CSS properties):
+
+| Theme key                 | Default                        |
+| ------------------------- | ------------------------------ |
+| `cornerHandleSize`        | `8px`                          |
+| `cornerHandleInset`       | `0px`                          |
+| `cornerHandleColor`       | muted theme color              |
+| `cornerHandleOpacity`     | `0.35`                         |
+| `cornerHandleDisplay`     | `block` (`none` hides targets) |
+| `cornerHandleBorderWidth` | `2px 0 0 2px`                  |
+| `cornerHandleRadius`      | `0px`                          |
+| `cornerHandleFill`        | `transparent`                  |
+
+For example, a dot uses border width `0`, radius `50%`, and a theme color as fill.
+These settings update chrome without remounting pane content or changing JSON.

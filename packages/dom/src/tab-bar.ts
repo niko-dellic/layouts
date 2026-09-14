@@ -5,6 +5,7 @@ import type { Scope } from './lifetime.js';
 export function validateTabBar(options: TabBarOptions) {
   for (const style of [options, ...Object.values(options.regions ?? {})]) {
     for (const [key, values] of Object.entries({
+      display: ['automatic', 'compact'],
       attachment: ['anchored', 'floating'],
       fit: ['full', 'fit'],
       corners: ['fitted', 'rounded', 'capsule'],
@@ -175,11 +176,17 @@ export function bindTabBar(
     if (disposed || !region.isConnected) return;
     const style = getStyle();
     const left = style.placement === 'left';
+    const compact = style.display === 'compact';
+    region.dataset.tabDisplay = compact ? 'compact' : 'automatic';
+    header.dataset.tabDisplay = compact ? 'compact' : 'automatic';
     const floating = style.attachment === 'floating';
-    const inset = floating ? 8 : 0;
+    const padding = parseFloat(
+      win.getComputedStyle(region).getPropertyValue('--layouts-panel-padding'),
+    );
+    const inset = floating ? (Number.isFinite(padding) ? Math.max(0, padding) : 8) : 0;
     const scrollbar = floating ? scrollbarClearance() : { right: 0, bottom: 0 };
-    const insetX = inset + scrollbar.right;
-    const insetY = inset + scrollbar.bottom;
+    const insetX = inset;
+    const insetY = inset;
     header.style.setProperty('--layouts-floating-inset-x', `${insetX}px`);
     header.style.setProperty('--layouts-floating-inset-y', `${insetY}px`);
     if (!floating) {
@@ -196,7 +203,7 @@ export function bindTabBar(
     if (!left) header.style.removeProperty('height');
     region.dataset.tabPlacement = left ? 'left' : 'top';
     for (const tab of header.querySelectorAll<HTMLElement>('.layouts-tab')) {
-      if (left) tab.removeAttribute('title');
+      if (left || compact) tab.removeAttribute('title');
       else tab.title = tab.getAttribute('aria-label') ?? '';
     }
     refreshTooltip();
@@ -212,7 +219,10 @@ export function bindTabBar(
     const height = header.hidden ? 0 : header.getBoundingClientRect().height;
     // clientWidth rounds fractional split widths up, allowing chrome to spill
     // outside the region and change the stage's scrollbar/resize geometry.
-    const available = Math.max(0, parseFloat(win.getComputedStyle(region).width) - insetX * 2);
+    const available = Math.max(
+      0,
+      parseFloat(win.getComputedStyle(region).width) - insetX * 2 - scrollbar.right,
+    );
     let occupied = available;
     if (left) {
       header.style.removeProperty('width');
@@ -220,7 +230,7 @@ export function bindTabBar(
       const width = header.hidden ? 0 : header.getBoundingClientRect().width;
       const regionHeight = Math.max(
         0,
-        parseFloat(win.getComputedStyle(region).height) - insetY * 2,
+        parseFloat(win.getComputedStyle(region).height) - insetY * 2 - scrollbar.bottom,
       );
       let occupiedHeight = regionHeight;
       if (tapered && width) {
@@ -320,7 +330,7 @@ export function bindTabBar(
       }
     }
     region.style.setProperty('--layouts-tab-bar-width', `${height ? occupied + insetX : 0}px`);
-    region.style.setProperty('--layouts-tab-bar-height', `${height}px`);
+    region.style.setProperty('--layouts-tab-bar-height', `${height ? height + insetY : 0}px`);
   };
   const schedule = () => {
     if (!disposed && !frame) frame = win.requestAnimationFrame(measure);

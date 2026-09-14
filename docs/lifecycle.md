@@ -72,3 +72,25 @@ never prunes existing empty regions. To retain the previous automatic behavior, 
 `enabled`. Empty tab bars provide “Close empty pane”; the final root cannot be removed.
 Removing a region never deletes its detached content. Returning popouts prefer the preserved
 original region, or use the existing fallback placement if it was explicitly removed.
+
+## Restoring closed tabs
+
+`store.restoreClosedTab()` restores the latest closed tab, preferring its original
+region and index. If the region was removed, it uses the same compatible-region
+fallback as returning a popout. It preserves subsequent layout edits and the tab's
+ID and metadata. `store.canRestoreClosedTab()` reports whether a tab is available.
+History retains up to 50 closed tabs for the store session, is excluded from JSON,
+and clears on successful load/reset or disposal. Failed closes add no history.
+Closing still disposes the view; restoration mounts it again. Application data
+remains application-owned and must be retained outside view lifetimes.
+
+Pane actions include **Close active tab** and **Restore closed tab**. Both demos
+bind **R** to restore; the renderer enables this with `shortcuts: true` or
+`shortcuts: { restoreClosedTab: true }`. Typing, modifier combinations, held keys,
+and open dialogs do not trigger the shortcut.
+
+**Close pane** closes all docked tabs in the region and removes the region,
+independently of automatic-collapse settings. `store.closeGroup(groupId, options)`
+performs this atomically and checks every tab's close permission for user actions.
+The last region remains empty so the workspace can accept new tabs. Closed tabs
+remain individually restorable; detached companion tabs are not closed.

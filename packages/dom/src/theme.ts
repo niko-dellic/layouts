@@ -13,6 +13,8 @@ export interface LayoutTheme {
   fontSize?: string;
   /** Tab and menu icon size (default 16px). */
   iconSize?: string;
+  /** Shared floating-tab inset and application content padding in CSS pixels (default 8px). */
+  panelPadding?: string;
   headerHeight?: string;
   /** Width of the vertical tab rail (default 32px). */
   headerWidth?: string;
@@ -22,6 +24,22 @@ export interface LayoutTheme {
   disabledResizeHandleWidth?: string;
   /** Border color at disabled, gapless boundaries; defaults to line. Use transparent to hide. */
   frozenPaneBorder?: string;
+  /** 8px target size. */
+  cornerHandleSize?: string;
+  /** 0px offset from pane edges. */
+  cornerHandleInset?: string;
+  /** muted color. */
+  cornerHandleColor?: string;
+  /** 0.35 idle opacity. */
+  cornerHandleOpacity?: string;
+  /** block; none disables corner targets. */
+  cornerHandleDisplay?: string;
+  /** 2px 0 0 2px bracket stroke. */
+  cornerHandleBorderWidth?: string;
+  /** 0px. */
+  cornerHandleRadius?: string;
+  /** transparent. */
+  cornerHandleFill?: string;
   scrollbarThumb?: string;
   scrollbarTrack?: string;
   scrollbarSize?: string;
@@ -41,11 +59,20 @@ export const themeProperties = {
   fontFamily: '--layouts-font-family',
   fontSize: '--layouts-font-size',
   iconSize: '--layouts-icon-size',
+  panelPadding: '--layouts-panel-padding',
   headerHeight: '--layouts-header-height',
   headerWidth: '--layouts-header-width',
   resizeHandleWidth: '--layouts-resize-handle-width',
   disabledResizeHandleWidth: '--layouts-disabled-resize-handle-width',
   frozenPaneBorder: '--layouts-frozen-pane-border',
+  cornerHandleSize: '--layouts-corner-handle-size',
+  cornerHandleInset: '--layouts-corner-handle-inset',
+  cornerHandleColor: '--layouts-corner-handle-color',
+  cornerHandleOpacity: '--layouts-corner-handle-opacity',
+  cornerHandleDisplay: '--layouts-corner-handle-display',
+  cornerHandleBorderWidth: '--layouts-corner-handle-border-width',
+  cornerHandleRadius: '--layouts-corner-handle-radius',
+  cornerHandleFill: '--layouts-corner-handle-fill',
   scrollbarThumb: '--layouts-scrollbar-thumb',
   scrollbarTrack: '--layouts-scrollbar-track',
   scrollbarSize: '--layouts-scrollbar-size',

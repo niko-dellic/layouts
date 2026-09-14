@@ -73,9 +73,9 @@ for (const demo of ['vanilla', 'react']) {
       .poll(async () => {
         const r = (await region.boundingBox())!;
         const h = (await header.boundingBox())!;
-        return Math.abs(h.x - r.x - (r.x + r.width - h.x - h.width));
+        return h.x - r.x;
       })
-      .toBeLessThan(1);
+      .toBe(8);
     // Removing overflow must release the reserved scrollbar space.
     await content.evaluate((el) => {
       (el as HTMLElement).style.display = 'none';

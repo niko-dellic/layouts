@@ -30,9 +30,27 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
     iconSize = 16,
     radius = 5,
     handleWidth = 4,
-    showDisabledHandles = false;
-  settings = document.querySelector<HTMLElement>('[aria-label="Workspace controls"]')!;
-  settings.remove();
+    showDisabledHandles = false,
+    cornerSize = 8,
+    cornerInset = 0,
+    cornerStroke = 2,
+    cornerOpacity = 35;
+  let cornerStyle = 'bracket',
+    cornerVisibility = 'always',
+    cornerColor = 'muted';
+  settings = document.createElement('div');
+  settings.className = 'demo-actions';
+  settings.setAttribute('aria-label', 'Workspace controls');
+  for (const [id, label] of [
+    ['json-open', 'Layout JSON'],
+    ['reset', 'Reset'],
+  ]) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.id = id!;
+    button.textContent = label!;
+    settings.append(button);
+  }
   settingsHost?.append(settings);
   const themeSelect = document.createElement('select');
   themeSelect.setAttribute('aria-label', 'Workspace theme');
@@ -67,6 +85,20 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
       headerHeight: `${headerHeight}px`,
       headerWidth: `${headerWidth}px`,
       radius: `${radius}px`,
+      cornerHandleSize: `${cornerSize}px`,
+      cornerHandleInset: `${cornerInset}px`,
+      cornerHandleColor: `var(--layouts-${cornerColor})`,
+      cornerHandleOpacity: cornerVisibility === 'hover' ? '0' : String(cornerOpacity / 100),
+      cornerHandleDisplay: cornerVisibility === 'hidden' ? 'none' : 'block',
+      cornerHandleBorderWidth:
+        cornerStyle === 'dot'
+          ? '0'
+          : cornerStyle === 'square'
+            ? `${cornerStroke}px`
+            : `${cornerStroke}px 0 0 ${cornerStroke}px`,
+      cornerHandleRadius:
+        cornerStyle === 'dot' ? '50%' : cornerStyle === 'rounded' ? '50% 0 0 0' : '0',
+      cornerHandleFill: cornerStyle === 'dot' ? `var(--layouts-${cornerColor})` : 'transparent',
       resizeHandleWidth: `${handleWidth}px`,
       disabledResizeHandleWidth: showDisabledHandles ? `${handleWidth}px` : '0px',
     });
@@ -134,6 +166,10 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
     }
     return { select, field: labelControl(select, label) };
   };
+  const display = choice('Tab display', [
+    ['automatic', 'Automatic'],
+    ['compact', 'Compact'],
+  ]);
   const attachment = choice('Tab placement', [
     ['anchored', 'Anchored'],
     ['floating', 'Floating'],
@@ -159,9 +195,11 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
   const applyBar = () => {
     const shape = barSelect.value as 'angle' | 'round' | 'scoop' | 'vertical' | 'rounded' | 'full';
     const position = placement.value as 'top' | 'left';
+    const tabDisplay = display.select.value as 'automatic' | 'compact';
     if (attachment.select.value === 'floating') {
       getMounted()?.setTabBar({
         placement: position,
+        display: tabDisplay,
         attachment: 'floating',
         fit: fit.select.value as 'full' | 'fit',
         corners: corners.select.value as 'fitted' | 'rounded' | 'capsule',
@@ -171,8 +209,8 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
     if (shape === 'full' || shape === 'vertical' || shape === 'rounded') {
       getMounted()?.setTabBar(
         shape === 'full'
-          ? { placement: position, mode: 'full' }
-          : { placement: position, mode: 'tapered', shape },
+          ? { placement: position, display: tabDisplay, mode: 'full' }
+          : { placement: position, display: tabDisplay, mode: 'tapered', shape },
       );
       return;
     }
@@ -188,7 +226,13 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
       shape === 'angle'
         ? (position === 'left' ? headerWidth : headerHeight) / Math.tan((value * Math.PI) / 180)
         : value;
-    getMounted()?.setTabBar({ placement: position, mode: 'tapered', shape, taperWidth });
+    getMounted()?.setTabBar({
+      placement: position,
+      display: tabDisplay,
+      mode: 'tapered',
+      shape,
+      taperWidth,
+    });
   };
   const updateAmount = () => {
     const shape = barSelect.value as keyof typeof values;
@@ -211,6 +255,7 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
   attachment.select.onchange = updateAmount;
   fit.select.onchange = applyBar;
   corners.select.onchange = applyBar;
+  display.select.onchange = applyBar;
   amount.oninput = applyBar;
   barSelect.onchange = updateAmount;
   placement.onchange = () => {
@@ -243,9 +288,11 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
   const fontSection = section('Font');
   const tabSection = section('Tab');
   const resizeSection = section('Resizing');
+  const cornerSection = section('Corner handles');
   themeSection.content.append(themeField);
   tabSection.content.append(
     placementField,
+    display.field,
     attachment.field,
     barField,
     amountField,
@@ -258,6 +305,7 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
     fontSection.region,
     tabSection.region,
     resizeSection.region,
+    cornerSection.region,
   );
   for (const [name, initial, min, max, update] of [
     [
@@ -282,7 +330,7 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
       'Tab width',
       headerWidth,
       28,
-      48,
+      240,
       (v: number) => {
         headerWidth = v;
       },
@@ -333,6 +381,113 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
     if (name === 'Resize handle width') resizing.append(field);
     else if (name === 'Text size' || name === 'Icon size') fontSection.content.append(field);
     else tabSection.content.append(field);
+  }
+  for (const [name, entries, initial, update] of [
+    [
+      'Handle style',
+      [
+        ['bracket', 'Bracket'],
+        ['rounded', 'Rounded bracket'],
+        ['square', 'Square'],
+        ['dot', 'Dot'],
+      ],
+      cornerStyle,
+      (v: string) => {
+        cornerStyle = v;
+      },
+    ],
+    [
+      'Visibility',
+      [
+        ['always', 'Always'],
+        ['hover', 'On hover'],
+        ['hidden', 'Hidden'],
+      ],
+      cornerVisibility,
+      (v: string) => {
+        cornerVisibility = v;
+      },
+    ],
+    [
+      'Handle color',
+      [
+        ['muted', 'Muted'],
+        ['line', 'Border'],
+        ['accent', 'Accent'],
+      ],
+      cornerColor,
+      (v: string) => {
+        cornerColor = v;
+      },
+    ],
+  ] as const) {
+    const control = choice(
+      name,
+      entries.map(([value, label]) => [value, label]),
+    );
+    control.select.value = initial;
+    control.select.onchange = () => {
+      update(control.select.value);
+      applyTheme();
+    };
+    cornerSection.content.append(control.field);
+  }
+  for (const [name, initial, min, max, unit, update] of [
+    [
+      'Handle size',
+      cornerSize,
+      8,
+      24,
+      'px',
+      (v: number) => {
+        cornerSize = v;
+      },
+    ],
+    [
+      'Handle inset',
+      cornerInset,
+      0,
+      12,
+      'px',
+      (v: number) => {
+        cornerInset = v;
+      },
+    ],
+    [
+      'Stroke width',
+      cornerStroke,
+      1,
+      4,
+      'px',
+      (v: number) => {
+        cornerStroke = v;
+      },
+    ],
+    [
+      'Idle opacity',
+      cornerOpacity,
+      0,
+      100,
+      '%',
+      (v: number) => {
+        cornerOpacity = v;
+      },
+    ],
+  ] as const) {
+    const input = document.createElement('input');
+    input.type = 'range';
+    input.min = String(min);
+    input.max = String(max);
+    input.value = String(initial);
+    input.setAttribute('aria-label', name);
+    const field = labelControl(input, `${name}: ${initial}${unit}`);
+    field.classList.add('demo-range');
+    input.oninput = () => {
+      update(Number(input.value));
+      field.querySelector('span')!.textContent = `${name}: ${input.value}${unit}`;
+      applyTheme();
+    };
+    cornerSection.content.append(field);
   }
   const disabledLabel = document.createElement('label');
   disabledLabel.className = 'demo-handle-toggle';

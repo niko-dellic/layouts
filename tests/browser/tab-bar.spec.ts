@@ -305,7 +305,7 @@ test('left icon rail reserves space, labels icons, navigates vertically and rest
 }) => {
   await page.evaluate(() => {
     window.harness.store.move('b', 'left');
-    window.harness.setTabBar({ placement: 'left' });
+    window.harness.setTabBar({ placement: 'left', display: 'compact' });
   });
   const group = page.locator('[data-node-id="left"]');
   await expect(group).toHaveAttribute('data-tab-placement', 'left');
@@ -330,7 +330,7 @@ test('left icon rail reserves space, labels icons, navigates vertically and rest
   await b.press('ArrowUp');
   await expect(a).toBeFocused();
   await group.getByRole('button', { name: 'A actions', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Close pane', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Close active tab', exact: true })).toBeVisible();
   await page.keyboard.press('Escape');
   await page.evaluate(() => window.harness.setTabBar({ mode: 'tapered' }));
   await expect(group).toHaveAttribute('data-tab-placement', 'top');

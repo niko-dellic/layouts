@@ -135,10 +135,10 @@ Convenience shortcuts are disabled by default:
 mountLayout(host, {
   store,
   renderers,
-  shortcuts: true, // enable both defaults
+  shortcuts: true, // enable all conveniences
 });
 // Or select individually:
-// shortcuts: { maximize: true, middleClickClose: false }
+// shortcuts: { maximize: true, middleClickClose: false, addTab: true }
 ```
 
 Backtick (`` ` ``) or Option+Space (`Alt+Space`) toggles workspace maximize/restore for the hovered
@@ -147,6 +147,9 @@ host; it does not invoke the browser Fullscreen API. Text inputs, editable
 content, dialogs, and repeated key events are left alone. Some operating systems
 reserve Alt+Space and may intercept it before the page receives it; the actions
 menu remains available. Middle-click closes a tab when enabled and permitted.
+`T` opens the new-tab picker in the hovered region when registered tabs and
+its move capabilities allow adding a tab. Handled events call `preventDefault()`.
+The typing, dialog, and repeat safeguards also apply. Use T without modifiers.
 Normal tab arrow-key navigation and divider keyboard resizing remain available
 regardless of this convenience setting.
 
