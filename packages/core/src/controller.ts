@@ -1,8 +1,10 @@
+import { joinRange } from './join.js';
 import { findNode, findParent, groups, paneIds, parseLayout, validate } from './model.js';
 import { LayoutError } from './types.js';
 import type {
   AutoCollapse,
   LayoutStoreOptions,
+  JoinOptions,
   Axis,
   Capability,
   Change,
@@ -374,6 +376,57 @@ export class LayoutStore {
       const parent = findParent(d.root, groupId);
       if (parent)
         this.replace(d, parent, parent.children[parent.children[0].id === groupId ? 1 : 0]);
+    });
+  }
+  /** Join a contiguous row/column range into the receiver, including both endpoints. */
+  joinRegions(receiverId: string, otherId: string, options: JoinOptions = {}) {
+    this.commit('join', (d) => {
+      const receiver = this.group(d, receiverId);
+      const range = joinRange(d.root, receiverId, otherId);
+      if (!range) problem('Join requires contiguous regions in one row or column');
+      const { row, regions, boundaries, start, end, selected } = range;
+      const panes = selected.flatMap((g) => g.panes);
+      this.permit(d, panes, 'join', options);
+      let sizes = range.weights;
+      let gaps = boundaries.map(() => 0);
+      if (options.extents) {
+        const extent = (node: Node): number => {
+          const value = options.extents![node.id];
+          if (value === undefined || !Number.isFinite(value) || value <= 0)
+            problem('Join extents must include a positive finite size for every node in the row');
+          return value;
+        };
+        sizes = regions.map(extent);
+        gaps = boundaries.map((split) => {
+          const gap = extent(split) - extent(split.children[0]) - extent(split.children[1]);
+          if (gap < -0.5) problem('Join extents must describe a non-overlapping row');
+          return Math.max(0, gap);
+        });
+      }
+      receiver.panes = panes;
+      receiver.active ??= panes[0] ?? null;
+      const combined =
+        sizes.slice(start, end + 1).reduce((a, b) => a + b, 0) +
+        gaps.slice(start, end).reduce((a, b) => a + b, 0);
+      const remaining = [...regions.slice(0, start), receiver, ...regions.slice(end + 1)];
+      const lengths = [...sizes.slice(0, start), combined, ...sizes.slice(end + 1)];
+      const dividers = [...boundaries.slice(0, start), ...boundaries.slice(end)];
+      const remainingGaps = [...gaps.slice(0, start), ...gaps.slice(end)];
+      // Reuse the surviving boundary IDs and their settings. Removed boundaries alone disappear.
+      let replacement = remaining[remaining.length - 1]!;
+      let length = lengths[lengths.length - 1]!;
+      for (let i = remaining.length - 2; i >= 0; i--) {
+        const first = lengths[i]!;
+        replacement = {
+          ...dividers[i]!,
+          ratio: first / (first + length),
+          children: [remaining[i]!, replacement],
+        };
+        length += first + remainingGaps[i]!;
+      }
+      this.replace(d, row, replacement);
+      if (selected.some((g) => g.id === d.maximized)) d.maximized = receiver.id;
+      this.tidy(d);
     });
   }
   close(paneId: string, options: CommandOptions = {}) {

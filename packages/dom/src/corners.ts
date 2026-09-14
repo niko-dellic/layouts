@@ -1,4 +1,4 @@
-import { allocate, bounds, DIVIDER, findNode, findParent, paneIds } from 'layouts-core';
+import { allocate, bounds, DIVIDER, findNode, joinRange } from 'layouts-core';
 import type { Group, Pane } from 'layouts-core';
 import type { LayoutOptions } from './types.js';
 import { el, Scope } from './lifetime.js';
@@ -21,7 +21,7 @@ export function bindCorners(
   for (const corner of ['tl', 'tr', 'bl', 'br']) {
     const handle = el(doc, 'button', 'layouts-corner');
     handle.dataset.corner = corner;
-    handle.title = 'Drag inward to split; drag into a sibling region to join. Escape cancels.';
+    handle.title = 'Drag inward to split; drag across adjacent regions to join. Escape cancels.';
     handle.setAttribute('aria-label', 'Split or join region from ' + corner + ' corner');
     handle.tabIndex = -1; // Equivalent keyboard operations live in the pane menu.
     host.append(handle);
@@ -36,10 +36,11 @@ export function bindCorners(
       drag?.dispose();
       const local = new Scope();
       drag = local;
+      local.add(options.store.subscribe(() => local.dispose()));
       handle.setPointerCapture(start.pointerId);
       let target:
         | { kind: 'split'; direction: Direction; ratio: number }
-        | { kind: 'join'; id: string }
+        | { kind: 'join'; id: string; extents: Record<string, number> }
         | undefined;
       const overlay = el(doc, 'div', 'layouts-corner-overlay');
       overlay.setAttribute('aria-hidden', 'true');
@@ -156,40 +157,75 @@ export function bindCorners(
           mark(newRect, 'split', 'New pane');
         } else {
           const layout = options.store.getSnapshot();
-          const parent = findParent(layout.root, id);
-          const sibling = parent?.children.find((n) => n.id !== id);
+          const elements = Array.from(
+            host.closest('.layouts')!.querySelectorAll<HTMLElement>('[data-node-id]'),
+          ).filter((element) => element.closest('.layouts') === host.closest('.layouts'));
+          const boxes = new Map(
+            elements.map((element) => [element.dataset.nodeId!, element.getBoundingClientRect()]),
+          );
+          const hovered = elements.find((element) => {
+            const candidate = findNode(layout.root, element.dataset.nodeId!);
+            const box = boxes.get(element.dataset.nodeId!)!;
+            return (
+              candidate?.kind === 'group' &&
+              move.clientX >= box.left &&
+              move.clientX <= box.right &&
+              move.clientY >= box.top &&
+              move.clientY <= box.bottom
+            );
+          });
+          if (!hovered) return;
+          const receiverId = hovered.dataset.nodeId!;
+          const range = joinRange(layout.root, id, receiverId);
           if (
-            sibling?.kind !== 'group' ||
-            !parent ||
-            !paneIds(parent).every((p) => options.store.can(p, 'join'))
+            !range ||
+            !range.selected.every((g) => g.panes.every((p) => options.store.can(p, 'join')))
           )
             return;
-          const element = Array.from(doc.querySelectorAll<HTMLElement>('[data-node-id]')).find(
-            (el) =>
-              el.dataset.nodeId === sibling.id &&
-              el.closest('.layouts') === host.closest('.layouts'),
-          );
-          const box = element?.getBoundingClientRect();
+          const receiver = findNode(layout.root, receiverId);
+          if (receiver?.kind !== 'group') return;
+          const selectedBoxes = range.selected.map((g) => boxes.get(g.id));
+          if (selectedBoxes.some((box) => !box)) return;
+          // Require full-edge alignment in the rendered layout too (constraints can leave slack).
+          const horizontal = range.row.axis === 'horizontal';
           if (
-            box &&
-            move.clientX >= box.left &&
-            move.clientX <= box.right &&
-            move.clientY >= box.top &&
-            move.clientY <= box.bottom
-          ) {
-            target = { kind: 'join', id: sibling.id };
-            const sourceTitle = layout.panes[node.active ?? '']?.title ?? 'This region';
-            const targetTitle = layout.panes[sibling.active ?? '']?.title ?? 'Sibling region';
-            mark(rect, 'join-source', `Joins ${targetTitle}`);
-            mark(box, 'join-target', `${targetTitle} absorbs ${sourceTitle}`);
-            const combined = {
-              left: Math.min(rect.left, box.left),
-              top: Math.min(rect.top, box.top),
-              width: Math.max(rect.right, box.right) - Math.min(rect.left, box.left),
-              height: Math.max(rect.bottom, box.bottom) - Math.min(rect.top, box.top),
-            };
-            mark(combined, 'join', '');
+            selectedBoxes.some((box) =>
+              horizontal
+                ? Math.abs(box!.top - rect.top) > 1 || Math.abs(box!.bottom - rect.bottom) > 1
+                : Math.abs(box!.left - rect.left) > 1 || Math.abs(box!.right - rect.right) > 1,
+            )
+          )
+            return;
+          const extents = Object.fromEntries(
+            [...boxes].map(([nodeId, box]) => [nodeId, horizontal ? box.width : box.height]),
+          );
+          target = { kind: 'join', id: receiverId, extents };
+          const targetTitle = layout.panes[receiver.active ?? '']?.title ?? 'Empty region';
+          const sourceTitles = range.selected
+            .filter((g) => g.id !== receiverId)
+            .map((g) => layout.panes[g.active ?? '']?.title ?? 'Empty region');
+          for (const group of range.selected) {
+            const receiving = group.id === receiverId;
+            mark(
+              boxes.get(group.id)!,
+              receiving ? 'join-target' : 'join-source',
+              receiving
+                ? `${targetTitle} absorbs ${sourceTitles.join(', ')}`
+                : `Joins ${targetTitle}`,
+            );
           }
+          const left = Math.min(...selectedBoxes.map((box) => box!.left));
+          const top = Math.min(...selectedBoxes.map((box) => box!.top));
+          mark(
+            {
+              left,
+              top,
+              width: Math.max(...selectedBoxes.map((box) => box!.right)) - left,
+              height: Math.max(...selectedBoxes.map((box) => box!.bottom)) - top,
+            },
+            'join',
+            '',
+          );
         }
       });
       local.listen(handle, 'pointerup', () => {
@@ -197,7 +233,8 @@ export function bindCorners(
         local.dispose();
         if (!action) return;
         try {
-          if (action.kind === 'join') options.store.join(action.id, { source: 'user' });
+          if (action.kind === 'join')
+            options.store.joinRegions(action.id, id, { source: 'user', extents: action.extents });
           else {
             const layout = options.store.getSnapshot(),
               group = findNode(layout.root, id);

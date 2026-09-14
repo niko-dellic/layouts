@@ -80,3 +80,11 @@ export interface Bounds {
   minHeight: number;
   maxHeight: number;
 }
+
+export interface JoinOptions extends CommandOptions {
+  /** Optional rendered extents along the join axis, keyed by node ID, including splits.
+   * Supply the complete row to retain actual sizes under constraints and custom dividers.
+   * Without measurements, joins retain proportional shares of the row/column.
+   */
+  extents?: Record<string, number>;
+}

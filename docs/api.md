@@ -63,27 +63,28 @@ an empty region (except the final root).
 
 Commands clone, validate, and commit atomically. A failed command leaves the previous snapshot intact and reports to `onError` subscribers before throwing.
 
-| Method                                               | Behavior                                                                                                |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `getSnapshot()`                                      | Stable, deeply frozen snapshot; treat it as read-only                                                   |
-| `export()`                                           | Mutable clone suitable for JSON serialization                                                           |
-| `subscribe(listener)`                                | Observe `{action, layout}`; returns unsubscribe                                                         |
-| `onError(listener)`                                  | Observe command/subscriber failures; returns unsubscribe                                                |
-| `load(input)`                                        | Replace with validated JSON atomically                                                                  |
-| `reset()`                                            | Restore constructor configuration                                                                       |
-| `activate(groupId, paneId)`                          | Select an existing tab                                                                                  |
-| `add(pane, groupId, options?)`                       | Insert a new pane as a tab                                                                              |
-| `updatePane(pane)`                                   | Replace metadata/constraints with validation                                                            |
-| `split(groupId, axis, newPane, options?)`            | Create a new region after the existing group                                                            |
-| `join(groupId, options?)`                            | Collapse its parent split, retaining all sibling content as tabs                                        |
-| `move(paneId, groupId, position?, index?, options?)` | Position is `tab`, `left`, `right`, `top`, or `bottom`; index is a tab insertion index after detachment |
-| `resize(splitId, ratio, options?)`                   | Set a preferred split proportion                                                                        |
-| `resizeMany(ratios, options?)`                       | Atomically update a map of split IDs to preferred proportions                                           |
-| `maximize(groupId \| null)`                          | Maximize or restore a region                                                                            |
-| `close(paneId, options?)`                            | Remove pane and placement                                                                               |
-| `popout(paneId, placement?, options?)`               | Pure model transition; does not open a browser                                                          |
-| `returnPane(paneId)`                                 | Return to a compatible original/fallback group, or a new region                                         |
-| `dispose()`                                          | End subscriptions; idempotent; subsequent commands fail                                                 |
+| Method                                               | Behavior                                                                                                                          |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `getSnapshot()`                                      | Stable, deeply frozen snapshot; treat it as read-only                                                                             |
+| `export()`                                           | Mutable clone suitable for JSON serialization                                                                                     |
+| `subscribe(listener)`                                | Observe `{action, layout}`; returns unsubscribe                                                                                   |
+| `onError(listener)`                                  | Observe command/subscriber failures; returns unsubscribe                                                                          |
+| `load(input)`                                        | Replace with validated JSON atomically                                                                                            |
+| `reset()`                                            | Restore constructor configuration                                                                                                 |
+| `activate(groupId, paneId)`                          | Select an existing tab                                                                                                            |
+| `add(pane, groupId, options?)`                       | Insert a new pane as a tab                                                                                                        |
+| `updatePane(pane)`                                   | Replace metadata/constraints with validation                                                                                      |
+| `split(groupId, axis, newPane, options?)`            | Create a new region after the existing group                                                                                      |
+| `joinRegions(receiverId, otherId, options?)`         | Join the inclusive contiguous row/column range into the receiver, crossing same-axis split ancestry; preserve all content as tabs |
+| `join(groupId, options?)`                            | Collapse its parent split, retaining all sibling content as tabs                                                                  |
+| `move(paneId, groupId, position?, index?, options?)` | Position is `tab`, `left`, `right`, `top`, or `bottom`; index is a tab insertion index after detachment                           |
+| `resize(splitId, ratio, options?)`                   | Set a preferred split proportion                                                                                                  |
+| `resizeMany(ratios, options?)`                       | Atomically update a map of split IDs to preferred proportions                                                                     |
+| `maximize(groupId \| null)`                          | Maximize or restore a region                                                                                                      |
+| `close(paneId, options?)`                            | Remove pane and placement                                                                                                         |
+| `popout(paneId, placement?, options?)`               | Pure model transition; does not open a browser                                                                                    |
+| `returnPane(paneId)`                                 | Return to a compatible original/fallback group, or a new region                                                                   |
+| `dispose()`                                          | End subscriptions; idempotent; subsequent commands fail                                                                           |
 
 Options accept `{source: 'user' | 'api'}`; default is `api`. Flags only restrict `user` commands. Use the mounted renderer's `popout` method, not the store's pure `popout` command, to open browser windows. A DOM renderer interprets detached records without live companion handles as restored data and docks them with a Reopen action.
 
@@ -215,3 +216,12 @@ command. Resizing the whole workspace still uses the stored proportions.
 Empty regions display diagonal guide lines. Click the empty content area, or focus it
 and press Enter/Space, to open tab search. Registry factories receive `source: undefined`
 when the workspace has no remaining source pane.
+
+`joinRegions` accepts `JoinOptions`: capability handling matches other commands. Optional
+`extents` maps every node ID in the affected row/column (including splits) to its rendered
+size along the join axis. The DOM renderer supplies these measurements to preserve actual
+sizes under constraints and custom divider widths. Without measurements, the command
+preserves proportional shares. `joinRange(root, from, to)` returns the eligible range for
+previews, or `undefined` when endpoints are identical, absent, or separated by a perpendicular
+split. Content constraints and capabilities are validated atomically when committing.
+The existing `join` command and “Join sibling region” menu retain their parent-collapse behavior.
