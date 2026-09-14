@@ -59,7 +59,8 @@ for (const framework of ['vanilla', 'react']) {
       const fixed = page.locator('[data-node-id="top"] > [role="separator"]');
       await expect(fixed).toHaveAttribute('aria-disabled', 'true');
       await page.getByRole('button', { name: 'Scene actions', exact: true }).click();
-      await page.getByRole('button', { name: 'Split below', exact: true }).click();
+      await page.getByRole('button', { name: 'Split', exact: true }).hover();
+      await page.getByRole('menuitem', { name: 'Split down', exact: true }).click();
       await page.getByRole('option', { name: 'Notes', exact: true }).click();
       await expect(page.getByRole('tab', { name: 'Notes', exact: true })).toBeVisible();
       await page.getByRole('button', { name: 'Notes actions', exact: true }).click();

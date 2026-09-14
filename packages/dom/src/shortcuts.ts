@@ -1,4 +1,4 @@
-import { findNode } from '@niko-dellic/layouts-core';
+import { findNode } from 'layouts-core';
 import type { LayoutOptions } from './types.js';
 import type { Scope } from './lifetime.js';
 export function shortcutEnabled(options: LayoutOptions, key: 'maximize' | 'middleClickClose') {

@@ -1,8 +1,8 @@
-import { LayoutStore } from '@niko-dellic/layouts-core';
-import type { Layout } from '@niko-dellic/layouts-core';
-import { mountLayout, TabRegistry } from '@niko-dellic/layouts';
-import '@niko-dellic/layouts/styles.css';
-import type { MountedLayout } from '@niko-dellic/layouts';
+import { LayoutStore } from 'layouts-core';
+import type { Layout } from 'layouts-core';
+import { mountLayout, TabRegistry } from 'layouts';
+import 'layouts/styles.css';
+import type { MountedLayout } from 'layouts';
 const data = { text: 'initial' };
 const stats = { mounts: 0, disposals: 0, live: 0, errors: [] as string[] };
 const fixture: Layout = {
@@ -63,7 +63,7 @@ document.querySelector('#open')!.addEventListener('click', () => mounted.popout(
 document.querySelector('#return')!.addEventListener('click', () => mounted.returnPane('a'));
 export const harness = {
   tabs,
-  setTheme: (theme: import('@niko-dellic/layouts').LayoutTheme) => mounted.setTheme(theme),
+  setTheme: (theme: import('layouts').LayoutTheme) => mounted.setTheme(theme),
   store,
   stats,
   fixture,

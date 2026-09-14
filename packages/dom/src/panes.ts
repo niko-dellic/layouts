@@ -1,4 +1,4 @@
-import type { Pane } from '@niko-dellic/layouts-core';
+import type { Pane } from 'layouts-core';
 import type { LayoutOptions, PaneView, PaneRenderer } from './types.js';
 import { el } from './lifetime.js';
 export interface MountedPane {

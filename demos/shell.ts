@@ -1,10 +1,15 @@
-import { themes } from '@niko-dellic/layouts';
+import { themes, themeFamilies } from 'layouts';
 import { store } from './model.js';
-import type { MountedLayout } from '@niko-dellic/layouts';
+import type { MountedLayout } from 'layouts';
 export function setupShell(getMounted: () => MountedLayout | undefined) {
   const themeSelect = document.createElement('select');
   themeSelect.setAttribute('aria-label', 'Workspace theme');
-  for (const name of ['sage', 'light', 'dark'] as const) {
+  for (const name of [
+    'sage',
+    'light',
+    'dark',
+    ...Object.keys(themeFamilies).flatMap((family) => [`${family}-dark`, `${family}-light`]),
+  ]) {
     const option = document.createElement('option');
     option.value = name;
     option.textContent = name[0]!.toUpperCase() + name.slice(1);
@@ -12,7 +17,11 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
   }
   themeSelect.onchange = () =>
     getMounted()?.setTheme({
-      ...themes[themeSelect.value as keyof typeof themes],
+      ...(themeSelect.value.includes('-')
+        ? themeFamilies[themeSelect.value.split('-')[0] as keyof typeof themeFamilies][
+            themeSelect.value.split('-')[1] as 'dark' | 'light'
+          ]
+        : themes[themeSelect.value as keyof typeof themes]),
       fontSize: '11px',
       headerHeight: '32px',
     });

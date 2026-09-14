@@ -10,7 +10,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build -w @niko-dellic/layouts-core && npm run build -w @niko-dellic/layouts && npm run build -w @niko-dellic/layouts-react",
+    "build": "npm run build -w layouts-core && npm run build -w layouts && npm run build -w layouts-react",
     "typecheck": "tsc -p tsconfig.demo.json --noEmit",
     "test": "vitest run",
     "test:browser": "playwright test",

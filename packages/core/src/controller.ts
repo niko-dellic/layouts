@@ -200,19 +200,55 @@ export class LayoutStore {
       d.panes[pane.id] = structuredClone(pane);
     });
   }
-  split(groupId: string, axis: Axis, pane: Pane, options: CommandOptions = {}) {
+  split(
+    groupId: string,
+    axis: Axis,
+    pane: Pane | null,
+    options: CommandOptions & { before?: boolean; ratio?: number } = {},
+  ) {
+    let created = '';
     this.commit('split', (d) => {
       const g = this.group(d, groupId);
       this.permit(d, g.panes, 'split', options);
-      if (Object.hasOwn(d.panes, pane.id)) problem('Pane id already exists');
-      Object.defineProperty(d.panes, pane.id, {
-        value: structuredClone(pane),
-        enumerable: true,
-        writable: true,
-        configurable: true,
+      if (pane) {
+        if (Object.hasOwn(d.panes, pane.id)) problem('Pane id already exists');
+        Object.defineProperty(d.panes, pane.id, {
+          value: structuredClone(pane),
+          enumerable: true,
+          writable: true,
+          configurable: true,
+        });
+      }
+      const group: Group = {
+        kind: 'group',
+        id: this.id(d),
+        panes: pane ? [pane.id] : [],
+        active: pane?.id ?? null,
+      };
+      created = group.id;
+      this.replace(d, g, {
+        kind: 'split',
+        id: this.id(d),
+        axis,
+        ratio: options.ratio ?? 0.5,
+        children: options.before ? [group, g] : [g, group],
       });
-      const group: Group = { kind: 'group', id: this.id(d), panes: [pane.id], active: pane.id };
-      this.replace(d, g, { kind: 'split', id: this.id(d), axis, ratio: 0.5, children: [g, group] });
+    });
+    return created;
+  }
+  /** Cancel only an unfilled region; never roll back edits made elsewhere. */
+  removeEmptyGroup(groupId: string) {
+    const existing = findNode(this.state.root, groupId);
+    if (
+      existing?.kind !== 'group' ||
+      existing.panes.length ||
+      !findParent(this.state.root, groupId)
+    )
+      return;
+    this.commit('removeEmptyGroup', (d) => {
+      if (d.maximized === groupId) d.maximized = null;
+      const parent = findParent(d.root, groupId)!;
+      this.replace(d, parent, parent.children[parent.children[0].id === groupId ? 1 : 0]);
     });
   }
   /** Move to a tab group or to a new split at an edge. */

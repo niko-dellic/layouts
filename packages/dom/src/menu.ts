@@ -1,7 +1,8 @@
 import { actionIcon } from './action-icons.js';
 import type { ActionIcon } from './action-icons.js';
 import { fillTabPicker } from './picker.js';
-import type { Group, Pane } from '@niko-dellic/layouts-core';
+import { findNode } from 'layouts-core';
+import type { Group, Pane } from 'layouts-core';
 import type { LayoutOptions } from './types.js';
 import type { Windows } from './windows.js';
 import { el, Scope } from './lifetime.js';
@@ -30,7 +31,13 @@ export function createPaneMenu(
     b.onclick = () => act(action);
     return b;
   }
-  function open(anchor: HTMLElement, pane: Pane, group: Group) {
+  function open(
+    anchor: HTMLElement,
+    pane: Pane,
+    group: Group,
+    direction?: 'left' | 'right' | 'top' | 'bottom',
+    ratio = 0.5,
+  ) {
     current?.dispose();
     const local = new Scope();
     current = local;
@@ -52,15 +59,22 @@ export function createPaneMenu(
     const allowed = (cap: 'split' | 'join' | 'move') =>
       group.panes.every((id) => options.store.can(id, cap));
     const available = Boolean(options.tabs?.list().length);
-    const create = (axis?: 'horizontal' | 'vertical') => {
+    const create = (axis?: 'horizontal' | 'vertical', before = false) => {
+      let destination = group;
+      if (axis && options.tabs) {
+        const id = options.store.split(group.id, axis, null, { source: 'user', before, ratio });
+        destination = findNode(options.store.getSnapshot().root, id) as Group;
+        refresh();
+      }
       const commit = (fresh: Pane) =>
-        axis
-          ? options.store.split(group.id, axis, fresh, { source: 'user' })
-          : options.store.add(fresh, group.id, { source: 'user' });
+        axis && !options.tabs
+          ? options.store.split(group.id, axis, fresh, { source: 'user', before, ratio })
+          : options.store.add(fresh, destination.id, { source: 'user' });
       if (options.tabs) {
         const pickerScope = new Scope();
         current = pickerScope;
         const picker = el(doc, 'dialog', 'layouts-menu layouts-picker');
+        if (axis) pickerScope.add(() => options.store.removeEmptyGroup(destination.id));
         pickerScope.add(() => picker.remove());
         pickerScope.listen(picker, 'close', () => pickerScope.dispose());
         root.append(picker);
@@ -80,16 +94,113 @@ export function createPaneMenu(
             pickerScope.dispose();
         });
         picker.showModal();
-        fillTabPicker(picker, pickerScope, options, pane, group, commit, report);
+        fillTabPicker(picker, pickerScope, options, pane, destination, commit, report);
+        if (axis || !group.panes.length) {
+          const region = Array.from(root.querySelectorAll<HTMLElement>('[data-node-id]')).find(
+            (element) => element.dataset.nodeId === destination.id,
+          );
+          if (region) {
+            const position = () => {
+              const bounds = region.getBoundingClientRect();
+              picker.style.width = `${Math.max(0, Math.min(340, bounds.width - 16))}px`;
+              picker.style.maxHeight = `${Math.max(0, bounds.height - 16)}px`;
+              picker.style.left = `${bounds.left + (bounds.width - picker.offsetWidth) / 2}px`;
+              picker.style.top = `${bounds.top + (bounds.height - picker.offsetHeight) / 2}px`;
+            };
+            position();
+            const observer = new ResizeObserver(position);
+            observer.observe(region);
+            observer.observe(picker);
+            pickerScope.add(() => observer.disconnect());
+            pickerScope.listen(win, 'resize', position);
+            pickerScope.add(
+              options.store.subscribe(() => {
+                if (!findNode(options.store.getSnapshot().root, destination.id))
+                  pickerScope.dispose();
+              }),
+            );
+          }
+        }
       } else if (axis) {
         const fresh = options.createPane?.(pane);
         if (fresh) commit(fresh);
       }
     };
+    if (!group.panes.length) {
+      local.dispose();
+      create();
+      return;
+    }
+    if (direction) {
+      local.dispose();
+      create(
+        direction === 'left' || direction === 'right' ? 'horizontal' : 'vertical',
+        direction === 'left' || direction === 'top',
+      );
+      return;
+    }
     add('add-tab', '+ Add tab', available && allowed('move'), () => create());
     const canCreate = options.tabs ? available : Boolean(options.createPane);
-    add('split-right', 'Split right', canCreate && allowed('split'), () => create('horizontal'));
-    add('split-below', 'Split below', canCreate && allowed('split'), () => create('vertical'));
+    const split = el(doc, 'div', 'layouts-submenu');
+    const trigger = button('Split ▸', 'Split', () => {
+      flyout.hidden = !flyout.hidden;
+      trigger.setAttribute('aria-expanded', String(!flyout.hidden));
+    });
+    const splitIcon = el(doc, 'span', 'layouts-tab-icon');
+    splitIcon.setAttribute('aria-hidden', 'true');
+    splitIcon.append(actionIcon(doc, 'split-right', options));
+    trigger.prepend(splitIcon);
+    trigger.disabled = !(canCreate && allowed('split'));
+    trigger.setAttribute('aria-haspopup', 'menu');
+    trigger.setAttribute('aria-expanded', 'false');
+    const flyout = el(doc, 'div', 'layouts-submenu-content');
+    flyout.hidden = true;
+    flyout.setAttribute('role', 'menu');
+    for (const [label, axis, before] of [
+      ['Split left', 'horizontal', true],
+      ['Split right', 'horizontal', false],
+      ['Split up', 'vertical', true],
+      ['Split down', 'vertical', false],
+    ] as const) {
+      const option = button(label, label, () => {
+        local.dispose();
+        create(axis, before);
+      });
+      const icon = el(doc, 'span', 'layouts-tab-icon');
+      icon.setAttribute('aria-hidden', 'true');
+      icon.append(actionIcon(doc, axis === 'horizontal' ? 'split-right' : 'split-below', options));
+      option.prepend(icon);
+      option.setAttribute('role', 'menuitem');
+      flyout.append(option);
+    }
+    local.listen(split, 'pointerenter', () => {
+      if (!trigger.disabled) {
+        flyout.hidden = false;
+        trigger.setAttribute('aria-expanded', 'true');
+      }
+    });
+    local.listen(split, 'pointerleave', () => {
+      flyout.hidden = true;
+      trigger.setAttribute('aria-expanded', 'false');
+    });
+    local.listen(trigger, 'keydown', (event) => {
+      if ((event as KeyboardEvent).key === 'ArrowRight') {
+        event.preventDefault();
+        flyout.hidden = false;
+        (flyout.firstElementChild as HTMLElement).focus();
+      }
+    });
+    local.listen(flyout, 'keydown', (event) => {
+      if ((event as KeyboardEvent).key === 'ArrowLeft') {
+        event.preventDefault();
+        flyout.hidden = true;
+        trigger.focus();
+      }
+    });
+    split.dataset.side =
+      anchor.getBoundingClientRect().right + 220 > win.innerWidth ? 'left' : 'right';
+    split.append(trigger, flyout);
+    dialog.append(split);
     add('join', 'Join sibling region', allowed('join'), () =>
       options.store.join(group.id, { source: 'user' }),
     );

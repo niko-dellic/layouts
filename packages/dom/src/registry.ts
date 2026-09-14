@@ -1,4 +1,4 @@
-import type { Pane } from '@niko-dellic/layouts-core';
+import type { Pane } from 'layouts-core';
 export interface TabRegistration {
   id: string;
   title: string;

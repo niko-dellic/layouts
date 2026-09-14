@@ -105,6 +105,8 @@ export function validate(input: unknown): Issue[] {
       if (node.panes.length ? !node.panes.includes(node.active) : node.active !== null)
         fail(path + '.active', 'Active tab must belong to group (or be null for empty group)');
     } else if (node.kind === 'split') {
+      if (node.gap !== undefined && (!finite(node.gap) || node.gap < 0))
+        fail(path + '.gap', 'Expected nonnegative divider space');
       if (!['horizontal', 'vertical'].includes(String(node.axis)))
         fail(path + '.axis', 'Expected horizontal or vertical');
       if (!finite(node.ratio) || node.ratio <= 0 || node.ratio >= 1)
@@ -203,14 +205,14 @@ export function bounds(node: Node, layout: Layout): Bounds {
     b = bounds(node.children[1], layout);
   return node.axis === 'horizontal'
     ? {
-        minWidth: a.minWidth + b.minWidth + DIVIDER,
-        maxWidth: a.maxWidth + b.maxWidth + DIVIDER,
+        minWidth: a.minWidth + b.minWidth + (node.gap ?? DIVIDER),
+        maxWidth: a.maxWidth + b.maxWidth + (node.gap ?? DIVIDER),
         minHeight: Math.max(a.minHeight, b.minHeight),
         maxHeight: Math.max(a.maxHeight, b.maxHeight),
       }
     : {
-        minHeight: a.minHeight + b.minHeight + DIVIDER,
-        maxHeight: a.maxHeight + b.maxHeight + DIVIDER,
+        minHeight: a.minHeight + b.minHeight + (node.gap ?? DIVIDER),
+        maxHeight: a.maxHeight + b.maxHeight + (node.gap ?? DIVIDER),
         minWidth: Math.max(a.minWidth, b.minWidth),
         maxWidth: Math.max(a.maxWidth, b.maxWidth),
       };
@@ -223,8 +225,9 @@ export function allocate(
   maxA: number,
   minB: number,
   maxB: number,
+  gap = DIVIDER,
 ): [number, number] {
-  const available = Math.max(total - DIVIDER, minA + minB);
+  const available = Math.max(total - gap, minA + minB);
   const used = Math.min(available, maxA + maxB);
   const low = Math.max(minA, used - maxB),
     high = Math.min(maxA, used - minB);

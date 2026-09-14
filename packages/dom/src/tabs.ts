@@ -1,4 +1,4 @@
-import type { Group, Pane } from '@niko-dellic/layouts-core';
+import type { Group, Pane } from 'layouts-core';
 import type { LayoutOptions } from './types.js';
 import { el } from './lifetime.js';
 import { shortcutEnabled } from './shortcuts.js';

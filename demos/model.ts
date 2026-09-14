@@ -1,6 +1,6 @@
-import { TabRegistry } from '@niko-dellic/layouts';
-import { LayoutStore } from '@niko-dellic/layouts-core';
-import type { Layout, Pane } from '@niko-dellic/layouts-core';
+import { TabRegistry } from 'layouts';
+import { LayoutStore } from 'layouts-core';
+import type { Layout, Pane } from 'layouts-core';
 export const initial: Layout = {
   version: 1,
   maximized: null,

@@ -1,8 +1,9 @@
+import { bindCorners } from './corners.js';
 import { applyTheme } from './theme.js';
 import { fillTabs } from './tabs.js';
 import { bindShortcuts } from './shortcuts.js';
-import { allocate, bounds, DIVIDER, findNode, groups, paneIds } from '@niko-dellic/layouts-core';
-import type { Group, Layout, Node, Pane } from '@niko-dellic/layouts-core';
+import { allocate, bounds, DIVIDER, findNode, groups, paneIds } from 'layouts-core';
+import type { Group, Layout, Node, Pane } from 'layouts-core';
 import type { LayoutOptions, MountedLayout } from './types.js';
 import { Scope, el, syncChildren } from './lifetime.js';
 import { mountPane } from './panes.js';
@@ -85,6 +86,14 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
       r.header = el(doc, 'header', 'layouts-header');
       r.body = el(doc, 'div', 'layouts-body');
       r.element.append(r.header, r.body);
+      bindCorners(
+        r.element,
+        node.id,
+        options,
+        r.scope,
+        (pane, group, direction, ratio) => menu.open(r.header!, pane, group, direction, ratio),
+        error,
+      );
       r.element.setAttribute('aria-label', 'Pane region');
       r.scope.listen(r.element, 'dragover', (event) => {
         if (!dragId) return;
@@ -151,7 +160,8 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
           const current = findNode(options.store.getSnapshot().root, node.id);
           if (current?.kind !== 'split') return;
           const rect = r.element.getBoundingClientRect();
-          const available = (current.axis === 'horizontal' ? rect.width : rect.height) - DIVIDER;
+          const available =
+            (current.axis === 'horizontal' ? rect.width : rect.height) - (current.gap ?? DIVIDER);
           if (available > 0)
             act(() =>
               options.store.resize(
@@ -327,7 +337,16 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
       }
       return p.element;
     });
-    if (!bodies.length) bodies.push(el(doc, 'div', 'layouts-placeholder', 'Empty region'));
+    if (!bodies.length) {
+      const placeholder = el(doc, 'div', 'layouts-placeholder');
+      placeholder.append(el(doc, 'p', '', 'Empty region'));
+      const source = Object.values(layout.panes).find((pane) => pane.header !== false);
+      if (source && options.tabs) {
+        const choose = button('Choose a tab', 'Choose a tab', () => menu.open(choose, source, g));
+        placeholder.append(choose);
+      }
+      bodies.push(placeholder);
+    }
     syncChildren(r.body!, bodies);
   }
   function tree(node: Node, layout: Layout, used: Set<string>): HTMLElement {
@@ -375,7 +394,8 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
     if (node.kind === 'split') {
       const a = bounds(node.children[0], layout),
         b = bounds(node.children[1], layout),
-        horizontal = node.axis === 'horizontal';
+        horizontal = node.axis === 'horizontal',
+        gap = node.gap ?? DIVIDER;
       const [first, second] = allocate(
         horizontal ? width : height,
         node.ratio,
@@ -383,6 +403,7 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
         horizontal ? a.maxWidth : a.maxHeight,
         horizontal ? b.minWidth : b.minHeight,
         horizontal ? b.maxWidth : b.maxHeight,
+        gap,
       );
       geometry(
         node.children[0],
@@ -394,17 +415,18 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
       );
       geometry(
         node.children[1],
-        horizontal ? first + DIVIDER : 0,
-        horizontal ? 0 : first + DIVIDER,
+        horizontal ? first + gap : 0,
+        horizontal ? 0 : first + gap,
         horizontal ? second : width,
         horizontal ? height : second,
         layout,
       );
+      r.divider!.hidden = gap === 0;
       Object.assign(
         r.divider!.style,
         horizontal
-          ? { left: `${first}px`, top: '0', width: `${DIVIDER}px`, height: `${height}px` }
-          : { left: '0', top: `${first}px`, width: `${width}px`, height: `${DIVIDER}px` },
+          ? { left: `${first}px`, top: '0', width: `${gap}px`, height: `${height}px` }
+          : { left: '0', top: `${first}px`, width: `${width}px`, height: `${gap}px` },
       );
     }
   }

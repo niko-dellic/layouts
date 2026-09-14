@@ -1,8 +1,8 @@
-import { themes } from '@niko-dellic/layouts';
+import { themes } from 'layouts';
 import { renderIcon } from './icons.js';
-import '@niko-dellic/layouts/styles.css';
+import 'layouts/styles.css';
 import './style.css';
-import { mountLayout } from '@niko-dellic/layouts';
+import { mountLayout } from 'layouts';
 import { store, getPaneState, tabs } from './model.js';
 import { renderers } from './views.js';
 import { setupShell } from './shell.js';

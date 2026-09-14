@@ -1,6 +1,6 @@
 import type { TabRegistry } from './registry.js';
 import type { LayoutTheme } from './theme.js';
-import type { LayoutStore, Pane, WindowPlacement } from '@niko-dellic/layouts-core';
+import type { LayoutStore, Pane, WindowPlacement } from 'layouts-core';
 export interface PaneContext {
   element: HTMLElement;
   document: Document;

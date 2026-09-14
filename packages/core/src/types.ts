@@ -24,6 +24,8 @@ export interface Split {
   id: string;
   axis: Axis;
   ratio: number;
+  /** Divider space in pixels; zero removes fixed-bar gaps. Default 6. */
+  gap?: number;
   children: [Node, Node];
 }
 export type Node = Group | Split;

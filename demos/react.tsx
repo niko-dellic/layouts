@@ -1,12 +1,12 @@
-import { themes } from '@niko-dellic/layouts';
+import { themes } from 'layouts';
 import { renderIcon } from './icons.js';
-import '@niko-dellic/layouts/styles.css';
+import 'layouts/styles.css';
 import './style.css';
 import { createRoot } from 'react-dom/client';
 import { createRef, useLayoutEffect, useRef, useSyncExternalStore } from 'react';
-import { Layout } from '@niko-dellic/layouts-react';
-import type { PaneProps } from '@niko-dellic/layouts-react';
-import type { MountedLayout } from '@niko-dellic/layouts';
+import { Layout } from 'layouts-react';
+import type { PaneProps } from 'layouts-react';
+import type { MountedLayout } from 'layouts';
 import { store, state, getPaneState, tabs } from './model.js';
 import { imperativeView } from './views.js';
 import { setupShell } from './shell.js';

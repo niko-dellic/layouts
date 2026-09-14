@@ -151,7 +151,7 @@
   background: var(--layouts-header, #242a34);
   color: var(--layouts-text, #e5e9f0);
   border: 1px solid var(--layouts-line, #39414e);
-  border-radius: 7px;
+  border-radius: var(--layouts-radius, 7px);
   box-shadow: 0 12px 40px #0005;
 }
 .layouts-menu .layouts-button {
@@ -327,4 +327,149 @@
 }
 .layouts-picker-status {
   padding: 10px;
+}
+
+/* Consumer-owned scrollbar roles also apply to nested application content. */
+.layouts,
+.layouts * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--layouts-scrollbar-thumb, var(--layouts-line, #39414e))
+    var(--layouts-scrollbar-track, transparent);
+}
+.layouts ::-webkit-scrollbar {
+  width: var(--layouts-scrollbar-size, 6px);
+  height: var(--layouts-scrollbar-size, 6px);
+}
+.layouts ::-webkit-scrollbar-thumb {
+  background: var(--layouts-scrollbar-thumb, var(--layouts-line, #39414e));
+  border-radius: var(--layouts-radius, 5px);
+}
+.layouts ::-webkit-scrollbar-track {
+  background: var(--layouts-scrollbar-track, transparent);
+}
+.layouts-submenu {
+  position: relative;
+}
+.layouts-submenu > button {
+  width: 100%;
+  text-align: left;
+}
+.layouts-submenu-content {
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  border: 1px solid var(--layouts-line);
+  background: var(--layouts-panel);
+}
+.layouts-menu:has(.layouts-submenu-content:not([hidden])) {
+  min-width: 300px;
+}
+.layouts-corner {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  z-index: 3;
+  touch-action: none;
+  cursor: crosshair;
+}
+.layouts-corner::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-top: 2px solid var(--layouts-muted);
+  border-left: 2px solid var(--layouts-muted);
+  opacity: 0.35;
+}
+.layouts-corner:hover::after {
+  opacity: 1;
+}
+.layouts-corner[data-corner='tl'] {
+  top: 0;
+  left: 0;
+}
+.layouts-corner[data-corner='tr'] {
+  top: 0;
+  right: 0;
+  transform: rotate(90deg);
+}
+.layouts-corner[data-corner='br'] {
+  bottom: 0;
+  right: 0;
+  transform: rotate(180deg);
+}
+.layouts-corner[data-corner='bl'] {
+  bottom: 0;
+  left: 0;
+  transform: rotate(270deg);
+}
+.layouts-group[data-corner-preview] {
+  outline: 2px solid var(--layouts-accent);
+  outline-offset: -2px;
+}
+
+.layouts-menu:has(.layouts-submenu) {
+  overflow: visible;
+}
+.layouts-submenu-content {
+  position: absolute;
+  top: 0;
+  left: calc(100% - 1px);
+  width: 200px;
+  box-shadow: 0 8px 24px #0005;
+  border-radius: var(--layouts-radius, 5px);
+}
+.layouts-submenu[data-side='left'] .layouts-submenu-content {
+  left: auto;
+  right: calc(100% - 1px);
+}
+.layouts-menu:has(.layouts-submenu-content:not([hidden])) {
+  min-width: 0;
+}
+
+.layouts-corner-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+}
+.layouts-corner-preview {
+  position: fixed;
+  box-sizing: border-box;
+  border: 2px solid var(--layouts-accent);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.layouts-corner-preview[data-corner-preview='split'],
+.layouts-corner-preview[data-corner-preview='join-target'] {
+  background: color-mix(in srgb, var(--layouts-accent) 16%, transparent);
+}
+.layouts-corner-preview[data-corner-preview='join-source'] {
+  border-style: dashed;
+  background: color-mix(in srgb, var(--layouts-bg) 65%, transparent);
+}
+.layouts-corner-preview[data-corner-preview='join'] {
+  border-width: 3px;
+}
+.layouts-corner-label {
+  background: var(--layouts-panel);
+  color: var(--layouts-text);
+  padding: 6px 10px;
+  border-radius: var(--layouts-radius);
+  text-align: center;
+}
+.layouts-corner-label:empty {
+  display: none;
+}
+
+/* Themeable density affects chrome only; structural divider gaps stay in layout JSON. */
+.layouts-menu button,
+.layouts-picker button {
+  min-height: var(--layouts-control-height, 28px);
+}
+.layouts-menu {
+  padding: var(--layouts-spacing, 5px);
 }

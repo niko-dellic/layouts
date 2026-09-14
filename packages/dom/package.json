@@ -1,5 +1,5 @@
 {
-  "name": "@niko-dellic/layouts",
+  "name": "layouts",
   "version": "0.1.0",
   "description": "Composable TypeScript pane layouts with real browser popouts",
   "type": "module",
@@ -25,7 +25,7 @@
     "build": "tsc -p tsconfig.json && cp src/styles.css dist/styles.css"
   },
   "dependencies": {
-    "@niko-dellic/layouts-core": "0.1.0"
+    "layouts-core": "0.1.0"
   },
   "sideEffects": [
     "**/*.css"

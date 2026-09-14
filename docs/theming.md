@@ -36,7 +36,7 @@ fallbacks, so a nested `.layouts` element does not overwrite container values.
 Use the typed API for presets and runtime changes:
 
 ```ts
-import { mountLayout, themes } from '@niko-dellic/layouts';
+import { mountLayout, themes } from 'layouts';
 const workspace = mountLayout(host, {
   store,
   renderers,
@@ -64,3 +64,71 @@ when custom properties depend on ancestors absent from companion windows.
 Theme preferences belong to the application, separate from layout JSON. The
 library does not read OS preferences or write browser storage. The demo theme
 selector switches chrome presets; visualization palettes remain authored data.
+
+## Families, density and portable presets
+
+`themeFamilies.neutral`, `.zinc`, `.stone` and `.mist` each expose `light` and
+`dark` color objects inspired by shadcn palettes. Existing `themes.dark`,
+`themes.light` and `themes.sage` retain their values. Both demo selectors include
+all variants. Choose the family and mode in your application; layouts has no
+singleton preference state, persistence, or framework dependency.
+
+Additional tokens:
+
+| Typed key      | CSS property              | Default                                  |
+| -------------- | ------------------------- | ---------------------------------------- |
+| scrollbarThumb | --layouts-scrollbar-thumb | line token                               |
+| scrollbarTrack | --layouts-scrollbar-track | transparent                              |
+| scrollbarSize  | --layouts-scrollbar-size  | 6px (WebKit; standards engines use thin) |
+| controlHeight  | --layouts-control-height  | 28px                                     |
+| spacing        | --layouts-spacing         | 5px                                      |
+
+Chrome font weight inherits from the host. Density can be expressed with
+`headerHeight`, `controlHeight`, `spacing` and `fontSize`; structural pane sizes
+and divider gaps remain layout configuration. Font files and licensing belong to
+the consuming application. The library never downloads a font.
+
+```ts
+import { themeFamilies, type LayoutTheme } from 'layouts';
+const myThemes = {
+  graphite: { ...themeFamilies.zinc.dark, accent: '#82baff' },
+} satisfies Record<string, LayoutTheme>;
+workspace.setTheme({
+  ...myThemes.graphite,
+  fontSize: '13px',
+  headerHeight: '38px',
+  controlHeight: '32px',
+});
+```
+
+```tsx
+import { Layout } from 'layouts-react';
+import { themeFamilies } from 'layouts';
+// Changing this prop updates chrome without remounting registered content.
+<Layout store={store} components={components} theme={themeFamilies.stone.light} />;
+```
+
+### Mapping shadcn semantic roles
+
+```css
+.workspace {
+  --layouts-bg: var(--background);
+  --layouts-panel: var(--card);
+  --layouts-header: var(--muted);
+  --layouts-text: var(--foreground);
+  --layouts-muted: var(--muted-foreground);
+  --layouts-line: var(--border);
+  --layouts-accent: var(--primary);
+  --layouts-focus: var(--ring);
+  --layouts-radius: var(--radius);
+  --layouts-font-family: var(--font-sans);
+}
+```
+
+No Tailwind installation is required for these variables. Set all overrides as
+one resolved object when switching a preset: `setTheme` replaces previous inline
+overrides. Use `setTheme({})` to return to CSS inheritance. Host preferences and
+font-role choices should remain outside layout JSON. Copy application content
+variables and font styles to companion documents in `prepareWindow`; the library
+propagates its own resolved chrome tokens on subsequent theme changes. Theme
+updates never reset pane view state, selection, or content renderers.

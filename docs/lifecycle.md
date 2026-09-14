@@ -48,3 +48,9 @@ Linked styles and inline style elements are copied into companions and refreshed
 React panes are separate roots. Wrap pane components in required providers; they do not inherit the outer application root's contexts. The React binding delays initial mounting beyond the parent commit so pane roots can be mounted transactionally. Keep registry and callback identities stable; changing those options rebuilds the mounted workspace.
 
 The host owns unsaved-work confirmation. For a pane with work that cannot yet be closed safely, set `close: false`; use explicit host actions after your own review/save flow. Closing a popout returns the pane rather than discarding its application data.
+
+## Corner gestures and pending content
+
+Corner dragging previews the new region using the same constraint allocation as the renderer. The dominant drag axis chooses split orientation. A gesture into an immediate sibling outlines both regions and labels the receiver; joining retains both regions' content as tabs. Escape and pointer cancellation remove the preview without changing state.
+
+Releasing a split creates an empty group before opening a centered registry chooser. Choosing content adds it to that stable group ID. Cancelling removes only the still-empty group, preserving unrelated edits. Empty groups are valid JSON and provide a chooser if restored after a reload. Applications can use `store.split(groupId, axis, null, options)` and `store.removeEmptyGroup(groupId)` for the same workflow; filled groups are never removed by the latter.

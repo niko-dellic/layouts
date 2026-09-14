@@ -1,4 +1,4 @@
-import type { PaneRenderer, PaneContext } from '@niko-dellic/layouts';
+import type { PaneRenderer, PaneContext } from 'layouts';
 import { state } from './model.js';
 export function field(doc: Document, tag: string, text: string, className = '') {
   const e = doc.createElement(tag);

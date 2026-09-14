@@ -147,7 +147,7 @@ what is already open. Registering a type does not mount it. Removing a
 registration prevents new instances without closing existing panes.
 
 ```ts
-import { TabRegistry, mountLayout } from '@niko-dellic/layouts';
+import { TabRegistry, mountLayout } from 'layouts';
 const tabs = new TabRegistry();
 const unregister = tabs.register({
   id: 'canvas',

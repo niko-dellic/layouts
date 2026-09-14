@@ -6,6 +6,8 @@ import {
   rmSync,
   realpathSync,
   existsSync,
+  mkdirSync,
+  copyFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
@@ -14,8 +16,13 @@ execFileSync(process.execPath, ['scripts/pack.mjs'], { stdio: 'inherit' });
 const manifest = JSON.parse(readFileSync('artifacts/packages/manifest.json', 'utf8'));
 const temp = mkdtempSync(join(tmpdir(), 'layouts-consumer-'));
 try {
+  const vendor = join(temp, 'vendor/layouts');
+  mkdirSync(vendor, { recursive: true });
+  for (const p of manifest.packages) {
+    copyFileSync(resolve('artifacts/packages', p.file), join(vendor, p.file));
+  }
   const dependencies = Object.fromEntries(
-    manifest.packages.map((p) => [p.name, `file:${resolve('artifacts/packages', p.file)}`]),
+    manifest.packages.map((p) => [p.name, `file:vendor/layouts/${p.file}`]),
   );
   // Explicit peer installation keeps the vanilla consumer independent of React.
   writeFileSync(
@@ -26,8 +33,8 @@ try {
       private: true,
       type: 'module',
       dependencies: {
-        '@niko-dellic/layouts-core': dependencies['@niko-dellic/layouts-core'],
-        '@niko-dellic/layouts': dependencies['@niko-dellic/layouts'],
+        'layouts-core': dependencies['layouts-core'],
+        layouts: dependencies['layouts'],
       },
     }),
   );
@@ -43,8 +50,8 @@ try {
   writeFileSync(
     join(temp, 'smoke.mjs'),
     `import assert from 'node:assert/strict';
- import {LayoutStore} from '@niko-dellic/layouts-core';
- import {mountLayout} from '@niko-dellic/layouts';
+ import {LayoutStore} from 'layouts-core';
+ import {mountLayout} from 'layouts';
  const store=new LayoutStore({version:1,root:{kind:'group',id:'main',panes:['a'],active:'a'},panes:{a:{id:'a',title:'A',type:'text'}},popouts:[],maximized:null});
  store.split('main','horizontal',{id:'b',title:'B',type:'text'});
  assert.equal(Object.keys(store.export().panes).length,2);
@@ -56,7 +63,7 @@ try {
     'npm',
     [
       'install',
-      dependencies['@niko-dellic/layouts-react'],
+      dependencies['layouts-react'],
       'react@19',
       'react-dom@19',
       '--ignore-scripts',
@@ -65,9 +72,16 @@ try {
     ],
     { cwd: temp, stdio: 'pipe' },
   );
+  // Reinstall from the lockfile using only the consumer's vendored archives.
+  rmSync(join(temp, 'node_modules'), { recursive: true, force: true });
+  execFileSync('npm', ['ci', '--ignore-scripts', '--no-audit', '--no-fund'], {
+    cwd: temp,
+    stdio: 'pipe',
+  });
+  execFileSync(process.execPath, ['smoke.mjs'], { cwd: temp, stdio: 'inherit' });
   writeFileSync(
     join(temp, 'react-smoke.mjs'),
-    `import assert from 'node:assert/strict';import {Layout,reactRenderer,useLayoutSnapshot} from '@niko-dellic/layouts-react';assert.ok(Layout);assert.equal(typeof reactRenderer,'function');assert.equal(typeof useLayoutSnapshot,'function');`,
+    `import assert from 'node:assert/strict';import {Layout,reactRenderer,useLayoutSnapshot} from 'layouts-react';assert.ok(Layout);assert.equal(typeof reactRenderer,'function');assert.equal(typeof useLayoutSnapshot,'function');`,
   );
   execFileSync(process.execPath, ['react-smoke.mjs'], { cwd: temp, stdio: 'inherit' });
   for (const p of manifest.packages) {
@@ -79,7 +93,7 @@ try {
     assert.ok(existsSync(join(location, 'dist/index.d.ts')));
     assert.ok(existsSync(join(location, 'LICENSE')));
   }
-  assert.ok(existsSync(join(temp, 'node_modules/@niko-dellic/layouts/dist/styles.css')));
+  assert.ok(existsSync(join(temp, 'node_modules/layouts/dist/styles.css')));
   console.log('Isolated tarball installs passed (vanilla without React; React with peers).');
 } finally {
   rmSync(temp, { recursive: true, force: true });

@@ -1,4 +1,4 @@
-import type { Group, Pane } from '@niko-dellic/layouts-core';
+import type { Group, Pane } from 'layouts-core';
 import type { LayoutOptions } from './types.js';
 import type { TabRegistration } from './registry.js';
 import { el, Scope } from './lifetime.js';

@@ -1,5 +1,5 @@
 {
-  "name": "@niko-dellic/layouts-core",
+  "name": "layouts-core",
   "version": "0.1.0",
   "description": "Composable TypeScript pane layouts with real browser popouts",
   "type": "module",

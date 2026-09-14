@@ -12,6 +12,11 @@ export interface LayoutTheme {
   fontFamily?: string;
   fontSize?: string;
   headerHeight?: string;
+  scrollbarThumb?: string;
+  scrollbarTrack?: string;
+  scrollbarSize?: string;
+  controlHeight?: string;
+  spacing?: string;
 }
 export const themeProperties = {
   bg: '--layouts-bg',
@@ -26,7 +31,103 @@ export const themeProperties = {
   fontFamily: '--layouts-font-family',
   fontSize: '--layouts-font-size',
   headerHeight: '--layouts-header-height',
+  scrollbarThumb: '--layouts-scrollbar-thumb',
+  scrollbarTrack: '--layouts-scrollbar-track',
+  scrollbarSize: '--layouts-scrollbar-size',
+  controlHeight: '--layouts-control-height',
+  spacing: '--layouts-spacing',
 } as const;
+/** Optional application presets: no framework, persistence, or global theme state. */
+export const themeFamilies = {
+  neutral: {
+    dark: {
+      bg: '#0a0a0a',
+      panel: '#171717',
+      header: '#262626',
+      text: '#fafafa',
+      muted: '#a3a3a3',
+      line: '#525252',
+      accent: '#e5e5e5',
+      focus: '#e5e5e5',
+    },
+    light: {
+      bg: '#fafafa',
+      panel: '#ffffff',
+      header: '#f5f5f5',
+      text: '#171717',
+      muted: '#525252',
+      line: '#d4d4d4',
+      accent: '#262626',
+      focus: '#262626',
+    },
+  },
+  zinc: {
+    dark: {
+      bg: '#09090b',
+      panel: '#18181b',
+      header: '#27272a',
+      text: '#fafafa',
+      muted: '#a1a1aa',
+      line: '#52525b',
+      accent: '#d4d4d8',
+      focus: '#d4d4d8',
+    },
+    light: {
+      bg: '#fafafa',
+      panel: '#ffffff',
+      header: '#f4f4f5',
+      text: '#18181b',
+      muted: '#52525b',
+      line: '#d4d4d8',
+      accent: '#3f3f46',
+      focus: '#3f3f46',
+    },
+  },
+  stone: {
+    dark: {
+      bg: '#0c0a09',
+      panel: '#1c1917',
+      header: '#292524',
+      text: '#fafaf9',
+      muted: '#a8a29e',
+      line: '#57534e',
+      accent: '#d6d3d1',
+      focus: '#d6d3d1',
+    },
+    light: {
+      bg: '#fafaf9',
+      panel: '#ffffff',
+      header: '#f5f5f4',
+      text: '#1c1917',
+      muted: '#57534e',
+      line: '#d6d3d1',
+      accent: '#57534e',
+      focus: '#57534e',
+    },
+  },
+  mist: {
+    dark: {
+      bg: '#0b1114',
+      panel: '#141e23',
+      header: '#1e2c32',
+      text: '#edf4f7',
+      muted: '#9eb5bf',
+      line: '#425d69',
+      accent: '#8bc5d8',
+      focus: '#8bc5d8',
+    },
+    light: {
+      bg: '#f4f8fa',
+      panel: '#ffffff',
+      header: '#eaf1f4',
+      text: '#192c35',
+      muted: '#465f6b',
+      line: '#b8ccd5',
+      accent: '#28647b',
+      focus: '#28647b',
+    },
+  },
+} as const satisfies Record<string, { dark: LayoutTheme; light: LayoutTheme }>;
 export const themes = {
   dark: {
     bg: '#161a20',

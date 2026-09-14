@@ -1,5 +1,5 @@
 import { themeProperties } from './theme.js';
-import type { Pane, WindowPlacement } from '@niko-dellic/layouts-core';
+import type { Pane, WindowPlacement } from 'layouts-core';
 import type { LayoutOptions } from './types.js';
 import { el, Scope } from './lifetime.js';
 import { mountPane } from './panes.js';

@@ -1,13 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import {
-  LayoutStore,
-  parseLayout,
-  allocate,
-  bounds,
-  groups,
-  validate,
-} from '@niko-dellic/layouts-core';
-import type { Layout, Pane } from '@niko-dellic/layouts-core';
+import { LayoutStore, parseLayout, allocate, bounds, groups, validate } from 'layouts-core';
+import type { Layout, Pane } from 'layouts-core';
 const pane = (id: string): Pane => ({ id, type: 'test', title: id });
 function fixture(): Layout {
   return {
@@ -201,4 +194,34 @@ describe('configuration replacement and nested observers', () => {
     expect(groups(s.getSnapshot().root)).toHaveLength(2);
     expect(validate(s.export())).toEqual([]);
   });
+});
+
+it('supports zero-gap geometry and directional splits without losing original panes', () => {
+  const f = fixture();
+  if (f.root.kind !== 'split') throw new Error('fixture');
+  f.root.gap = 0;
+  expect(validate(f)).toEqual([]);
+  const original = bounds(f.root, f).minWidth;
+  f.root.gap = 6;
+  expect(bounds(f.root, f).minWidth).toBe(original + 6);
+  expect(allocate(100, 0.5, 0, Infinity, 0, Infinity, 0)).toEqual([50, 50]);
+  const store = new LayoutStore(f);
+  store.split('a-group', 'horizontal', pane('new'), { before: true, ratio: 0.3 });
+  const group = store.getSnapshot().root;
+  expect(groups(group).map((g) => g.panes)).toEqual([['new'], ['a', 'b'], ['c']]);
+});
+
+it('creates an empty split before content selection and cancels without losing concurrent edits', () => {
+  const store = new LayoutStore(fixture());
+  const id = store.split('a-group', 'horizontal', null, { before: true, ratio: 0.3 });
+  expect(groups(store.getSnapshot().root).find((g) => g.id === id)?.panes).toEqual([]);
+  store.updatePane({ ...store.getSnapshot().panes.a!, title: 'Edited' });
+  store.removeEmptyGroup(id);
+  expect(store.getSnapshot().panes.a!.title).toBe('Edited');
+  expect(groups(store.getSnapshot().root)).toHaveLength(2);
+  const filled = store.split('a-group', 'vertical', null);
+  store.add(pane('chosen'), filled);
+  store.removeEmptyGroup(filled);
+  expect(groups(store.getSnapshot().root).find((g) => g.id === filled)?.panes).toEqual(['chosen']);
+  expect(validate(store.export())).toEqual([]);
 });

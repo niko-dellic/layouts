@@ -11,9 +11,9 @@ import {
 import type { ComponentType, CSSProperties, ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { mountLayout } from '@niko-dellic/layouts';
-import type { LayoutOptions, MountedLayout, PaneContext, PaneRenderer } from '@niko-dellic/layouts';
-import type { Layout as LayoutSnapshot, LayoutStore } from '@niko-dellic/layouts-core';
+import { mountLayout } from 'layouts';
+import type { LayoutOptions, MountedLayout, PaneContext, PaneRenderer } from 'layouts';
+import type { Layout as LayoutSnapshot, LayoutStore } from 'layouts-core';
 export type PaneProps = Omit<PaneContext, 'element'>;
 class Boundary extends Component<
   { children: ReactNode; onError: (error: unknown) => void },
