@@ -41,7 +41,7 @@ renderer while handling readiness, messaging, and lifecycle in a host-specific l
 
 ## Downloadable showcase
 
-[Quilt Demo](https://layouts-ruddy.vercel.app/electron.html) bundles the full web
+[Quilt Demo](https://quilt-layouts.vercel.app/electron.html) bundles the full web
 showcase as native apps. Source and packaging instructions are in
 [desktop/README.md](../desktop/README.md). These demo binaries are unsigned and
 not notarized; their release notes explain OS approval prompts.
