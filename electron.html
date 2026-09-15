@@ -6,7 +6,7 @@
     <title>Quilt — Desktop demo</title>
     <meta
       name="description"
-      content="Download the full Quilt demo for macOS, Windows, or Linux. Open it on your desktop with native companion windows and no setup commands."
+      content="Quilt layout demos packaged with Electron for macOS, Windows, and Ubuntu/Debian."
     />
     <link rel="stylesheet" href="/demos/style.css" />
     <link rel="stylesheet" href="/demos/electron.css" />
@@ -33,12 +33,10 @@
     </header>
     <main class="electron-content">
       <p class="eyebrow">DESKTOP DEMO</p>
-      <h1>The Quilt demo.<br />On your desktop.</h1>
+      <h1>Quilt for Electron</h1>
       <p class="landing-lead">
-        The full workspace you know from the web, with native companion windows.<br
-          class="desktop-break"
-        />
-        Download the app, open it, and explore. No Node.js or terminal setup.
+        The vanilla and React demos, packaged as a desktop application. Includes pane layouts,
+        themes, workspace JSON, and popout windows. Runs offline; Node.js is not required.
       </p>
       <div class="electron-platforms" aria-label="Download Quilt Demo">
         <a
@@ -66,15 +64,15 @@
           ><small>64-bit · DEB</small></a
         >
       </div>
-      <p class="electron-meta">v__QUILT_VERSION__ · Free demo · Runs offline</p>
+      <p class="electron-meta">Version __QUILT_VERSION__ · MIT license</p>
       <section class="electron-setup" aria-labelledby="setup-title">
         <div>
-          <p class="eyebrow">OPEN AND EXPLORE</p>
-          <h2 id="setup-title">Same workspace. Native windows.</h2>
+          <p class="eyebrow">USAGE</p>
+          <h2 id="setup-title">Running the demo</h2>
           <p>
-            Includes the full vanilla and React showcases: the scene, inspector, timeline, themes,
-            and workspace JSON. Pop a pane out into its own desktop window and close it to return
-            it.
+            Use the header to switch between vanilla and React. A popped-out pane opens in a
+            separate window; closing that window returns it to the main layout. Saved workspaces
+            restore with all panes docked.
           </p>
         </div>
         <div class="electron-install">
@@ -89,8 +87,8 @@
       <details class="electron-unsigned">
         <summary>First launch: unsigned demo builds</summary>
         <p>
-          These demo apps are not signed or notarized. Your OS may show an unidentified-developer
-          warning.
+          These builds have no trusted developer certificate and are not notarized. macOS builds use
+          an ad-hoc signature. Your OS may show an unidentified-developer warning.
         </p>
         <p>
           On macOS, you may need to approve Quilt Demo in System Settings → Privacy &amp; Security
@@ -99,7 +97,7 @@
         </p>
       </details>
       <footer class="landing-footer">
-        <a href="/vanilla.html">Try Quilt in your browser ↗</a
+        <a href="/vanilla.html">Browser demo ↗</a
         ><a href="https://github.com/niko-dellic/quilt/blob/main/docs/compatibility.md"
           >Host compatibility ↗</a
         >

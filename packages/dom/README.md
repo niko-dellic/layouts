@@ -1,6 +1,6 @@
 # quilt-vanilla
 
-Vanilla DOM pane layouts, tabs, themes, resizing, and same-origin browser popouts. Includes convenient core exports; does not install React. MIT licensed, ESM and TypeScript.
+Vanilla DOM pane layouts, tabs, themes, resizing, and same-origin browser popouts. Re-exports the core API and does not install React. MIT licensed, ESM and TypeScript.
 
 ## Install
 
@@ -51,7 +51,7 @@ function disposeWorkspace() {
 }
 ```
 
-The host needs an explicit height. Supply a `TabRegistry` through `tabs` to offer new content; registration factories return fresh pane IDs. `themes`, `themeFamilies`, `LayoutTheme`, and `MountedLayout` are public exports. The layout JSON type is `LayoutSnapshot` from this entry point.
+The host needs an explicit height. Use a unified `PaneRegistry` to register creation metadata and renderers together, or supply a `TabRegistry` through `tabs` to offer new content; Quilt generates omitted pane IDs and preserves explicit IDs. `themes`, `themeFamilies`, `LayoutTheme`, and `MountedLayout` are public exports. The layout JSON type is `LayoutSnapshot` from this entry point.
 
 Call `mounted.popout(id)` from a user action. Companions are same-origin and owned by the main session. Use the supplied document/window inside renderers and release every view-owned resource in `dispose`. Keep app data outside view lifetimes.
 

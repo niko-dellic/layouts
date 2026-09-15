@@ -8,6 +8,6 @@ JSON v1 is a public contract. Add versioned migrations for future breaking chang
 
 Validation: `npm run check`. The full gate builds packages, checks demo/test types, runs unit tests, exercises Chromium/Firefox/WebKit, builds demos, and installs packed artifacts in an isolated temporary consumer. Install test browsers first with `npx playwright install chromium firefox webkit`.
 
-Package scopes are not published to the npm registry yet. `npm run pack:all` writes three local archives and a checksum manifest in `artifacts/packages`. Do not commit node_modules, dist, test output, or generated archives. Release archives can be attached to a GitHub release after source verification.
+The npm packages are `quilt-core`, `quilt-vanilla`, and `quilt-react`. `npm run pack:all` writes three local archives and a checksum manifest in `artifacts/packages`. Do not commit node_modules, dist, test output, or generated archives. See [release instructions](docs/releases.md) for npm publication and desktop builds.
 
 Keep changes focused. Tests should cover observable behaviors and failure recovery, particularly cross-document lifetime and preservation of application-owned data.

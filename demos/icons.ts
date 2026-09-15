@@ -1,6 +1,18 @@
-import { Activity, Search, Keyboard, Box, Layers, SlidersHorizontal, Timer } from 'lucide';
+import {
+  Activity,
+  Search,
+  Keyboard,
+  Box,
+  Layers,
+  SlidersHorizontal,
+  Timer,
+  Maximize,
+  Minimize,
+} from 'lucide';
 import type { IconNode } from 'lucide';
 const icons: Record<string, IconNode> = {
+  fullscreen: Maximize,
+  exitFullscreen: Minimize,
   activity: Activity,
   hotkeys: Keyboard,
   canvas: Box,

@@ -44,7 +44,7 @@ The default companion starts at `about:blank` and inherits the opener origin. A 
 
 ## Styles and React providers
 
-Linked styles and inline style elements are copied into companions and refreshed when the source head changes. Document/body class, style, and data attributes are synchronized. Ancestor-specific selectors, shadow-root styles, adopted stylesheets, assets initialized by scripts, and provider context need explicit application integration through `prepareWindow` or pane wrappers.
+Linked styles and inline style elements are copied into companions and refreshed when the source head changes. Document/body class, style, and data attributes are synchronized. Ancestor-specific selectors, shadow-root styles, adopted stylesheets, and assets initialized by scripts need application integration through `prepareWindow` or pane wrappers.
 
 Declarative React panes use portals and inherit their application providers, including in companion documents. Callback and component-map identity changes update options without rebuilding the workspace. Replacing the store replaces the session. Standalone `reactRenderer` still creates an independent root and needs explicit provider wrappers. Document transitions still remount content; React-local state does not travel.
 
@@ -61,8 +61,9 @@ Releasing a split creates an empty group before opening a centered registry choo
 Configure the core store with `new LayoutStore(layout, { autoCollapse: 'disabled' })`.
 `AutoCollapse` accepts `'enabled' | 'protected' | 'disabled'`; omitted means `'disabled'`.
 Read or change it with `store.getAutoCollapse()` and `store.setAutoCollapse(mode)`.
-This is a workspace-wide session setting shared by DOM and React. It is not exported in
-layout JSON and survives `load` and `reset`. The demo Settings pane includes a live selector.
+This is a workspace-wide session setting shared by DOM and React. Raw core layout JSON excludes it, and core `load` and `reset` preserve it.
+Workspace presets include it; `loadWorkspace` applies the saved setting. The demo
+Theming pane includes a live selector.
 
 - `enabled`: closing, moving, or popping out the last tab removes its empty source region.
 - `protected`: closing or moving the last tab removes the region; popping it out preserves it.

@@ -1,4 +1,4 @@
-# Copyable starters
+# Application examples
 
 Each directory is an independent application with public npm imports, its own
 package manifest, and no aliases into Quilt source.
@@ -9,11 +9,11 @@ package manifest, and no aliases into Quilt source.
 | [React](react)       | `npm run dev`        |
 | [Electron](electron) | `npm start`          |
 
-Use Node 24. After Quilt 0.2.0 is published, copy a starter directory, run
+Use Node 24. Copy a starter directory, run
 `npm install`, then the command above. `npm run build` checks TypeScript and builds
 the app. Electron loads the built files locally; it needs no development server.
 
-## Before publication / testing this checkout
+## Testing changes from this checkout
 
 From the repository root:
 
@@ -50,5 +50,6 @@ color or the application's `data-theme` selection. Load the supplied stylesheet
 and save application preferences separately. For debounced localStorage with
 error handling and cleanup, see [Web integration](../docs/integration.md).
 
-These are intentionally small examples. Authentication, persistence of note data,
-desktop installers, and native window-state restoration belong to the application.
+These examples cover a single notes pane. For the packaged desktop demo, see
+[desktop](../desktop/README.md). Applications provide authentication, note-data
+persistence, and any native window restoration.

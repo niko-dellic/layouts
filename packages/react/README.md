@@ -27,8 +27,7 @@ const store = new LayoutStore(
 );
 const data = { text: 'Hello' };
 const getPaneState = () => data;
-function Notes({ state }: PaneProps) {
-  const model = state as typeof data;
+function Notes({ state: model }: PaneProps<typeof data>) {
   return (
     <textarea
       defaultValue={model.text}
@@ -41,7 +40,7 @@ function Notes({ state }: PaneProps) {
 const components = { notes: Notes };
 const root = createRoot(document.getElementById('app')!);
 root.render(
-  <Layout
+  <Layout<typeof data>
     store={store}
     components={components}
     getPaneState={getPaneState}
@@ -58,6 +57,6 @@ function disposeWorkspace() {
 
 Keep the store stable. Component maps and adapter callbacks can change identity without rebuilding the workspace. Declarative panes inherit application providers through portals. `useLayoutSnapshot(store)` observes layout changes. The model type is `LayoutSnapshot`; `Layout` is the component. `MountedLayout`, `TabRegistry`, theme presets, and DOM configuration types are available here too. Attach a `MountedLayout` ref to call `popout` from a user gesture; before mounting completes, popout/requestClose resolve false; workspace configuration methods throw a clear not-mounted error.
 
-Declarative panes inherit your app's context providers. Only standalone `reactRenderer` creates separate roots requiring explicit provider wrappers. React-local state does not survive crossing documents: retain data in an application-owned store, and subscribe inside each view when live synchronization is needed. Companion windows are same-origin and depend on the main session.
+Only standalone `reactRenderer` creates separate roots requiring explicit provider wrappers. React-local state does not survive crossing documents: retain data in an application-owned store, and subscribe inside each view when live synchronization is needed. Companion windows are same-origin and depend on the main session.
 
 The stylesheet is identical to `quilt-vanilla/styles.css`; import either once. See [API](https://github.com/niko-dellic/quilt/blob/main/docs/api.md), [lifecycle](https://github.com/niko-dellic/quilt/blob/main/docs/lifecycle.md), and [migration](https://github.com/niko-dellic/quilt/blob/main/docs/migration.md).
