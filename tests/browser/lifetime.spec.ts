@@ -82,7 +82,7 @@ test('restoring JSON containing a popout never opens a window automatically', as
   });
   expect(context.pages()).toHaveLength(1);
   await page.getByRole('button', { name: 'A actions', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Reopen window', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open in window', exact: true })).toBeVisible();
 });
 test('disposing the main session closes its companion and releases views', async ({ page }) => {
   const opened = page.waitForEvent('popup');

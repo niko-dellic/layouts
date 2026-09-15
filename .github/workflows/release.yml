@@ -31,7 +31,7 @@ jobs:
       - run: npm ci
       - run: node scripts/release.mjs --validate
       - run: npx playwright install --with-deps chromium firefox webkit
-      - run: npm run check
+      - run: xvfb-run -a npm run check
       - run: node scripts/release.mjs
       - uses: actions/upload-artifact@v7
         with:

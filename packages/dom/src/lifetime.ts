@@ -41,6 +41,7 @@ export function el<K extends keyof HTMLElementTagNameMap>(
 ): HTMLElementTagNameMap[K] {
   const node = doc.createElement(tag);
   node.className = className;
+  node.dataset.layoutsChrome = '';
   if (text !== undefined) node.textContent = text;
   return node;
 }

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0
+
+- Preserve React provider context through portals and update renderer options without rebuilding pane views.
+- Add transactional asynchronous popout completion, explicit pane retry, and temporary-popout workspace JSON export/import.
+- Add unified pane registration, scoped configurable shortcuts, typed message overrides, and workspace popout availability.
+- Add opt-in close confirmation with a built-in dialog or an application-owned asynchronous replacement.
+- Resolve geometry theme lengths through CSS, expose theme refresh/token mapping, and scope chrome resets to library elements.
+- Add integration examples and regression coverage; isolate the browser test server from running demos.
+
+- Add standalone vanilla, React, and Electron starters, typed application state, compile-time registration exclusivity, and explicit option resets.
+
 ## 0.1.1
 
 - Keep pane action menus and submenus inside the viewport, including near window edges and during resizing. Oversized menus scroll so every action remains accessible.

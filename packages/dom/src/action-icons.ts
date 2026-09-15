@@ -1,4 +1,4 @@
-import type { LayoutOptions } from './types.js';
+import type { ResolvedLayoutOptions } from './types.js';
 const paths = {
   'add-tab': ['M12 5v14M5 12h14'],
   'split-right': ['M3 4h18v16H3z', 'M12 4v16'],
@@ -16,7 +16,7 @@ export type ActionIcon = keyof typeof paths;
 export function actionIcon(
   doc: Document,
   name: ActionIcon,
-  options: Pick<LayoutOptions, 'renderIcon'>,
+  options: Pick<ResolvedLayoutOptions, 'renderIcon'>,
 ): Element {
   const custom = options.renderIcon?.(`layouts:${name}`, doc);
   if (custom) return custom;

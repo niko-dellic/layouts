@@ -31,6 +31,7 @@ interface Pane {
   title: string;
   params?: Json; // JSON only, not runtime state
   header?: boolean;
+  confirmClose?: boolean; // optional UI confirmation; default inherits registration or false
   capabilities?: Partial<
     Record<'resize' | 'move' | 'split' | 'join' | 'close' | 'popout', boolean>
   >;
@@ -99,7 +100,7 @@ Commands clone, validate, and commit atomically. A failed command leaves the pre
 | `returnPane(paneId)`                                 | Return to a compatible original/fallback group, or a new region                                                                   |
 | `dispose()`                                          | End subscriptions; idempotent; subsequent commands fail                                                                           |
 
-Options accept `{source: 'user' | 'api'}`; default is `api`. Flags only restrict `user` commands. Use the mounted renderer's `popout` method, not the store's pure `popout` command, to open browser windows. A DOM renderer interprets detached records without live companion handles as restored data and docks them with a Reopen action.
+Options accept `{source: 'user' | 'api'}`; default is `api`. Flags only restrict `user` commands. Use the mounted renderer's `popout` method, not the store's pure `popout` command, to open browser windows. A DOM renderer interprets detached records without live companion handles as restored data and docks them without retaining reopening intent.
 
 ## DOM exports
 
@@ -114,11 +115,11 @@ Options accept `{source: 'user' | 'api'}`; default is `api`. Flags only restrict
 - `prepareWindow(window, pane)`: copy additional styles/providers/assets into a companion document.
 - `openWindow(pane, placement)`: optional synchronous, same-origin window factory; null means blocked. The library owns this returned window and replaces its body, so do not return an existing unrelated application window.
 
-Returned handle: `setTheme(theme)`, `setTabBar(options)`, `popout(id, placement?): boolean`, `returnPane(id)`, `dispose()`. Dispose the mounted view before disposing the externally owned store.
+Returned handle: `setTheme(theme)`, `setTabBar(options)`, `popout(id, placement?): Promise<boolean>`, `returnPane(id)`, `dispose()`. Dispose the mounted view before disposing the externally owned store.
 
 ## React exports
 
-`Layout` accepts the same options, replacing `renderers` with `components: Record<string, ComponentType<PaneProps>>`, plus `className` and `style`. Its ref exposes the mounted handle. Mounting is deferred one microtask beyond React's commit; ref methods return false/no-op before mounting completes.
+`Layout` accepts the same options, replacing `renderers` with `components: Record<string, ComponentType<PaneProps>>`, plus `className` and `style`. Its ref exposes the mounted handle. Mounting is deferred one microtask beyond React's commit; popout/requestClose resolve false before mounting completes; configuration methods throw a not-mounted error.
 
 `reactRenderer(Component)` adapts a React component for mixed vanilla/React consumers. `useLayoutSnapshot(store)` subscribes with React's external-store API. React 18.3 and 19 are peer-compatible; packed-consumer tests compile and exercise both React versions.
 
@@ -237,3 +238,26 @@ preserves proportional shares. `joinRange(root, from, to)` returns the eligible 
 previews, or `undefined` when endpoints are identical, absent, or separated by a perpendicular
 split. Content constraints and capabilities are validated atomically when committing.
 The existing `join` command and “Join sibling region” menu retain their parent-collapse behavior.
+
+## Web integration additions
+
+Mounted handles also expose `updateOptions(partial)`, `exportWorkspace()`,
+`loadWorkspace(unknown)`, `refreshTheme()`, `retryPane(id)`, and
+`requestClose(id, kind?: 'pane' | 'group'): Promise<boolean>`.
+
+`WorkspacePreset` v1 stores layout, theme, tabBar, and autoCollapse. The exported
+layout is docked without changing live windows. `parseWorkspace` validates an
+independent preset; `dockLayout` normalizes a layout copy. Raw core exports retain
+live detached records.
+
+`registry: PaneRegistry<PaneRenderer>` replaces separate `renderers` and `tabs`
+when supplied. React accepts `PaneRegistry<ComponentType<PaneProps>>`. Registrations
+combine `type`, `title`, `view`, optional `create`, and optional `confirmClose`.
+
+Options add `messages`, `popouts` (default true), and an optional async
+`confirmClose(request)` replacement for the built-in dialog. Confirmation is
+only requested for panes opting in through metadata or their registration.
+`KeyBinding` accepts `key` and optional `ctrl`, `alt`, `shift`, `meta`; configurable
+shortcut actions accept one binding, an array, or their existing boolean preset.
+
+See [Web integration](integration.md) for complete usage and lifetime rules.

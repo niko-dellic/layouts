@@ -1,6 +1,6 @@
 {
   "name": "quilt-react",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "React split panes and tabs with shared DOM chrome and browser window popouts",
   "type": "module",
   "license": "MIT",
@@ -30,8 +30,8 @@
     "prepack": "node ../../scripts/build-package.mjs react --dependencies"
   },
   "dependencies": {
-    "quilt-core": "0.1.1",
-    "quilt-vanilla": "0.1.1"
+    "quilt-core": "0.2.0",
+    "quilt-vanilla": "0.2.0"
   },
   "sideEffects": [
     "**/*.css"

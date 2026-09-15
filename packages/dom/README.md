@@ -56,3 +56,9 @@ The host needs an explicit height. Supply a `TabRegistry` through `tabs` to offe
 Call `mounted.popout(id)` from a user action. Companions are same-origin and owned by the main session. Use the supplied document/window inside renderers and release every view-owned resource in `dispose`. Keep app data outside view lifetimes.
 
 See [API](https://github.com/niko-dellic/quilt/blob/main/docs/api.md), [lifecycle](https://github.com/niko-dellic/quilt/blob/main/docs/lifecycle.md), and [migration](https://github.com/niko-dellic/quilt/blob/main/docs/migration.md).
+
+Use `mounted.exportWorkspace()` and `mounted.loadWorkspace(input)` to round-trip
+layout and appearance as JSON. Popouts export docked copies without closing live
+windows. `popout` returns `Promise<boolean>` and must be called from a user gesture.
+See [web integration](https://github.com/niko-dellic/quilt/blob/main/docs/integration.md)
+for unified registration, custom themes, close confirmation, and storage examples.

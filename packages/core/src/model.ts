@@ -42,6 +42,8 @@ export function validate(input: unknown): Issue[] {
       fail(`panes.${id}`, 'Expected matching id, type, and title');
       continue;
     }
+    if (pane.confirmClose !== undefined && typeof pane.confirmClose !== 'boolean')
+      fail(`panes.${id}.confirmClose`, 'Expected boolean');
     if (pane.icon !== undefined && typeof pane.icon !== 'string')
       fail(`panes.${id}.icon`, 'Expected string');
     if (pane.header !== undefined && typeof pane.header !== 'boolean')

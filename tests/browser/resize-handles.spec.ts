@@ -10,7 +10,7 @@ for (const framework of ['vanilla', 'react']) {
         .getByRole('textbox', { name: 'Layout JSON', exact: true })
         .inputValue();
       await page.getByRole('button', { name: 'Cancel', exact: true }).click();
-      return value;
+      return JSON.stringify(JSON.parse(value).layout);
     };
     const originalJSON = await readJSON();
     const top = page.locator('[data-node-id="top"] > .layouts-divider');

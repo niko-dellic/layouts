@@ -48,7 +48,7 @@ for (const framework of ['vanilla', 'react']) {
   });
 }
 
-test('T respects opt-in, hovered target, text entry, and move capabilities', async ({ page }) => {
+test('T respects opt-in, focus fallback, text entry, and move capabilities', async ({ page }) => {
   for (const enabled of [false, true]) {
     await page.goto(`/tests/browser/harness.html${enabled ? '?shortcuts' : ''}`);
     await page.evaluate(() =>
@@ -68,7 +68,9 @@ test('T respects opt-in, hovered target, text entry, and move capabilities', asy
     expect(await press(page)).toBe(false);
     await tab.focus();
     await page.mouse.move(950, 650);
-    expect(await press(page)).toBe(false);
+    expect(await press(page)).toBe(true);
+    await page.getByRole('combobox', { name: 'Search tabs' }).press('Escape');
+    await tab.focus();
     await tab.hover();
     await page.evaluate(() =>
       window.harness.store.updatePane({

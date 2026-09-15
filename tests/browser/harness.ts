@@ -1,7 +1,8 @@
 import { LayoutStore } from 'quilt-core';
 import type { Layout } from 'quilt-core';
-import { mountLayout, TabRegistry } from 'quilt-vanilla';
+import { mountLayout, TabRegistry, PaneRegistry } from 'quilt-vanilla';
 import 'quilt-vanilla/styles.css';
+import type { PaneRenderer } from 'quilt-vanilla';
 import type { MountedLayout } from 'quilt-vanilla';
 const data = { text: 'initial' };
 const stats = { mounts: 0, disposals: 0, live: 0, errors: [] as string[] };
@@ -30,7 +31,7 @@ let mounted: MountedLayout;
 let fail = false,
   blocked = false;
 function mount() {
-  mounted = mountLayout(document.querySelector('#host')!, {
+  mounted = mountLayout<unknown>(document.querySelector('#host')!, {
     store,
     ...(new URLSearchParams(location.search).has('no-registry') ? {} : { tabs }),
     shortcuts: new URLSearchParams(location.search).has('shortcuts'),
@@ -61,7 +62,43 @@ function mount() {
 mount();
 document.querySelector('#open')!.addEventListener('click', () => mounted.popout('a'));
 document.querySelector('#return')!.addEventListener('click', () => mounted.returnPane('a'));
+let extra: { store: LayoutStore; mounted: MountedLayout } | undefined;
+const unified = new PaneRegistry<PaneRenderer>();
 export const harness = {
+  unified,
+  get extra() {
+    return extra!;
+  },
+  secondary() {
+    const host = document.createElement('div');
+    host.id = 'secondary';
+    host.style.cssText = 'width:900px;height:200px';
+    document.body.append(host);
+    const other = new LayoutStore(fixture);
+    extra = {
+      store: other,
+      mounted: mountLayout<unknown>(host, { store: other, renderers: {}, shortcuts: true }),
+    };
+    return;
+  },
+  useRegistry() {
+    mounted.dispose();
+    mounted = mountLayout<unknown>(document.querySelector('#host')!, { store, registry: unified });
+  },
+  registerTest() {
+    return unified.register({
+      type: 'test',
+      title: 'Registered',
+      confirmClose: true,
+      view: ({ element }) => {
+        element.textContent = 'Dynamic renderer';
+        return { dispose() {} };
+      },
+    });
+  },
+  get mounted() {
+    return mounted;
+  },
   tabs,
   setTabBar: (options: import('quilt-vanilla').TabBarOptions) => mounted.setTabBar(options),
   setTheme: (theme: import('quilt-vanilla').LayoutTheme) => mounted.setTheme(theme),

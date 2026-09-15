@@ -117,6 +117,7 @@ try {
         const common = [
           '--noEmit',
           '--strict',
+          '--exactOptionalPropertyTypes',
           '--noUncheckedSideEffectImports',
           '--skipLibCheck',
           'false',

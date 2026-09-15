@@ -1,4 +1,4 @@
-import { createRef, useEffect } from 'react';
+import { createRef, useEffect, createContext, useContext } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   Layout,
@@ -6,12 +6,14 @@ import {
   createLayout,
   useLayoutSnapshot,
   TabRegistry,
+  PaneRegistry,
   themes,
 } from 'quilt-react';
 import type { MountedLayout, PaneProps, LayoutSnapshot, LayoutProps } from 'quilt-react';
 import 'quilt-react/styles.css';
 const store = new LayoutStore(createLayout({ pane: { id: 'note', type: 'note', title: 'Note' } }));
 const state = { text: 'initial' };
+const Context = createContext('missing');
 const stats = { live: 0 };
 const getPaneState = () => state;
 function Note({ state: data }: PaneProps) {
@@ -21,6 +23,8 @@ function Note({ state: data }: PaneProps) {
       stats.live--;
     };
   }, []);
+  const inherited = useContext(Context);
+  if (inherited !== 'inherited') throw new Error('Provider context was lost');
   const model = data as typeof state;
   return (
     <input
@@ -57,5 +61,24 @@ const props: LayoutProps = { store, components };
 // @ts-expect-error Content creation requires TabRegistry.
 props.createPane = () => undefined;
 const root = createRoot(document.getElementById('app')!);
-root.render(<App />);
+root.render(
+  <Context.Provider value="inherited">
+    <App />
+  </Context.Provider>,
+);
 Object.assign(window, { consumer: { store, stats, state, dispose: () => root.unmount() } });
+
+const unified = new PaneRegistry<import('react').ComponentType<PaneProps>>();
+// @ts-expect-error Unified registration excludes component maps.
+const conflict: LayoutProps = { store, registry: unified, components };
+// @ts-expect-error Unified registration excludes tabs.
+const conflictTabs: LayoutProps = { store, registry: unified, tabs };
+void conflict;
+void conflictTabs;
+function TypedNote({ state }: PaneProps<{ text: string }>) {
+  return <p>{state.text}</p>;
+}
+const typedLayout = (
+  <Layout store={store} components={{ note: TypedNote }} getPaneState={() => ({ text: 'typed' })} />
+);
+void typedLayout;

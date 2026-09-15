@@ -1,5 +1,6 @@
+import { message } from './messages.js';
 import type { Pane } from 'quilt-core';
-import type { LayoutOptions, PaneView, PaneRenderer } from './types.js';
+import type { ResolvedLayoutOptions, PaneView, PaneRenderer } from './types.js';
 import { el } from './lifetime.js';
 export interface MountedPane {
   element: HTMLElement;
@@ -14,19 +15,25 @@ export function mountPane(
   doc: Document,
   pane: Pane,
   location: 'main' | 'popout',
-  options: LayoutOptions,
+  options: ResolvedLayoutOptions,
 ): MountedPane {
   const win = doc.defaultView;
   if (!win) throw new Error('Pane needs a live document');
   const element = el(doc, 'div', 'layouts-pane');
   element.dataset.paneId = pane.id;
-  const renderer = Object.hasOwn(options.renderers, pane.type)
-    ? options.renderers[pane.type]
+  const renderer = Object.hasOwn(options.renderers ?? {}, pane.type)
+    ? options.renderers?.[pane.type]
     : undefined;
   let view: PaneView;
+  let result: MountedPane | undefined;
+  const reportError = (error: unknown) => {
+    if (result) result.failed = true;
+    options.onError?.(error);
+  };
   if (renderer)
     view = renderer({
       element,
+      reportError,
       document: doc,
       window: win,
       pane,
@@ -39,7 +46,9 @@ export function mountPane(
         doc,
         'div',
         'layouts-placeholder',
-        `Unknown pane type: ${pane.type}. Register a renderer and reload the layout.`,
+        message(options, 'Unknown pane type: {type}. Register a renderer to display this pane.', {
+          type: pane.type,
+        }),
       ),
     );
     view = { dispose() {} };
@@ -56,7 +65,7 @@ export function mountPane(
   });
   observer.observe(element);
   let disposed = false;
-  return {
+  result = {
     element,
     view,
     pane,
@@ -73,4 +82,9 @@ export function mountPane(
       }
     },
   };
+  if (location === 'main')
+    void view.ready?.catch((error) => {
+      if (!disposed) reportError(error);
+    });
+  return result;
 }

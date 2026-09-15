@@ -5,7 +5,7 @@ import { mountLayout } from 'quilt-vanilla';
 import { store, getPaneState, tabs } from './model.js';
 import { renderers } from './views.js';
 import { setupShell } from './shell.js';
-const layout = mountLayout(document.querySelector('#workspace')!, {
+const layout = mountLayout<unknown>(document.querySelector('#workspace')!, {
   store,
   renderers,
   getPaneState,

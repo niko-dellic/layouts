@@ -1,3 +1,5 @@
+import { message } from './messages.js';
+import type { Messages } from './messages.js';
 import type { Scope } from './lifetime.js';
 
 let nextTooltip = 0;
@@ -7,6 +9,7 @@ export function bindTabTooltip(
   header: HTMLElement,
   root: HTMLElement,
   scope: Scope,
+  getMessages: () => Messages = () => ({}),
 ) {
   const doc = root.ownerDocument;
   const win = doc.defaultView!;
@@ -55,7 +58,9 @@ export function bindTabTooltip(
       root.append(tooltip);
     }
     const empty = anchor.matches('.layouts-empty');
-    tooltip.textContent = empty ? 'Click to add a pane' : (anchor.getAttribute('aria-label') ?? '');
+    tooltip.textContent = empty
+      ? message({ messages: getMessages() }, 'Click to add a pane')
+      : (anchor.getAttribute('aria-label') ?? '');
     const rect = (empty ? region : anchor).getBoundingClientRect();
     const size = tooltip.getBoundingClientRect();
     const horizontal = !empty && region.dataset.tabPlacement !== 'left';
