@@ -1,10 +1,12 @@
+import { message } from './messages.js';
 import { chromeIcon } from './chrome-icons.js';
 import type { Group, Pane } from 'quilt-core';
-import type { LayoutOptions } from './types.js';
+import type { ResolvedLayoutOptions } from './types.js';
 import { el } from './lifetime.js';
 import { shortcutEnabled } from './shortcuts.js';
 interface TabDependencies {
-  options: LayoutOptions;
+  options: ResolvedLayoutOptions;
+  requestClose: (id: string) => Promise<boolean>;
   prefix: string;
   act: (fn: () => void) => void;
   getDrag: () => string | undefined;
@@ -99,7 +101,7 @@ export function fillTabs(tabs: HTMLElement, group: Group, panes: Pane[], deps: T
     };
     const close = () =>
       act(() => {
-        options.store.close(pane.id, { source: 'user' });
+        void deps.requestClose(pane.id);
         deps.focusActive();
       });
     item.append(tab);
@@ -107,7 +109,7 @@ export function fillTabs(tabs: HTMLElement, group: Group, panes: Pane[], deps: T
       const x = el(doc, 'button', 'layouts-button layouts-tab-close');
       x.append(chromeIcon(doc, 'close'));
       x.type = 'button';
-      x.title = `Close ${pane.title}`;
+      x.title = message(options, 'Close {title}', { title: pane.title });
       x.setAttribute('aria-label', x.title);
       x.dataset.focusId = `close-${pane.id}`;
       x.onclick = close;

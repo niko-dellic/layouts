@@ -34,7 +34,7 @@ fallbacks, so a nested `.layouts` element does not overwrite container values.
 | `headerHeight` | `--layouts-header-height` | Tab strip height / `34px`                         |
 
 `panelPadding` / `--layouts-panel-padding` sets the shared panel inset (default
-`8px`; use a nonnegative CSS pixel value). Floating tab bars use it for their edge
+`8px`; use a nonnegative CSS length). Floating tab bars use it for their edge
 inset. Application content can use `padding: var(--layouts-panel-padding, 8px)`;
 the demo uses it for Hotkeys, Objects, Inspector, Timeline, and Theming. Canvas
 content stays edge-to-edge. Table cell padding and control spacing remain separate.
@@ -66,10 +66,10 @@ reload JSON, dispose views, or reset application data. React accepts the same
 Companion windows receive the resolved workspace tokens when opening and when
 host/ancestor attributes or head styles change. Arbitrary media-query changes or
 stylesheet edits made only through CSSOM do not emit DOM mutations; call
-`setTheme` when driving themes that way. Use concrete CSS values in API themes
+`refreshTheme()` when driving themes that way. Use concrete CSS values in API themes
 when custom properties depend on ancestors absent from companion windows.
 
-Theme preferences belong to the application, separate from layout JSON. The
+Theme preferences are separate from core layout JSON and included as configured overrides in workspace presets. The
 library does not read OS preferences or write browser storage. The demo theme
 selector switches chrome presets; visualization palettes remain authored data.
 
@@ -318,3 +318,49 @@ Tab tooltips depend only on actual label visibility: icon-only tabs show their
 full name, including Automatic tabs compressed by available space. Visible labels
 suppress tooltips. This applies to both orientations and updates as tabs resize.
 Horizontal tooltips appear below the tab; vertical tooltips appear to its right.
+
+## Complete public token mapping
+
+Import `themeProperties` to map every typed key below to its `--layouts-*` CSS
+property. Configured overrides are serialized by `exportWorkspace`; inherited
+application CSS and font files are not. Omitted tokens use CSS inheritance and
+then the defaults below. `setTheme` replaces overrides, and `{}` clears them.
+
+Length tokens support CSS lengths (including `rem`, `em`, and `calc()`). Colors
+support CSS color expressions and custom-property references. Opacity is a CSS
+number; display is `block` or `none`. Stroke width accepts CSS border-width
+shorthand. Family accepts a CSS font-family list. Font files stay app-owned.
+
+| Key                         | Default                 | Value kind       |
+| --------------------------- | ----------------------- | ---------------- |
+| `bg`                        | `#161a20`               | Color            |
+| `panel`                     | `#1d222a`               | Color            |
+| `header`                    | `#242a34`               | Color            |
+| `text`                      | `#e5e9f0`               | Color            |
+| `muted`                     | `#a2acba`               | Color            |
+| `line`                      | `#39414e`               | Color            |
+| `accent`                    | `#8bbaaa`               | Color            |
+| `focus`                     | `#b3decf`               | Color            |
+| `radius`                    | `5px`                   | Length           |
+| `fontFamily`                | `system-ui, sans-serif` | Family           |
+| `fontSize`                  | `13px`                  | Length           |
+| `iconSize`                  | `16px`                  | Length           |
+| `panelPadding`              | `8px`                   | Length           |
+| `headerHeight`              | `34px`                  | Length           |
+| `headerWidth`               | `32px`                  | Length           |
+| `resizeHandleWidth`         | `4px`                   | Length           |
+| `disabledResizeHandleWidth` | `0px`                   | Length           |
+| `frozenPaneBorder`          | `line`                  | Color            |
+| `cornerHandleSize`          | `8px`                   | Length           |
+| `cornerHandleInset`         | `0px`                   | Length           |
+| `cornerHandleColor`         | `muted`                 | Color            |
+| `cornerHandleOpacity`       | `0.35`                  | Number           |
+| `cornerHandleDisplay`       | `block`                 | Display          |
+| `cornerHandleBorderWidth`   | `2px 0 0 2px`           | Stroke shorthand |
+| `cornerHandleRadius`        | `0px`                   | Length           |
+| `cornerHandleFill`          | `transparent`           | Color            |
+| `scrollbarThumb`            | `line`                  | Color            |
+| `scrollbarTrack`            | `transparent`           | Color            |
+| `scrollbarSize`             | `6px`                   | Length           |
+| `controlHeight`             | `28px`                  | Length           |
+| `spacing`                   | `5px`                   | Length           |

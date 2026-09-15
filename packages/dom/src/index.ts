@@ -25,3 +25,10 @@ export type {
   Bounds,
   JoinOptions,
 } from 'quilt-core';
+export { PaneRegistry } from './registry.js';
+export type { PaneRegistration } from './registry.js';
+export { parseWorkspace, dockLayout } from './workspace.js';
+export type { WorkspacePreset } from './workspace.js';
+export { themeProperties } from './theme.js';
+export { defaultMessages } from './messages.js';
+export type { Messages } from './messages.js';

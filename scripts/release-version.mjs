@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import assert from 'node:assert/strict';
 const paths = [
   'package.json',
@@ -38,6 +38,14 @@ for (let i = 0; i < paths.length; i++) {
 lock.version = version;
 for (let i = 0; i < paths.length; i++)
   writeFileSync(paths[i], JSON.stringify(manifests[i], null, 2) + '\n');
+for (const example of ['vanilla', 'react', 'electron']) {
+  const path = 'examples/' + example + '/package.json';
+  if (!existsSync(path)) continue;
+  const manifest = read(path);
+  for (const name of names)
+    if (manifest.dependencies?.[name]) manifest.dependencies[name] = version;
+  writeFileSync(path, JSON.stringify(manifest, null, 2) + '\n');
+}
 writeFileSync('package-lock.json', JSON.stringify(lock, null, 2) + '\n');
 console.log(
   `Set all packages to ${version}. Add a ## ${version} entry to CHANGELOG.md, then open a pull request.`,

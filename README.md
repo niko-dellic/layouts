@@ -84,16 +84,14 @@ For checkout builds and local tarball installation, see
 ## Vanilla
 
 ```ts
-import { LayoutStore, mountLayout } from 'quilt-vanilla';
+import { LayoutStore, mountLayout, createLayout } from 'quilt-vanilla';
 import 'quilt-vanilla/styles.css';
 
-const store = new LayoutStore({
-  version: 1,
-  root: { kind: 'group', id: 'main', panes: ['notes'], active: 'notes' },
-  panes: { notes: { id: 'notes', type: 'notes', title: 'Notes' } },
-  popouts: [],
-  maximized: null,
-});
+const store = new LayoutStore(
+  createLayout({
+    pane: { id: 'notes', type: 'notes', title: 'Notes' },
+  }),
+);
 const data = { text: 'Hello, workspace.' }; // application-owned
 const mounted = mountLayout(document.querySelector<HTMLElement>('#workspace')!, {
   store,
@@ -144,14 +142,14 @@ function Notes({ state }: PaneProps) {
   );
 }
 const components = { notes: Notes };
-// store, components, and callbacks should have stable identities.
+// The store owns the session; ordinary inline components maps and callbacks are supported.
 const getPaneState = () => data;
 function Workspace() {
   return <Layout store={store} components={components} getPaneState={getPaneState} />;
 }
 ```
 
-Use `useLayoutSnapshot(store)` to subscribe to the layout. Pane components are separate React roots and do not inherit context providers from your app root. Supply a component wrapper with any required providers. Use an external store for state that must survive popouts; the demo shows `useSyncExternalStore`.
+Use `useLayoutSnapshot(store)` to subscribe to the layout. Declarative panes inherit application providers through React portals, including in companions. Keep the store stable; changing callback or component-map identities does not rebuild the workspace. Use an external store for state that must survive document transitions; the demo shows `useSyncExternalStore`.
 
 ## Configure bars and capabilities
 
@@ -172,8 +170,11 @@ Bottom and side bars use the same tree composition. Set a minimum and maximum to
 
 ## Documentation
 
+- [Copyable vanilla, React, and Electron starters](examples/README.md)
+- [Host compatibility](docs/compatibility.md)
+
 - [Configuration and API](docs/api.md)
-- [Pre-release API migration](docs/migration.md)
+- [0.2.0 upgrade checklist](docs/migration.md)
 - [Pane and window lifecycle](docs/lifecycle.md)
 - [Packaging and integration](docs/packaging.md)
 - [Architecture and contribution](CONTRIBUTING.md)
@@ -192,7 +193,7 @@ The suite checks the pure model, real popouts, rollback, lifecycle cleanup, data
 - One pane per popout; split trees and tab groups stay in the main window.
 - Popouts depend on the main session and the same origin. Independent sessions and cross-origin windows are out of scope.
 - Window placement is a browser request, not a guarantee. Popups need user activation. Loading JSON never opens windows automatically.
-- Persistence and unsaved-work policy belong to the app. Layout change events are not a durable data store.
+- Storage and application data belong to the app. Workspace JSON includes layout and appearance; optional close confirmation supports either a Quilt dialog or your own.
 - Unknown renderer types show placeholders. Workspace menus allow keyboard alternatives to dragging.
 - On small viewports, constraints are preserved through overflow rather than silently shrinking panes below their minimums.
 
@@ -221,3 +222,18 @@ size role. The same roles apply in companion windows.
 ## Releases
 
 See [release instructions](docs/releases.md) and the [changelog](CHANGELOG.md).
+
+## Save a workspace and customize integration
+
+```ts
+const json = JSON.stringify(mounted.exportWorkspace());
+mounted.loadWorkspace(JSON.parse(json));
+```
+
+Workspace JSON includes theme overrides, tab-bar settings and automatic collapse.
+Popouts export as docked panes without closing live windows. Reloading never
+reopens windows. Storage is your choice.
+
+See [Web integration](docs/integration.md) for unified registrations, provider
+context, custom themes, save/load examples, configurable shortcuts, and optional
+close confirmation. See [migration notes](docs/migration.md) for API changes.

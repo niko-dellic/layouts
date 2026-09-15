@@ -1,0 +1,28 @@
+:root {
+  font-family: system-ui, sans-serif;
+  --app-accent: #5c42d6;
+}
+:root[data-theme='warm'] {
+  --app-accent: #b44b18;
+}
+body {
+  margin: 0;
+}
+.toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  flex-wrap: wrap;
+}
+#workspace {
+  height: 55vh;
+  min-height: 260px;
+}
+textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 100px;
+}
+.note {
+  padding: 16px;
+}

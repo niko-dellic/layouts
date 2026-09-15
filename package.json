@@ -1,7 +1,7 @@
 {
   "name": "quilt-workspace",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "module",
   "workspaces": [
     "packages/*"
@@ -15,17 +15,20 @@
     "dev": "vite --host localhost --port 5186",
     "build:demos": "vite build",
     "pack:all": "node scripts/pack.mjs",
-    "check": "npm run format:check && npm run test:release && npm run build && npm run typecheck && npm test && npm run test:browser && npm run build:demos && npm run test:packed",
+    "check": "npm run format:check && npm run test:release && npm run build && npm run typecheck && npm test && npm run test:browser && npm run build:demos && npm run test:packed && npm run test:examples",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "release:version": "node scripts/release-version.mjs",
-    "test:release": "node --test scripts/release.test.mjs"
+    "test:release": "node --test scripts/release.test.mjs",
+    "test:examples": "node scripts/test-examples.mjs",
+    "release:rehearse": "node scripts/rehearse-release.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "electron": "44.3.0",
     "lucide": "1.45.0",
     "prettier": "3.9.6",
     "react": "^19.0.0",

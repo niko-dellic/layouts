@@ -1,3 +1,7 @@
+import { closeRequests } from './close.js';
+import { dockLayout, parseWorkspace } from './workspace.js';
+import { validateTheme, themePixels } from './theme.js';
+import { message } from './messages.js';
 import { isolatedResize } from './resize.js';
 import { chromeIcon } from './chrome-icons.js';
 import { bindTabBar, validateTabBar } from './tab-bar.js';
@@ -7,7 +11,7 @@ import { fillTabs } from './tabs.js';
 import { bindShortcuts } from './shortcuts.js';
 import { allocate, bounds, DIVIDER, findNode, groups, paneIds } from 'quilt-core';
 import type { Group, Layout, Node, Pane } from 'quilt-core';
-import type { LayoutOptions, MountedLayout } from './types.js';
+import type { LayoutOptions, ResolvedLayoutOptions, MountedLayout } from './types.js';
 import { Scope, el, syncChildren } from './lifetime.js';
 import { mountPane } from './panes.js';
 import type { MountedPane } from './panes.js';
@@ -24,7 +28,30 @@ interface Region {
   updateTabBar?: () => void;
 }
 let nextMount = 0;
-export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedLayout {
+export function mountLayout<State = unknown>(
+  host: HTMLElement,
+  input: LayoutOptions<State>,
+): MountedLayout<State> {
+  // State typing is a boundary contract; the renderer only forwards the value.
+  return mountLayoutInternal(
+    host,
+    input as unknown as ResolvedLayoutOptions,
+  ) as MountedLayout<State>;
+}
+function mountLayoutInternal(host: HTMLElement, input: ResolvedLayoutOptions): MountedLayout {
+  const options = { ...input };
+  const configure = () => {
+    if (options.registry) {
+      options.tabs = options.registry.tabs;
+      options.renderers = Object.fromEntries(
+        options.registry.list().map((entry) => [entry.type, entry.view]),
+      );
+    }
+  };
+  if (input.registry && (input.renderers || input.tabs))
+    throw new Error('registry cannot be combined with renderers or tabs');
+  configure();
+  validateTheme(options.theme ?? {});
   validateTabBar(options.tabBar ?? {});
   let tabBar = structuredClone(options.tabBar ?? {});
   const prefix = `layouts-${++nextMount}`;
@@ -36,7 +63,7 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
     panes = new Map<string, MountedPane>();
   const root = el(doc, 'div', 'layouts');
   applyTheme(root, options.theme ?? {});
-  root.setAttribute('aria-label', 'Pane workspace');
+  root.setAttribute('aria-label', message(options, 'Pane workspace'));
   const stage = el(doc, 'div', 'layouts-stage');
   const status = el(doc, 'div', 'layouts-status');
   status.setAttribute('role', 'status');
@@ -62,8 +89,9 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
       error(e);
     }
   };
+  const requestClose = closeRequests(root, options, scope, error);
   const windows = new Windows(doc, options, error, root);
-  const menu = createPaneMenu(root, options, windows, render, error);
+  const menu = createPaneMenu(root, options, windows, render, error, requestClose);
   bindShortcuts(root, options, scope, act, (group) => {
     const region = regions.get(group.id);
     if (region) menu.addTab(region.header ?? region.element, group);
@@ -95,19 +123,26 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
       r.header = el(doc, 'header', 'layouts-header');
       r.body = el(doc, 'div', 'layouts-body');
       r.element.append(r.header, r.body);
-      r.updateTabBar = bindTabBar(r.element, r.header, root, r.scope, () => {
-        const current = findNode(options.store.getSnapshot().root, node.id);
-        return {
-          ...tabBar,
-          ...(tabBar.regions?.[node.id] ?? {}),
-          ...(current?.kind === 'group' && current.tabDisplay
-            ? { display: current.tabDisplay }
-            : {}),
-          ...(current?.kind === 'group' && current.tabPlacement
-            ? { placement: current.tabPlacement }
-            : {}),
-        };
-      });
+      r.updateTabBar = bindTabBar(
+        r.element,
+        r.header,
+        root,
+        r.scope,
+        () => {
+          const current = findNode(options.store.getSnapshot().root, node.id);
+          return {
+            ...tabBar,
+            ...(tabBar.regions?.[node.id] ?? {}),
+            ...(current?.kind === 'group' && current.tabDisplay
+              ? { display: current.tabDisplay }
+              : {}),
+            ...(current?.kind === 'group' && current.tabPlacement
+              ? { placement: current.tabPlacement }
+              : {}),
+          };
+        },
+        () => options.messages ?? {},
+      );
       bindCorners(
         r.element,
         node.id,
@@ -116,7 +151,7 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
         (pane, group, direction, ratio) => menu.open(r.header!, pane, group, direction, ratio),
         error,
       );
-      r.element.setAttribute('aria-label', 'Pane region');
+      r.element.setAttribute('aria-label', message(options, 'Pane region'));
       r.scope.listen(r.element, 'dragover', (event) => {
         if (!dragId) return;
         const e = event as DragEvent;
@@ -158,7 +193,7 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
       r.divider = el(doc, 'div', 'layouts-divider');
       r.divider.tabIndex = 0;
       r.divider.setAttribute('role', 'separator');
-      r.divider.setAttribute('aria-label', 'Resize panes');
+      r.divider.setAttribute('aria-label', message(options, 'Resize panes'));
       const start = (event: Event) => {
         const e = event as PointerEvent;
         if (e.button !== 0) return;
@@ -266,7 +301,9 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
     if (
       old &&
       old.renderer !==
-        (Object.hasOwn(options.renderers, pane.type) ? options.renderers[pane.type] : undefined)
+        (Object.hasOwn(options.renderers ?? {}, pane.type)
+          ? options.renderers?.[pane.type]
+          : undefined)
     ) {
       old.dispose();
       panes.delete(pane.id);
@@ -283,7 +320,12 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
         } else {
           old.pane = pane;
           old.signature = signature;
-          old.view.update?.(pane);
+          try {
+            old.view.update?.(pane);
+          } catch (error) {
+            old.failed = true;
+            throw error;
+          }
           return old;
         }
       } else return old;
@@ -298,14 +340,14 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
         doc,
         'div',
         'layouts-pane layouts-placeholder',
-        `Could not mount ${pane.title}. Reload the layout to retry.`,
+        message(options, 'Could not mount {title}. Retry this pane.', { title: pane.title }),
       );
       element.dataset.paneId = pane.id;
       const mounted: MountedPane = {
         element,
         pane,
         signature,
-        renderer: options.renderers[pane.type],
+        renderer: options.renderers?.[pane.type],
         failed: true,
         view: { dispose() {} },
         dispose() {
@@ -323,7 +365,6 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
       g.active,
       layout.maximized,
       layout.root.id === g.id,
-      definitions.map((p) => windows.pending.has(p.id)),
     ]);
     if (r.signature !== signature) {
       r.signature = signature;
@@ -331,9 +372,10 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
       r.header!.hidden = definitions.length === 1 && definitions[0]!.header === false;
       const tabs = el(doc, 'div', 'layouts-tabs');
       tabs.setAttribute('role', 'tablist');
-      tabs.setAttribute('aria-label', `Tabs in ${g.id}`);
+      tabs.setAttribute('aria-label', message(options, 'Tabs in {id}', { id: g.id }));
       fillTabs(tabs, g, definitions, {
         options,
+        requestClose,
         prefix,
         act,
         getDrag: () => dragId,
@@ -350,10 +392,14 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
       });
       r.header!.append(tabs);
       if (!definitions.length) {
-        const close = button('', 'Close empty pane', () => options.store.removeEmptyGroup(g.id));
+        const close = button('', message(options, 'Close empty pane'), () =>
+          options.store.removeEmptyGroup(g.id),
+        );
         close.append(chromeIcon(doc, 'close'));
         close.disabled = layout.root.id === g.id;
-        const settings = button('', 'Empty pane actions', () => menu.openEmpty(settings, g));
+        const settings = button('', message(options, 'Empty pane actions'), () =>
+          menu.openEmpty(settings, g),
+        );
         settings.append(chromeIcon(doc, 'more'));
         settings.setAttribute('aria-haspopup', 'dialog');
         settings.dataset.focusId = `menu-${g.id}`;
@@ -361,7 +407,9 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
       }
       const active = g.active ? layout.panes[g.active] : undefined;
       if (active) {
-        const more = button('', `${active.title} actions`, () => menu.open(more, active, g));
+        const more = button('', message(options, '{title} actions', { title: active.title }), () =>
+          menu.open(more, active, g),
+        );
         more.append(chromeIcon(doc, 'more'));
         more.dataset.focusId = `menu-${active.id}`;
         more.setAttribute('aria-haspopup', 'dialog');
@@ -386,7 +434,7 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
     if (!bodies.length) {
       let placeholder = r.body!.querySelector<HTMLButtonElement>('.layouts-empty');
       if (!placeholder) {
-        placeholder = button('', 'Choose a tab', () => {
+        placeholder = button('', message(options, 'Choose a tab'), () => {
           const current = options.store.getSnapshot();
           const source = Object.values(current.panes).find((pane) => pane.header !== false);
           const group = findNode(current.root, g.id);
@@ -513,11 +561,7 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
   // Renderer-only gaps participate in bounds/allocation without modifying Layout JSON.
   function geometryLayout(): Layout {
     const layout = options.store.getSnapshot();
-    const css = win!.getComputedStyle(root);
-    const pixels = (property: string, fallback: number) => {
-      const value = parseFloat(css.getPropertyValue(property));
-      return Number.isFinite(value) && value >= 0 ? value : fallback;
-    };
+    const pixels = (property: string, fallback: number) => themePixels(root, property, fallback);
     const width = pixels('--layouts-resize-handle-width', DIVIDER);
     const disabledWidth = pixels('--layouts-disabled-resize-handle-width', 0);
     const visit = (node: Node): Node =>
@@ -611,22 +655,145 @@ export function mountLayout(host: HTMLElement, options: LayoutOptions): MountedL
     dragId = undefined;
     for (const r of regions.values()) delete r.element.dataset.drop;
   });
+  let registryCleanup = () => {};
+  const refreshOptions = (repaintChrome = true) => {
+    configure();
+    Object.assign(renderOptions, options, { onError: error });
+    if (repaintChrome) {
+      menu.dispose();
+      root.setAttribute('aria-label', message(options, 'Pane workspace'));
+      for (const region of regions.values()) {
+        region.element.setAttribute('aria-label', message(options, 'Pane region'));
+        region.divider?.setAttribute('aria-label', message(options, 'Resize panes'));
+        for (const handle of region.element.querySelectorAll<HTMLElement>(
+          ':scope > .layouts-corner',
+        )) {
+          handle.title = message(
+            options,
+            'Drag inward to split; drag across adjacent regions to join. Escape cancels.',
+          );
+          handle.setAttribute(
+            'aria-label',
+            message(options, 'Split or join region from {corner} corner', {
+              corner: handle.dataset.corner ?? '',
+            }),
+          );
+        }
+      }
+      for (const region of regions.values()) region.signature = '';
+    }
+    windows.refresh();
+    render();
+  };
+  const bindRegistry = () => {
+    registryCleanup();
+    registryCleanup = options.registry?.subscribe(() => refreshOptions()) ?? (() => {});
+  };
+  bindRegistry();
+  scope.add(() => registryCleanup());
+  const refreshTheme = () => {
+    if (disposed) return;
+    measure();
+    for (const region of regions.values()) region.updateTabBar?.();
+    windows.refreshTheme();
+  };
+  const themeObserver = new MutationObserver(refreshTheme);
+  for (let ancestor: HTMLElement | null = root; ancestor; ancestor = ancestor.parentElement)
+    themeObserver.observe(ancestor, { attributes: true });
+  themeObserver.observe(doc.head, { childList: true, subtree: true, characterData: true });
+  scope.add(() => themeObserver.disconnect());
   render();
   return {
+    requestClose,
+    refreshTheme,
+    updateOptions(next) {
+      if (disposed) return;
+      const candidate = { ...options, ...next };
+      if (candidate.registry && (next.renderers || next.tabs))
+        throw new Error('registry cannot be combined with renderers or tabs');
+      validateTheme(candidate.theme ?? {});
+      validateTabBar(candidate.tabBar ?? {});
+      const sameRegistrations =
+        candidate.registry === options.registry ||
+        (candidate.registry &&
+          options.registry &&
+          candidate.registry.list().length === options.registry.list().length &&
+          candidate.registry.list().every((entry, index) => {
+            const previous = options.registry!.list()[index]!;
+            return (
+              entry.type === previous.type &&
+              entry.title === previous.title &&
+              entry.description === previous.description &&
+              entry.icon === previous.icon &&
+              entry.view === previous.view &&
+              entry.create === previous.create &&
+              entry.confirmClose === previous.confirmClose &&
+              JSON.stringify(entry.keywords) === JSON.stringify(previous.keywords)
+            );
+          }));
+      const repaintChrome =
+        !sameRegistrations ||
+        (!candidate.registry && candidate.tabs !== options.tabs) ||
+        candidate.renderIcon !== options.renderIcon ||
+        candidate.popouts !== options.popouts ||
+        JSON.stringify(candidate.messages) !== JSON.stringify(options.messages) ||
+        JSON.stringify(candidate.shortcuts) !== JSON.stringify(options.shortcuts);
+      // Clear maps derived from the old registry when returning to low-level registration.
+      if ('registry' in next && !next.registry && options.registry) {
+        Object.assign(options, { renderers: undefined, tabs: undefined });
+      }
+      Object.assign(options, next);
+      if ('theme' in next) applyTheme(root, options.theme ?? {});
+      if ('tabBar' in next) tabBar = structuredClone(options.tabBar ?? {});
+      bindRegistry();
+      refreshOptions(repaintChrome);
+      refreshTheme();
+    },
+    exportWorkspace() {
+      return {
+        version: 1,
+        layout: dockLayout(options.store.getSnapshot()),
+        theme: structuredClone(options.theme ?? {}),
+        tabBar: structuredClone(tabBar),
+        autoCollapse: options.store.getAutoCollapse(),
+      };
+    },
+    loadWorkspace(input) {
+      if (disposed) throw new Error('Layout has been disposed');
+      const preset = parseWorkspace(input);
+      options.theme = preset.theme;
+      options.tabBar = preset.tabBar;
+      tabBar = preset.tabBar;
+      applyTheme(root, preset.theme);
+      options.store.setAutoCollapse(preset.autoCollapse);
+      options.store.load(preset.layout);
+      refreshTheme();
+    },
+    retryPane(id) {
+      if (disposed) return;
+      const pane = panes.get(id);
+      if (pane?.failed) {
+        pane.dispose();
+        panes.delete(id);
+      }
+      windows.retryPane(id);
+      render();
+    },
     setTabBar(next) {
       if (disposed) return;
       validateTabBar(next);
       tabBar = structuredClone(next);
+      options.tabBar = tabBar;
       for (const region of regions.values()) region.updateTabBar?.();
     },
     setTheme(theme) {
+      if (disposed) return;
       applyTheme(root, theme);
-      measure();
+      options.theme = structuredClone(theme);
+      refreshTheme();
     },
     popout(id, placement) {
-      const opened = windows.open(id, placement);
-      render();
-      return opened;
+      return windows.open(id, placement);
     },
     returnPane(id) {
       windows.returnPane(id);

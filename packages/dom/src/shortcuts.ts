@@ -1,90 +1,99 @@
-import type { Group } from 'quilt-core';
 import { findNode } from 'quilt-core';
-import type { LayoutOptions } from './types.js';
+import type { Group } from 'quilt-core';
+import type { ResolvedLayoutOptions, KeyBinding } from './types.js';
 import type { Scope } from './lifetime.js';
-export function shortcutEnabled(
-  options: LayoutOptions,
-  key: 'maximize' | 'middleClickClose' | 'addTab' | 'restoreClosedTab',
-) {
+type Action = 'maximize' | 'addTab' | 'restoreClosedTab';
+const defaults: Record<Action, readonly KeyBinding[]> = {
+  maximize: [{ key: '`' }, { key: ' ', alt: true }],
+  addTab: [{ key: 't' }],
+  restoreClosedTab: [{ key: 'r' }],
+};
+export function shortcutEnabled(options: ResolvedLayoutOptions, key: Action | 'middleClickClose') {
   return (
     options.shortcuts === true ||
-    (typeof options.shortcuts === 'object' && options.shortcuts[key] === true)
+    (typeof options.shortcuts === 'object' && !!options.shortcuts[key])
   );
 }
+const hovered = new WeakMap<Document, HTMLElement>();
 export function bindShortcuts(
   root: HTMLElement,
-  options: LayoutOptions,
+  options: ResolvedLayoutOptions,
   scope: Scope,
   act: (fn: () => void) => void,
   addTab: (group: Group) => void,
 ) {
-  if (
-    !shortcutEnabled(options, 'maximize') &&
-    !shortcutEnabled(options, 'addTab') &&
-    !shortcutEnabled(options, 'restoreClosedTab')
-  )
-    return;
-  let hovered: string | undefined;
+  const doc = root.ownerDocument;
+  let hoveredGroup: string | undefined;
   scope.listen(root, 'pointerover', (event) => {
-    hovered = (event.target as Element).closest<HTMLElement>('.layouts-group')?.dataset.nodeId;
+    hovered.set(doc, root);
+    hoveredGroup = (event.target as Element).closest<HTMLElement>('.layouts-group')?.dataset.nodeId;
   });
   scope.listen(root, 'pointerleave', () => {
-    hovered = undefined;
+    if (hovered.get(doc) === root) hovered.delete(doc);
+    hoveredGroup = undefined;
   });
-  scope.listen(root.ownerDocument, 'keydown', (event) => {
+  scope.add(() => {
+    if (hovered.get(doc) === root) hovered.delete(doc);
+  });
+  scope.listen(doc, 'keydown', (event) => {
     const e = event as KeyboardEvent;
-    const maximizeKey = (e.altKey && e.code === 'Space') || (!e.altKey && e.key === '`');
-    const addTabKey = !e.metaKey && !e.altKey && e.key.toLowerCase() === 't';
-    const maximize = !e.metaKey && maximizeKey && shortcutEnabled(options, 'maximize');
-    const restore =
-      !e.metaKey &&
-      !e.altKey &&
-      e.key.toLowerCase() === 'r' &&
-      shortcutEnabled(options, 'restoreClosedTab');
-    const create = addTabKey && shortcutEnabled(options, 'addTab');
-    if (
-      e.isComposing ||
-      e.defaultPrevented ||
-      e.repeat ||
-      (!maximize && !create && !restore) ||
-      e.ctrlKey ||
-      e.shiftKey
-    )
-      return;
     const target = e.target as HTMLElement | null;
+    const focused = doc.activeElement?.closest<HTMLElement>('.layouts');
+    if ((focused ?? hovered.get(doc)) !== root || e.defaultPrevented || e.repeat || e.isComposing)
+      return;
     if (
       target?.closest(
         'input, textarea, select, [contenteditable]:not([contenteditable="false"]), dialog',
       ) ||
-      root.ownerDocument.querySelector('dialog[open]')
+      doc.querySelector('dialog[open]')
     )
       return;
-    if (restore) {
-      if (options.store.canRestoreClosedTab()) {
-        e.preventDefault();
-        act(() => options.store.restoreClosedTab());
-      }
+    const matches = (binding: KeyBinding) =>
+      e.key.toLowerCase() === binding.key.toLowerCase() &&
+      e.ctrlKey === !!binding.ctrl &&
+      e.altKey === !!binding.alt &&
+      e.shiftKey === !!binding.shift &&
+      e.metaKey === !!binding.meta;
+    const action = (Object.keys(defaults) as Action[]).find((key) => {
+      const configured =
+        options.shortcuts === true
+          ? true
+          : typeof options.shortcuts === 'object'
+            ? options.shortcuts[key]
+            : false;
+      if (!configured) return false;
+      const bindings =
+        configured === true
+          ? defaults[key]
+          : Array.isArray(configured)
+            ? configured
+            : [configured as KeyBinding];
+      return bindings.some(matches);
+    });
+    if (!action) return;
+    if (action === 'restoreClosedTab') {
+      if (!options.store.canRestoreClosedTab()) return;
+      e.preventDefault();
+      act(() => options.store.restoreClosedTab());
       return;
     }
-    const focused =
-      target && root.contains(target)
-        ? target.closest<HTMLElement>('.layouts-group')?.dataset.nodeId
-        : undefined;
-    const id = create ? hovered : (hovered ?? focused);
-    const layout = options.store.getSnapshot();
-    const group = id ? findNode(layout.root, id) : undefined;
+    const focusedGroup =
+      focused === root ? target?.closest<HTMLElement>('.layouts-group')?.dataset.nodeId : undefined;
+    const id = (hovered.get(doc) === root ? hoveredGroup : undefined) ?? focusedGroup;
+    const group = id ? findNode(options.store.getSnapshot().root, id) : undefined;
     if (group?.kind !== 'group') return;
     if (
-      create &&
-      (!options.tabs?.list().length ||
-        !group.panes.every((paneId) => options.store.can(paneId, 'move')))
+      action === 'addTab' &&
+      (!options.tabs?.list().length || !group.panes.every((id) => options.store.can(id, 'move')))
     )
       return;
     e.preventDefault();
     act(() =>
-      create
+      action === 'addTab'
         ? addTab(group)
-        : options.store.maximize(layout.maximized === group.id ? null : group.id),
+        : options.store.maximize(
+            options.store.getSnapshot().maximized === group.id ? null : group.id,
+          ),
     );
   });
 }

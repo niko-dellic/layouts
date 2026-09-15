@@ -10,12 +10,12 @@
   line-height: 1.45;
   isolation: isolate;
 }
-.layouts *,
-.layouts *::before,
-.layouts *::after {
+.layouts [data-layouts-chrome],
+.layouts [data-layouts-chrome]::before,
+.layouts [data-layouts-chrome]::after {
   box-sizing: border-box;
 }
-.layouts [hidden] {
+.layouts [data-layouts-chrome][hidden] {
   display: none !important;
 }
 .layouts-stage {
@@ -96,7 +96,7 @@
   opacity: 0.4;
   cursor: default;
 }
-.layouts :focus-visible {
+.layouts :where([data-layouts-chrome]):focus-visible {
   outline: 2px solid var(--layouts-focus, #b3decf);
   outline-offset: -2px;
 }
@@ -348,20 +348,20 @@
 
 /* Consumer-owned scrollbar roles also apply to nested application content. */
 .layouts,
-.layouts * {
+.layouts [data-layouts-chrome] {
   scrollbar-width: thin;
   scrollbar-color: var(--layouts-scrollbar-thumb, var(--layouts-line, #39414e))
     var(--layouts-scrollbar-track, transparent);
 }
-.layouts ::-webkit-scrollbar {
+.layouts [data-layouts-chrome]::-webkit-scrollbar {
   width: var(--layouts-scrollbar-size, 6px);
   height: var(--layouts-scrollbar-size, 6px);
 }
-.layouts ::-webkit-scrollbar-thumb {
+.layouts [data-layouts-chrome]::-webkit-scrollbar-thumb {
   background: var(--layouts-scrollbar-thumb, var(--layouts-line, #39414e));
   border-radius: var(--layouts-radius, 5px);
 }
-.layouts ::-webkit-scrollbar-track {
+.layouts [data-layouts-chrome]::-webkit-scrollbar-track {
   background: var(--layouts-scrollbar-track, transparent);
 }
 .layouts-submenu {

@@ -1,0 +1,71 @@
+/** Override English message keys; placeholders use {name}. */
+export const defaultMessages = {
+  'Tabs in {id}': 'Tabs in {id}',
+  '{count} empty region': '{count} empty region',
+  '{count} empty regions': '{count} empty regions',
+  '{target} absorbs {source}': '{target} absorbs {source}',
+  'Joins {target}': 'Joins {target}',
+  '{target} keeps all tabs': '{target} keeps all tabs',
+  'Pane could not be rendered.': 'Pane could not be rendered.',
+
+  'Pane workspace': 'Pane workspace',
+  'Pane region': 'Pane region',
+  'Resize panes': 'Resize panes',
+  'Close empty pane': 'Close empty pane',
+  'Empty pane actions': 'Empty pane actions',
+  'Choose a tab': 'Choose a tab',
+  '+ Add tab': '+ Add tab',
+  Split: 'Split',
+  'Split left': 'Split left',
+  'Split right': 'Split right',
+  'Split up': 'Split up',
+  'Split down': 'Split down',
+  'Join sibling region': 'Join sibling region',
+  'This region': 'This region',
+  'Restore region': 'Restore region',
+  'Maximize region': 'Maximize region',
+  'Open in window': 'Open in window',
+  'Tab orientation': 'Tab orientation',
+  'Workspace default': 'Workspace default',
+  Horizontal: 'Horizontal',
+  Vertical: 'Vertical',
+  'Tab display': 'Tab display',
+  Automatic: 'Automatic',
+  Compact: 'Compact',
+  'Close active tab': 'Close active tab',
+  'Close pane': 'Close pane',
+  'Restore closed tab': 'Restore closed tab',
+  Cancel: 'Cancel',
+  'Search tabs\u2026': 'Search tabs\u2026',
+  'Search tabs': 'Search tabs',
+  'Available tabs': 'Available tabs',
+  'No matching tabs': 'No matching tabs',
+  'Return to layout': 'Return to layout',
+  'Disconnected: the main layout session has ended.':
+    'Disconnected: the main layout session has ended.',
+  'The browser blocked the popout. Allow popups or try again from the pane menu.':
+    'The browser blocked the popout. Allow popups or try again from the pane menu.',
+  'Close selected panes?': 'Close selected panes?',
+  Close: 'Close',
+  'New pane': 'New pane',
+  'Empty region': 'Empty region',
+  'Click to add a pane': 'Click to add a pane',
+  'Drag inward to split; drag across adjacent regions to join. Escape cancels.':
+    'Drag inward to split; drag across adjacent regions to join. Escape cancels.',
+  '{title} actions': '{title} actions',
+  'Close {title}': 'Close {title}',
+  '{count} tab types': '{count} tab types',
+  'Unknown pane type: {type}. Register a renderer to display this pane.':
+    'Unknown pane type: {type}. Register a renderer to display this pane.',
+  'Could not mount {title}. Retry this pane.': 'Could not mount {title}. Retry this pane.',
+  'Split or join region from {corner} corner': 'Split or join region from {corner} corner',
+} as const;
+export type Messages = Partial<Record<keyof typeof defaultMessages, string>>;
+export function message(
+  options: { messages?: Messages },
+  key: string,
+  values: Record<string, string | number> = {},
+): string {
+  const template = options.messages?.[key as keyof Messages] ?? key;
+  return template.replace(/\{(\w+)\}/g, (match, name: string) => String(values[name] ?? match));
+}

@@ -509,14 +509,17 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
   const dialog = document.querySelector<HTMLDialogElement>('#json-dialog')!;
   const error = document.querySelector<HTMLElement>('#json-error')!;
   settings.querySelector('#json-open')!.addEventListener('click', () => {
-    output.value = JSON.stringify(store.export(), null, 2);
+    output.value = JSON.stringify(getMounted()?.exportWorkspace(), null, 2);
     error.textContent = '';
     dialog.showModal();
   });
   document.querySelector('#json-cancel')!.addEventListener('click', () => dialog.close());
   document.querySelector('#json-load')!.addEventListener('click', () => {
     try {
-      store.load(JSON.parse(output.value));
+      const input: unknown = JSON.parse(output.value);
+      if (input && typeof input === 'object' && 'layout' in input)
+        getMounted()?.loadWorkspace(input);
+      else store.load(input); // Accept earlier layout-only JSON too.
       dialog.close();
     } catch (e) {
       error.textContent = e instanceof Error ? e.message : String(e);

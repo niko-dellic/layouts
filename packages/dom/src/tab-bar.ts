@@ -1,9 +1,35 @@
+import type { Messages } from './messages.js';
+import { themePixels } from './theme.js';
 import { bindTabTooltip } from './tab-tooltip.js';
 import type { TabBarOptions, TabBarStyle } from './types.js';
 import type { Scope } from './lifetime.js';
 
 export function validateTabBar(options: TabBarOptions) {
+  if (!options || typeof options !== 'object' || Array.isArray(options))
+    throw new Error('Expected tab bar object');
+  if (
+    options.regions !== undefined &&
+    (!options.regions || typeof options.regions !== 'object' || Array.isArray(options.regions))
+  )
+    throw new Error('Expected tab bar regions');
   for (const style of [options, ...Object.values(options.regions ?? {})]) {
+    if (!style || typeof style !== 'object' || Array.isArray(style))
+      throw new Error('Expected tab bar style');
+    for (const key of Object.keys(style))
+      if (
+        ![
+          'display',
+          'attachment',
+          'fit',
+          'corners',
+          'placement',
+          'mode',
+          'shape',
+          'taperWidth',
+          ...(style === options ? ['regions'] : []),
+        ].includes(key)
+      )
+        throw new Error(`Unknown tab bar property: ${key}`);
     for (const [key, values] of Object.entries({
       display: ['automatic', 'compact'],
       attachment: ['anchored', 'floating'],
@@ -38,6 +64,7 @@ export function bindTabBar(
   root: HTMLElement,
   scope: Scope,
   getStyle: () => TabBarStyle,
+  getMessages: () => Messages = () => ({}),
 ) {
   const doc = region.ownerDocument,
     win = doc.defaultView!;
@@ -118,7 +145,7 @@ export function bindTabBar(
     outline.append(edge);
     header.append(outline);
   };
-  const refreshTooltip = bindTabTooltip(region, header, root, scope);
+  const refreshTooltip = bindTabTooltip(region, header, root, scope, getMessages);
   let frame = 0,
     disposed = false;
   const observedContent = new Set<Element>();
@@ -137,7 +164,7 @@ export function bindTabBar(
         next.add(element);
         for (const child of element.children) next.add(child);
         const rect = element.getBoundingClientRect();
-        const fallback = parseFloat(css.getPropertyValue('--layouts-scrollbar-size')) || 6;
+        const fallback = themePixels(region, '--layouts-scrollbar-size', 6);
         // Overlay scrollbars report zero gutter: use the themed size then.
         if (
           /(auto|scroll)/.test(css.overflowY) &&
@@ -180,9 +207,7 @@ export function bindTabBar(
     region.dataset.tabDisplay = compact ? 'compact' : 'automatic';
     header.dataset.tabDisplay = compact ? 'compact' : 'automatic';
     const floating = style.attachment === 'floating';
-    const padding = parseFloat(
-      win.getComputedStyle(region).getPropertyValue('--layouts-panel-padding'),
-    );
+    const padding = themePixels(region, '--layouts-panel-padding', 8);
     const inset = floating ? (Number.isFinite(padding) ? Math.max(0, padding) : 8) : 0;
     const scrollbar = floating ? scrollbarClearance() : { right: 0, bottom: 0 };
     const insetX = inset;

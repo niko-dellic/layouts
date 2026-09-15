@@ -11,6 +11,9 @@ const files = [
   'packages/dom/package.json',
   'packages/react/package.json',
   'CHANGELOG.md',
+  'examples/vanilla/package.json',
+  'examples/react/package.json',
+  'examples/electron/package.json',
 ];
 function fixture(fn) {
   const dir = mkdtempSync(join(tmpdir(), 'quilt-release-test-'));
@@ -42,9 +45,12 @@ test('version command rejects invalid/decreasing input without writes and update
     }
     assert.equal(run('release-version.mjs', dir, [next]).status, 0);
     const read = (file) => JSON.parse(readFileSync(join(dir, file), 'utf8'));
-    for (const file of files.filter((f) => f.endsWith('package.json')))
+    for (const file of files.filter(
+      (f) => f.endsWith('package.json') && !f.startsWith('examples/'),
+    ))
       assert.equal(read(file).version, next);
     assert.equal(read('packages/react/package.json').dependencies['quilt-vanilla'], next);
+    assert.equal(read('examples/react/package.json').dependencies['quilt-react'], next);
     assert.equal(
       read('package-lock.json').packages['packages/dom'].dependencies['quilt-core'],
       next,

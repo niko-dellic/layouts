@@ -1,17 +1,19 @@
+import { message } from './messages.js';
 import { actionIcon } from './action-icons.js';
 import type { ActionIcon } from './action-icons.js';
 import { fillTabPicker } from './picker.js';
 import { findNode, findParent, groups, paneIds } from 'quilt-core';
 import type { Group, Pane } from 'quilt-core';
-import type { LayoutOptions } from './types.js';
+import type { ResolvedLayoutOptions } from './types.js';
 import type { Windows } from './windows.js';
 import { el, Scope } from './lifetime.js';
 export function createPaneMenu(
   root: HTMLElement,
-  options: LayoutOptions,
-  windows: Pick<Windows, 'pending' | 'open'>,
+  options: ResolvedLayoutOptions,
+  windows: Pick<Windows, 'open'>,
   refresh: () => void,
   report: (e: unknown) => void,
+  requestClose: (id: string, kind?: 'pane' | 'group') => Promise<boolean>,
 ) {
   const doc = root.ownerDocument,
     win = doc.defaultView!;
@@ -52,7 +54,9 @@ export function createPaneMenu(
     dialog.autofocus = true;
     dialog.setAttribute(
       'aria-label',
-      pane && !groupActions ? `${pane.title} actions` : 'Empty pane actions',
+      pane && !groupActions
+        ? message(options, '{title} actions', { title: pane.title })
+        : message(options, 'Empty pane actions'),
     );
     local.add(() => dialog.remove());
     const add = (icon: ActionIcon, label: string, enabled: boolean, fn: () => void) => {
@@ -184,7 +188,7 @@ export function createPaneMenu(
       );
       return;
     }
-    add('add-tab', '+ Add tab', available && allowed('move'), () => create());
+    add('add-tab', message(options, '+ Add tab'), available && allowed('move'), () => create());
     const canCreate = !group.panes.length || available;
     const flyouts: { trigger: HTMLElement; flyout: HTMLElement }[] = [];
     let positionMenus = () => {};
@@ -236,12 +240,12 @@ export function createPaneMenu(
       dialog.append(container);
       return flyout;
     }
-    const flyout = submenu('Split', 'split-right', canCreate && allowed('split'));
+    const flyout = submenu(message(options, 'Split'), 'split-right', canCreate && allowed('split'));
     for (const [label, axis, before] of [
-      ['Split left', 'horizontal', true],
-      ['Split right', 'horizontal', false],
-      ['Split up', 'vertical', true],
-      ['Split down', 'vertical', false],
+      [message(options, 'Split left'), 'horizontal', true],
+      [message(options, 'Split right'), 'horizontal', false],
+      [message(options, 'Split up'), 'vertical', true],
+      [message(options, 'Split down'), 'vertical', false],
     ] as const) {
       const option = button(label, label, () => {
         local.dispose();
@@ -257,7 +261,7 @@ export function createPaneMenu(
     const joinParent = findParent(options.store.getSnapshot().root, group.id);
     const join = add(
       'join',
-      'Join sibling region',
+      message(options, 'Join sibling region'),
       Boolean(joinParent) && paneIds(joinParent!).every((id) => options.store.can(id, 'join')),
       () => options.store.join(group.id, { source: 'user' }),
     );
@@ -278,7 +282,8 @@ export function createPaneMenu(
       overlay.setAttribute('aria-hidden', 'true');
       root.append(overlay);
       scope.add(() => overlay.remove());
-      const targetTitle = layout.panes[group.active ?? '']?.title ?? 'This region';
+      const targetTitle =
+        layout.panes[group.active ?? '']?.title ?? message(options, 'This region');
       const regions = groups(parent).map((region) => ({
         region,
         element: Array.from(root.querySelectorAll<HTMLElement>('[data-node-id]')).find(
@@ -303,7 +308,9 @@ export function createPaneMenu(
               doc,
               'span',
               'layouts-corner-label',
-              region.id === group.id ? `${targetTitle} keeps all tabs` : `Joins ${targetTitle}`,
+              region.id === group.id
+                ? message(options, '{target} keeps all tabs', { target: targetTitle })
+                : message(options, 'Joins {target}', { target: targetTitle }),
             ),
           );
           overlay.append(box);
@@ -323,29 +330,31 @@ export function createPaneMenu(
     local.listen(join, 'blur', clearPreview);
     add(
       options.store.getSnapshot().maximized === group.id ? 'restore' : 'maximize',
-      options.store.getSnapshot().maximized === group.id ? 'Restore region' : 'Maximize region',
+      options.store.getSnapshot().maximized === group.id
+        ? message(options, 'Restore region')
+        : message(options, 'Maximize region'),
       true,
       () =>
         options.store.maximize(
           options.store.getSnapshot().maximized === group.id ? null : group.id,
         ),
     );
-    if (group.panes.length && pane) {
+    if (group.panes.length && pane && options.popouts !== false) {
       add(
         'popout',
-        windows.pending.has(pane.id) ? 'Reopen window' : 'Open in window',
+        message(options, 'Open in window'),
         options.store.can(pane.id, 'popout'),
         () => {
-          windows.open(pane.id, windows.pending.get(pane.id));
+          void windows.open(pane.id);
           refresh();
         },
       );
     }
-    const orientation = submenu('Tab orientation', 'tab-orientation');
+    const orientation = submenu(message(options, 'Tab orientation'), 'tab-orientation');
     for (const [value, label] of [
-      [undefined, 'Workspace default'],
-      ['top', 'Horizontal'],
-      ['left', 'Vertical'],
+      [undefined, message(options, 'Workspace default')],
+      ['top', message(options, 'Horizontal')],
+      ['left', message(options, 'Vertical')],
     ] as const) {
       const selected = group.tabPlacement === value;
       const option = button(label, label, () => {
@@ -359,11 +368,11 @@ export function createPaneMenu(
       option.prepend(mark);
       orientation.append(option);
     }
-    const display = submenu('Tab display', 'tab-orientation');
+    const display = submenu(message(options, 'Tab display'), 'tab-orientation');
     for (const [value, label] of [
-      [undefined, 'Workspace default'],
-      ['automatic', 'Automatic'],
-      ['compact', 'Compact'],
+      [undefined, message(options, 'Workspace default')],
+      ['automatic', message(options, 'Automatic')],
+      ['compact', message(options, 'Compact')],
     ] as const) {
       const selected = group.tabDisplay === value;
       const option = button(label, label, () => {
@@ -378,24 +387,33 @@ export function createPaneMenu(
       display.append(option);
     }
     if (group.panes.length && pane) {
-      add('close', 'Close active tab', options.store.can(pane.id, 'close'), () =>
-        options.store.close(pane.id, { source: 'user' }),
+      add(
+        'close',
+        message(options, 'Close active tab'),
+        options.store.can(pane.id, 'close'),
+        () => void requestClose(pane.id),
       );
       add(
         'close',
-        'Close pane',
+        message(options, 'Close pane'),
         group.panes.every((id) => options.store.can(id, 'close')),
-        () => options.store.closeGroup(group.id, { source: 'user' }),
+        () => void requestClose(group.id, 'group'),
       );
     } else {
-      add('close', 'Close empty pane', options.store.getSnapshot().root.id !== group.id, () =>
-        options.store.removeEmptyGroup(group.id),
+      add(
+        'close',
+        message(options, 'Close empty pane'),
+        options.store.getSnapshot().root.id !== group.id,
+        () => options.store.removeEmptyGroup(group.id),
       );
     }
-    add('restore', 'Restore closed tab', options.store.canRestoreClosedTab(), () =>
-      options.store.restoreClosedTab(),
+    add(
+      'restore',
+      message(options, 'Restore closed tab'),
+      options.store.canRestoreClosedTab(),
+      () => options.store.restoreClosedTab(),
     );
-    add('cancel', 'Cancel', true, () => {});
+    add('cancel', message(options, 'Cancel'), true, () => {});
     root.append(dialog);
     // Measure after opening: theme density, labels, and available actions change the size.
     // Fixed flyouts escape the scrolling dialog while retaining its modal focus scope.

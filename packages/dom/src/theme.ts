@@ -203,9 +203,39 @@ export const themes = {
   },
 } as const satisfies Record<string, LayoutTheme>;
 export function applyTheme(root: HTMLElement, theme: LayoutTheme) {
+  validateTheme(theme);
   for (const key of Object.keys(themeProperties) as (keyof LayoutTheme)[]) {
     const value = theme[key];
     if (value === undefined) root.style.removeProperty(themeProperties[key]);
     else root.style.setProperty(themeProperties[key], value);
+  }
+}
+
+export function validateTheme(theme: LayoutTheme) {
+  if (!theme || typeof theme !== 'object' || Array.isArray(theme))
+    throw new Error('Expected theme object');
+  for (const [key, value] of Object.entries(theme)) {
+    if (!Object.hasOwn(themeProperties, key) || typeof value !== 'string')
+      throw new Error(`Invalid theme token: ${key}`);
+  }
+}
+/** Resolve inherited CSS lengths using the same browser engine that paints chrome. */
+export function themePixels(root: HTMLElement, property: string, fallback: number): number {
+  const probe = root.ownerDocument.createElement('span');
+  probe.style.cssText =
+    'position:absolute;visibility:hidden;pointer-events:none;height:0;padding:0;border:0;min-width:0;max-width:none;';
+  probe.style.width = `${fallback}px`;
+  const authored = root.ownerDocument
+    .defaultView!.getComputedStyle(root)
+    .getPropertyValue(property)
+    .trim();
+  if (authored && authored !== 'auto') probe.style.width = authored;
+  root.append(probe);
+  try {
+    const width = root.ownerDocument.defaultView!.getComputedStyle(probe).width;
+    const value = Number.parseFloat(width);
+    return Number.isFinite(value) && value >= 0 ? value : fallback;
+  } finally {
+    probe.remove();
   }
 }

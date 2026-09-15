@@ -1,13 +1,14 @@
+import { message } from './messages.js';
 import { allocate, bounds, DIVIDER, findNode, joinRange } from 'quilt-core';
 import type { Group, Pane } from 'quilt-core';
-import type { LayoutOptions } from './types.js';
+import type { ResolvedLayoutOptions } from './types.js';
 import { el, Scope } from './lifetime.js';
 type Direction = 'left' | 'right' | 'top' | 'bottom';
 /** Commit once on release; cancellation never changes the layout or pane ownership. */
 export function bindCorners(
   host: HTMLElement,
   id: string,
-  options: LayoutOptions,
+  options: ResolvedLayoutOptions,
   scope: Scope,
   split: (pane: Pane | undefined, group: Group, direction: Direction, ratio: number) => void,
   report: (error: unknown) => void,
@@ -21,8 +22,14 @@ export function bindCorners(
   for (const corner of ['tl', 'tr', 'bl', 'br']) {
     const handle = el(doc, 'button', 'layouts-corner');
     handle.dataset.corner = corner;
-    handle.title = 'Drag inward to split; drag across adjacent regions to join. Escape cancels.';
-    handle.setAttribute('aria-label', 'Split or join region from ' + corner + ' corner');
+    handle.title = message(
+      options,
+      'Drag inward to split; drag across adjacent regions to join. Escape cancels.',
+    );
+    handle.setAttribute(
+      'aria-label',
+      message(options, 'Split or join region from {corner} corner', { corner }),
+    );
     handle.tabIndex = -1; // Equivalent keyboard operations live in the pane menu.
     host.append(handle);
     scope.add(() => handle.remove());
@@ -154,7 +161,7 @@ export function bindCorners(
                 width: rect.width,
                 height: before ? first : second,
               };
-          mark(newRect, 'split', 'New pane');
+          mark(newRect, 'split', message(options, 'New pane'));
         } else {
           const layout = options.store.getSnapshot();
           const elements = Array.from(
@@ -200,17 +207,29 @@ export function bindCorners(
             [...boxes].map(([nodeId, box]) => [nodeId, horizontal ? box.width : box.height]),
           );
           target = { kind: 'join', id: receiverId, extents };
-          const targetTitle = layout.panes[receiver.active ?? '']?.title ?? 'Empty region';
+          const targetTitle =
+            layout.panes[receiver.active ?? '']?.title ?? message(options, 'Empty region');
           const sources = range.selected.filter((g) => g.id !== receiverId);
           const sourceLabel = sources.every((g) => g.panes.length === 0)
-            ? `${sources.length} empty ${sources.length === 1 ? 'region' : 'regions'}`
-            : sources.map((g) => layout.panes[g.active ?? '']?.title ?? 'Empty region').join(', ');
+            ? message(
+                options,
+                sources.length === 1 ? '{count} empty region' : '{count} empty regions',
+                { count: sources.length },
+              )
+            : sources
+                .map((g) => layout.panes[g.active ?? '']?.title ?? message(options, 'Empty region'))
+                .join(', ');
           for (const group of range.selected) {
             const receiving = group.id === receiverId;
             mark(
               boxes.get(group.id)!,
               receiving ? 'join-target' : 'join-source',
-              receiving ? `${targetTitle} absorbs ${sourceLabel}` : `Joins ${targetTitle}`,
+              receiving
+                ? message(options, '{target} absorbs {source}', {
+                    target: targetTitle,
+                    source: sourceLabel,
+                  })
+                : message(options, 'Joins {target}', { target: targetTitle }),
             );
           }
           const left = Math.min(...selectedBoxes.map((box) => box!.left));

@@ -7,6 +7,8 @@ export type Json = null | boolean | number | string | Json[] | { [key: string]: 
 export type Capability = 'resize' | 'move' | 'split' | 'join' | 'close' | 'popout';
 export type Axis = 'horizontal' | 'vertical';
 export interface Pane {
+  /** Override the pane-type close confirmation default. */
+  confirmClose?: boolean;
   id: string;
   type: string;
   title: string;
