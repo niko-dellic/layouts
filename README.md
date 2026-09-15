@@ -38,7 +38,7 @@ Explore the [screenshot gallery](docs/showcase.md), [configuration API](docs/api
 
 ## Try it
 
-Open the live [vanilla demo](https://layouts-ruddy.vercel.app/vanilla.html) or [React demo](https://layouts-ruddy.vercel.app/react.html), or run locally:
+Open the live [vanilla demo](https://quilt-layouts.vercel.app/vanilla.html) or [React demo](https://quilt-layouts.vercel.app/react.html), or run locally:
 
 ```sh
 nvm use

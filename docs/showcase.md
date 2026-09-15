@@ -1,6 +1,6 @@
 # Quilt in pictures
 
-These are captures of the working vanilla demo. The [React demo](https://layouts-ruddy.vercel.app/react.html) uses the same layout engine and chrome. Try the controls yourself in the [live vanilla demo](https://layouts-ruddy.vercel.app/vanilla.html).
+These are captures of the working vanilla demo. The [React demo](https://quilt-layouts.vercel.app/react.html) uses the same layout engine and chrome. Try the controls yourself in the [live vanilla demo](https://quilt-layouts.vercel.app/vanilla.html).
 
 ## Recorded walkthrough
 
