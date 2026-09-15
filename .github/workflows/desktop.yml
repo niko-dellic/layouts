@@ -1,0 +1,97 @@
+name: Desktop demo
+on:
+  pull_request:
+    paths:
+      - 'desktop/**'
+      - 'scripts/*desktop*'
+      - 'demos/**'
+      - 'packages/**'
+      - 'package*.json'
+      - 'vanilla.html'
+      - 'react.html'
+      - '.github/workflows/desktop.yml'
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish verified desktop downloads to GitHub Releases
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            platform: mac
+            arch: arm64
+          - os: macos-15-intel
+            platform: mac
+            arch: x64
+          - os: windows-latest
+            platform: win
+            arch: x64
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - if: runner.os == 'Linux'
+        run: npx playwright install-deps chromium
+      - run: npm run package:desktop -- --${{ matrix.platform }} --${{ matrix.arch }}
+      - if: runner.os == 'Linux'
+        run: xvfb-run -a npm run test:desktop -- --packaged
+      - if: runner.os != 'Linux'
+        run: npm run test:desktop -- --packaged
+      - run: node scripts/desktop-checksums.mjs
+      - uses: actions/upload-artifact@v7
+        with:
+          name: desktop-binary-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            artifacts/desktop/releases/*.dmg
+            artifacts/desktop/releases/*.exe
+            artifacts/desktop/releases/*.deb
+            artifacts/desktop/releases/*.sha256
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: desktop-screenshot-${{ matrix.platform }}-${{ matrix.arch }}
+          path: artifacts/desktop/screenshot.png
+          if-no-files-found: ignore
+  publish:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: desktop-binary-*
+          merge-multiple: true
+          path: artifacts/desktop-publish
+      - name: Publish desktop release
+        shell: bash
+        run: |
+          version=$(node -p "require('./package.json').version")
+          cd artifacts/desktop-publish
+          sha256sum --check *.sha256
+          gh release create "desktop-v${version}" --target "$GITHUB_SHA" --title "Quilt Desktop Demo ${version}" --latest=false --notes-file ../../docs/desktop-release.md *.dmg *.exe *.deb *.sha256

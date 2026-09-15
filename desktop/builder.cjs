@@ -1,0 +1,30 @@
+module.exports = {
+  appId: 'io.quilt.demo',
+  productName: 'Quilt Demo',
+  directories: { app: 'artifacts/desktop/app', output: 'artifacts/desktop/releases' },
+  files: ['main.cjs', 'package.json', 'site/**/*', 'LICENSE'],
+  asar: true,
+  npmRebuild: false,
+  electronVersion: '44.3.0',
+  artifactName: 'Quilt-Demo-${version}-${os}-${arch}.${ext}',
+  mac: {
+    target: ['dmg'],
+    category: 'public.app-category.developer-tools',
+    identity: null,
+    hardenedRuntime: false,
+    icon: 'public/android-chrome-512x512.png',
+  },
+  dmg: { sign: false },
+  win: {
+    target: ['portable'],
+    icon: 'public/android-chrome-512x512.png',
+    signAndEditExecutable: false,
+  },
+  linux: {
+    target: ['deb'],
+    category: 'Development',
+    icon: 'public/android-chrome-512x512.png',
+    maintainer: 'Quilt contributors',
+  },
+  publish: null,
+};
