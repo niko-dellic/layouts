@@ -5,7 +5,7 @@ The full Quilt showcase as an offline desktop app. Includes both vanilla and Rea
 - **macOS Apple Silicon:** `mac-arm64.dmg`
 - **macOS Intel:** `mac-x64.dmg`
 - **Windows 64-bit:** `win-x64.exe` (portable app)
-- **Ubuntu / Debian 64-bit:** `linux-x64.deb`
+- **Ubuntu / Debian 64-bit:** `linux-amd64.deb`
 
 On macOS, open the DMG and drag Quilt Demo into Applications. On Windows, open the EXE. On Ubuntu / Debian, open the DEB with your software installer, then launch Quilt Demo from the applications menu.
 
