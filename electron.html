@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Quilt — Electron desktop demo</title>
+    <meta
+      name="description"
+      content="Try Quilt's Electron starter in your browser, then run it locally with native companion windows, custom themes, and workspace JSON."
+    />
+    <link rel="stylesheet" href="/demos/style.css" />
+    <link rel="stylesheet" href="/demos/electron.css" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+  </head>
+  <body class="electron-page">
+    <header class="demo-top">
+      <a href="/" class="brand"
+        ><img
+          class="brand-icon"
+          src="/android-chrome-192x192.png"
+          width="29"
+          height="29"
+          alt=""
+        /><span class="brand-wordmark">quilt</span><span class="version">__QUILT_VERSION__</span></a
+      >
+      <nav aria-label="Demo framework">
+        <a href="/vanilla.html">Vanilla TS</a><a href="/react.html">React</a
+        ><a href="/electron.html" aria-current="page">Electron</a>
+      </nav>
+      <a class="source-link" href="https://github.com/niko-dellic/quilt/tree/main/examples/electron"
+        >Starter source ↗</a
+      >
+    </header>
+    <main class="electron-content">
+      <section class="electron-intro">
+        <p class="eyebrow">DESKTOP WORKSPACES</p>
+        <h1>Quilt in Electron</h1>
+        <p class="landing-lead">
+          The same layout library, with native companion windows.<br />Arrange your workspace,
+          switch themes, and save its configuration.
+        </p>
+        <a class="electron-link" href="#run-locally"
+          >Run the desktop starter <span aria-hidden="true">↓</span></a
+        >
+      </section>
+      <section aria-labelledby="preview-title">
+        <div class="electron-section-heading">
+          <h2 id="preview-title">Try the starter</h2>
+          <span class="electron-badge">Browser preview</span>
+        </div>
+        <p class="electron-description">
+          Edit the note, pop it out, then close the companion to return it. This preview runs in
+          your browser; run the starter below to try Electron’s native windows.
+        </p>
+        <iframe
+          class="electron-preview"
+          title="Interactive Electron starter browser preview"
+          src="/examples/electron/index.html"
+        ></iframe>
+        <p class="electron-caption">
+          Save workspace exports a docked layout without closing the live companion. Note text
+          belongs to the application and is separate from workspace JSON.
+        </p>
+      </section>
+      <section id="run-locally" aria-labelledby="desktop-title" class="electron-setup">
+        <div>
+          <p class="eyebrow">RUN LOCALLY</p>
+          <h2 id="desktop-title">Open it on your desktop</h2>
+          <p class="electron-description">
+            With Node.js 24 and Git installed, run these commands in your terminal. Electron
+            installs with the starter and opens the built app.
+          </p>
+          <a
+            class="electron-link"
+            href="https://github.com/niko-dellic/quilt/tree/v__QUILT_VERSION__/examples/electron"
+            >View the starter source ↗</a
+          >
+        </div>
+        <pre><code>git clone --depth 1 --branch v__QUILT_VERSION__ https://github.com/niko-dellic/quilt.git
+cd quilt/examples/electron
+npm install
+npm start</code></pre>
+      </section>
+      <section class="electron-details" aria-label="Desktop integration details">
+        <div>
+          <h3>Application-owned data</h3>
+          <p>Keep note data outside view lifetimes so it survives popout and return.</p>
+        </div>
+        <div>
+          <h3>Temporary companions</h3>
+          <p>Closing a companion returns its pane. Saved workspaces restore docked.</p>
+        </div>
+        <div>
+          <h3>Shared rendering</h3>
+          <p>Quilt uses its regular DOM renderer. Electron stays a dependency of your app.</p>
+        </div>
+      </section>
+      <footer class="landing-footer">
+        <a href="https://github.com/niko-dellic/quilt/blob/main/docs/compatibility.md"
+          >Host compatibility ↗</a
+        ><a href="https://github.com/niko-dellic/quilt/blob/main/docs/integration.md"
+          >Integration guide ↗</a
+        >
+      </footer>
+    </main>
+  </body>
+</html>
