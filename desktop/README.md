@@ -34,5 +34,6 @@ Closing the main window destroys companions. External repository links open in
 the system browser. Both framework examples reuse the same application source
 as the web demos; desktop-specific HTML changes are limited to navigation.
 
-These builds are unsigned and not notarized. See the release notes for first-run
+These builds have no developer certificate and are not notarized. macOS uses an
+ad-hoc signature to keep the bundle internally valid after packaging. See the release notes for first-run
 OS prompts. Signing should be added separately when certificates become available.

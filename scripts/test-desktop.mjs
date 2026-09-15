@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { _electron, expect } from '@playwright/test';
 import { resolve } from 'node:path';
 import { existsSync, mkdirSync } from 'node:fs';
@@ -12,6 +13,10 @@ const executablePath =
   process.env.QUILT_DESKTOP_EXECUTABLE ||
   (packaged ? resolve(binaries[process.platform]) : electron);
 if (!existsSync(executablePath)) throw new Error('Desktop executable not found: ' + executablePath);
+if (packaged && process.platform === 'darwin') {
+  const bundle = executablePath.slice(0, executablePath.indexOf('.app/') + 4);
+  execFileSync('codesign', ['--verify', '--deep', '--strict', bundle], { stdio: 'inherit' });
+}
 const app = await _electron.launch({
   executablePath,
   args: packaged ? [] : [resolve('artifacts/desktop/app/main.cjs')],

@@ -10,7 +10,7 @@ module.exports = {
   mac: {
     target: ['dmg'],
     category: 'public.app-category.developer-tools',
-    identity: null,
+    identity: '-',
     hardenedRuntime: false,
     icon: 'public/android-chrome-512x512.png',
   },
