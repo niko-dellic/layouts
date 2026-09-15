@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Quilt — Electron starter</title>
+    <title>Quilt — Desktop demo</title>
     <meta
       name="description"
-      content="Download the Quilt Electron starter and run it locally with native companion windows, custom themes, and workspace JSON."
+      content="Download the full Quilt demo for macOS, Windows, or Linux. Open it on your desktop with native companion windows and no setup commands."
     />
     <link rel="stylesheet" href="/demos/style.css" />
     <link rel="stylesheet" href="/demos/electron.css" />
@@ -27,45 +27,77 @@
         <a href="/vanilla.html">Vanilla TS</a><a href="/react.html">React</a
         ><a href="/electron.html" aria-current="page">Electron</a>
       </nav>
-      <a class="source-link" href="https://github.com/niko-dellic/quilt/tree/main/examples/electron"
-        >Starter source ↗</a
+      <a class="source-link" href="https://github.com/niko-dellic/quilt/tree/main/desktop"
+        >Source ↗</a
       >
     </header>
     <main class="electron-content">
-      <p class="eyebrow">ELECTRON STARTER</p>
-      <h1>Take Quilt to the desktop.</h1>
+      <p class="eyebrow">DESKTOP DEMO</p>
+      <h1>The Quilt demo.<br />On your desktop.</h1>
       <p class="landing-lead">
-        A small Electron project with native companion windows,<br class="desktop-break" />
-        custom themes, and workspace save/load. Download it and make it yours.
+        The full workspace you know from the web, with native companion windows.<br
+          class="desktop-break"
+        />
+        Download the app, open it, and explore. No Node.js or terminal setup.
       </p>
-      <div class="electron-downloads">
+      <div class="electron-platforms" aria-label="Download Quilt Demo">
         <a
-          class="electron-download"
-          href="/downloads/quilt-electron-starter-__QUILT_VERSION__.zip"
-          download
-          >Download starter <span aria-hidden="true">↓</span></a
+          class="electron-platform"
+          href="https://github.com/niko-dellic/quilt/releases/download/desktop-v__QUILT_VERSION__/Quilt-Demo-__QUILT_VERSION__-mac-arm64.dmg"
+          ><span>macOS <span aria-hidden="true">↓</span></span
+          ><small>Apple Silicon · DMG</small></a
         >
         <a
-          class="electron-source"
-          href="https://github.com/niko-dellic/quilt/tree/main/examples/electron"
-          >View source ↗</a
+          class="electron-platform"
+          href="https://github.com/niko-dellic/quilt/releases/download/desktop-v__QUILT_VERSION__/Quilt-Demo-__QUILT_VERSION__-mac-x64.dmg"
+          ><span>macOS <span aria-hidden="true">↓</span></span
+          ><small>Intel · DMG</small></a
+        >
+        <a
+          class="electron-platform"
+          href="https://github.com/niko-dellic/quilt/releases/download/desktop-v__QUILT_VERSION__/Quilt-Demo-__QUILT_VERSION__-win-x64.exe"
+          ><span>Windows <span aria-hidden="true">↓</span></span
+          ><small>64-bit · Portable EXE</small></a
+        >
+        <a
+          class="electron-platform"
+          href="https://github.com/niko-dellic/quilt/releases/download/desktop-v__QUILT_VERSION__/Quilt-Demo-__QUILT_VERSION__-linux-amd64.deb"
+          ><span>Ubuntu / Debian <span aria-hidden="true">↓</span></span
+          ><small>64-bit · DEB</small></a
         >
       </div>
-      <p class="electron-meta">v__QUILT_VERSION__ · Source ZIP · Requires Node.js 24</p>
+      <p class="electron-meta">v__QUILT_VERSION__ · Free demo · Runs offline</p>
       <section class="electron-setup" aria-labelledby="setup-title">
         <div>
-          <p class="eyebrow">GET STARTED</p>
-          <h2 id="setup-title">Unzip. Install. Open.</h2>
+          <p class="eyebrow">OPEN AND EXPLORE</p>
+          <h2 id="setup-title">Same workspace. Native windows.</h2>
           <p>
-            Open a terminal in the extracted folder and run these commands. Electron installs with
-            the project, then launches the desktop app.
+            Includes the full vanilla and React showcases: the scene, inspector, timeline, themes,
+            and workspace JSON. Pop a pane out into its own desktop window and close it to return
+            it.
           </p>
-          <p class="electron-note">This is a source starter, not a prebuilt installer.</p>
         </div>
-        <pre><code>cd quilt-electron-starter
-npm install
-npm start</code></pre>
+        <div class="electron-install">
+          <p><strong>macOS</strong> Open the DMG and drag Quilt Demo into Applications.</p>
+          <p><strong>Windows</strong> Open the downloaded EXE to launch the portable app.</p>
+          <p>
+            <strong>Ubuntu / Debian</strong> Open the DEB with your software installer, then launch
+            Quilt Demo.
+          </p>
+        </div>
       </section>
+      <details class="electron-unsigned">
+        <summary>First launch: unsigned demo builds</summary>
+        <p>
+          These demo apps are not signed or notarized. Your OS may show an unidentified-developer
+          warning.
+        </p>
+        <p>
+          On macOS, you may need to approve Quilt Demo in System Settings → Privacy &amp; Security
+          after first opening it. On Windows, the warning may offer More info → Run anyway. Managed
+          devices may block unsigned apps.
+        </p>
+      </details>
       <footer class="landing-footer">
         <a href="/vanilla.html">Try Quilt in your browser ↗</a
         ><a href="https://github.com/niko-dellic/quilt/blob/main/docs/compatibility.md"
