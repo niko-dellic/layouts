@@ -1,11 +1,14 @@
 # Quilt Electron starter
 
-A small source project using Quilt 0.2.0 and Electron. This download contains
-source code, not a prebuilt desktop installer.
+A source example using Quilt 0.2.1 and Electron, with a notes pane, themes,
+workspace JSON, and close confirmation.
+
+For a runnable application containing the web demos, use the
+[desktop downloads](https://quilt-layouts.vercel.app/electron.html).
 
 ## Run
 
-Install Node.js 24, unzip the download, then open a terminal in this folder:
+Install Node.js 24 and open a terminal in a copy of this directory:
 
 ```sh
 npm install
@@ -28,4 +31,5 @@ Note text remains application-owned; it is not part of workspace JSON.
 Run `npm run dev` for browser development or `npm start` for desktop behavior.
 The starter targets the same DOM renderer as the browser packages.
 
-Source and documentation: https://github.com/niko-dellic/quilt
+See [host compatibility](../../docs/compatibility.md) and
+[integration documentation](../../docs/integration.md).

@@ -1,9 +1,12 @@
-# Packaged Quilt desktop demo
+# Quilt desktop demo
 
-This app bundles the existing vanilla and React showcase pages and their assets.
-It starts at the full vanilla showcase and switches to React through its header.
-No network server, Node installation, npm install, or source editing is required
-by a person downloading the packaged app.
+This application bundles the vanilla and React demos and their assets. It opens
+the vanilla demo; the header switches to React. It runs offline without a separate
+Node.js installation.
+
+Download the application from the [desktop page](https://quilt-layouts.vercel.app/electron.html)
+or [GitHub Releases](https://github.com/niko-dellic/quilt/releases/tag/desktop-v0.2.1).
+See the [release notes](../docs/desktop-release.md) for installation instructions.
 
 ## Develop and verify
 
@@ -35,5 +38,4 @@ the system browser. Both framework examples reuse the same application source
 as the web demos; desktop-specific HTML changes are limited to navigation.
 
 These builds have no developer certificate and are not notarized. macOS uses an
-ad-hoc signature to keep the bundle internally valid after packaging. See the release notes for first-run
-OS prompts. Signing should be added separately when certificates become available.
+ad-hoc signature to keep the bundle internally valid after packaging. See the [release notes](../docs/desktop-release.md) for first-run OS prompts.

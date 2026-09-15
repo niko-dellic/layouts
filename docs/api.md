@@ -1,6 +1,6 @@
 # Configuration and API
 
-## JSON v1
+## Core layout JSON v1
 
 ```ts
 interface Layout {
@@ -16,6 +16,7 @@ interface Group {
   panes: string[];
   active: string | null;
   tabPlacement?: 'top' | 'left';
+  tabDisplay?: 'automatic' | 'compact';
 }
 interface Split {
   kind: 'split';
@@ -29,6 +30,7 @@ interface Pane {
   id: string;
   type: string;
   title: string;
+  icon?: string; // application icon key
   params?: Json; // JSON only, not runtime state
   header?: boolean;
   confirmClose?: boolean; // optional UI confirmation; default inherits registration or false
@@ -70,7 +72,8 @@ See [migration notes](migration.md) for removed pre-release APIs.
 `LayoutStoreOptions.autoCollapse` accepts `AutoCollapse` (`'enabled' | 'protected' | 'disabled'`),
 defaulting to `'disabled'`. `getAutoCollapse()` reads the session setting and
 `setAutoCollapse(mode)` validates and updates it without altering the current layout.
-Load/reset preserve this setting; it is not serialized. Enabled collapses regions emptied
+Core load/reset preserve this setting; raw layout JSON excludes it.
+Workspace presets serialize it, and `loadWorkspace` applies the saved setting. Enabled collapses regions emptied
 by close, move, or popout; protected exempts popouts; disabled preserves all empty source
 regions. Use `removeEmptyGroup(groupId)` or the empty tab bar’s X to explicitly remove
 an empty region (except the final root).
@@ -98,6 +101,12 @@ Commands clone, validate, and commit atomically. A failed command leaves the pre
 | `close(paneId, options?)`                            | Remove pane and placement                                                                                                         |
 | `popout(paneId, placement?, options?)`               | Pure model transition; does not open a browser                                                                                    |
 | `returnPane(paneId)`                                 | Return to a compatible original/fallback group, or a new region                                                                   |
+| `setTabPlacement(groupId, placement?)`               | Set top/left orientation; omit to inherit                                                                                         |
+| `setTabDisplay(groupId, display?)`                   | Set automatic/compact display; omit to inherit                                                                                    |
+| `removeEmptyGroup(groupId)`                          | Remove an empty region except the final root                                                                                      |
+| `closeGroup(groupId, options?)`                      | Atomically close docked tabs in a region                                                                                          |
+| `canRestoreClosedTab()`                              | Report whether closed-tab history is available                                                                                    |
+| `restoreClosedTab()`                                 | Restore the most recently closed tab with compatible placement                                                                    |
 | `dispose()`                                          | End subscriptions; idempotent; subsequent commands fail                                                                           |
 
 Options accept `{source: 'user' | 'api'}`; default is `api`. Flags only restrict `user` commands. Use the mounted renderer's `popout` method, not the store's pure `popout` command, to open browser windows. A DOM renderer interprets detached records without live companion handles as restored data and docks them without retaining reopening intent.
@@ -109,13 +118,36 @@ Options accept `{source: 'user' | 'api'}`; default is `api`. Flags only restrict
 - `store`: externally owned `LayoutStore`.
 - `renderers`: pane-type-to-renderer registry.
 - `getPaneState(id)`: optional application-owned reference for each view mount.
-- `tabs`: `TabRegistry` of available content. Factories return fresh panes with unique IDs, or undefined to cancel.
+- `tabs`: `TabRegistry` of available content. Factories return pane metadata, or undefined to cancel. Omitted instance IDs are generated.
+- `registry`: combines creation metadata and renderers; mutually exclusive with `tabs` and `renderers`.
+- `messages`: typed text overrides for chrome and dialogs.
+- `shortcuts`: opt-in presets or explicit key/modifier bindings.
+- `popouts`: workspace-level availability, default true.
+- `confirmClose(request)`: optional application dialog replacing the built-in close confirmation.
+- `renderIcon(key, document)`: optional icon resolver.
 - `theme` and `tabBar`: theme tokens and workspace/group tab-bar configuration; see [Theming](theming.md).
 - `onError(error)`: mount, interaction, and window failures.
-- `prepareWindow(window, pane)`: copy additional styles/providers/assets into a companion document.
+- `prepareWindow(window, pane)`: copy additional application styles/assets into a companion document.
 - `openWindow(pane, placement)`: optional synchronous, same-origin window factory; null means blocked. The library owns this returned window and replaces its body, so do not return an existing unrelated application window.
 
-Returned handle: `setTheme(theme)`, `setTabBar(options)`, `popout(id, placement?): Promise<boolean>`, `returnPane(id)`, `dispose()`. Dispose the mounted view before disposing the externally owned store.
+The returned `MountedLayout` handle provides:
+
+| Method                                      | Purpose                                                                                  |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `updateOptions(partial)`                    | Update options in place; omitted keys remain unchanged, explicit `undefined` resets them |
+| `setTheme(theme)`                           | Replace theme overrides; `{}` clears them                                                |
+| `setTabBar(options)`                        | Replace tab-bar settings; `{}` restores defaults                                         |
+| `refreshTheme()`                            | Recompute CSS geometry and synchronize companions                                        |
+| `exportWorkspace()`                         | Export layout and appearance with a docked layout copy                                   |
+| `loadWorkspace(input)`                      | Validate and apply a workspace preset                                                    |
+| `popout(id, placement?): Promise<boolean>`  | Open a companion from a user action; resolve when mounting succeeds or fails             |
+| `returnPane(id)`                            | Dock a live companion pane                                                               |
+| `retryPane(id)`                             | Retry a failed view                                                                      |
+| `requestClose(id, kind?): Promise<boolean>` | Request pane or group closure, including confirmation when configured                    |
+| `dispose()`                                 | Release views, listeners, dialogs, and companions                                        |
+
+Dispose the mounted view before disposing the externally owned store.
+`requestClose` defaults to `kind: 'pane'`; use `'group'` with a group ID for a group close.
 
 ## React exports
 
@@ -123,7 +155,7 @@ Returned handle: `setTheme(theme)`, `setTabBar(options)`, `popout(id, placement?
 
 `reactRenderer(Component)` adapts a React component for mixed vanilla/React consumers. `useLayoutSnapshot(store)` subscribes with React's external-store API. React 18.3 and 19 are peer-compatible; packed-consumer tests compile and exercise both React versions.
 
-`PaneProps` includes `document`, `window`, `pane`, `state`, and `location`; the vanilla renderer also receives `element`.
+`PaneProps<State>` includes `document`, `window`, `pane`, `state`, `reportError`, and `location`; the vanilla `PaneContext<State>` also receives `element`. State defaults to `unknown`. See [typed state and option resets](integration.md#typescript-state-and-option-resets).
 
 ## Theme variables
 
@@ -199,7 +231,8 @@ const workspace = mountLayout(host, { store, renderers, tabs });
 or empty IDs and returns an idempotent unregister function. `list()` returns
 registrations in insertion order; `subscribe(listener)` returns cleanup.
 Registration IDs identify choices; pane IDs identify individual open instances.
-Factories own unique IDs, type, metadata, constraints, and initial params; return
+Factories supply type, metadata, constraints, and initial params. IDs are optional;
+Quilt generates omitted IDs once per creation and preserves explicit IDs. Return
 `undefined` to cancel. They run only after an explicit selection. Core validation
 remains atomic, so a rejected creation preserves the workspace.
 
@@ -239,11 +272,7 @@ previews, or `undefined` when endpoints are identical, absent, or separated by a
 split. Content constraints and capabilities are validated atomically when committing.
 The existing `join` command and “Join sibling region” menu retain their parent-collapse behavior.
 
-## Web integration additions
-
-Mounted handles also expose `updateOptions(partial)`, `exportWorkspace()`,
-`loadWorkspace(unknown)`, `refreshTheme()`, `retryPane(id)`, and
-`requestClose(id, kind?: 'pane' | 'group'): Promise<boolean>`.
+## Workspace presets and interaction options
 
 `WorkspacePreset` v1 stores layout, theme, tabBar, and autoCollapse. The exported
 layout is docked without changing live windows. `parseWorkspace` validates an

@@ -4,8 +4,7 @@ Themes style workspace chrome: tabs, menus, dividers, picker, and companion wind
 bars. Pane content is application-owned and may consume these same tokens. A
 canvas's authored colors are content, not theme tokens.
 
-Like [Tweakpane](https://tweakpane.github.io/docs/theming/), Quilt accepts CSS
-custom properties on its container. Variables inherit normally. Defaults are CSS
+Quilt accepts CSS custom properties on its container. Variables inherit normally. Defaults are CSS
 fallbacks, so a nested `.layouts` element does not overwrite container values.
 
 ```css
@@ -134,9 +133,9 @@ import { themeFamilies } from 'quilt-vanilla';
 ```
 
 No Tailwind installation is required for these variables. Set all overrides as
-one resolved object when switching a preset: `setTheme` replaces previous inline
-overrides. Use `setTheme({})` to return to CSS inheritance. Host preferences and
-font-role choices should remain outside layout JSON. Copy application content
+one theme object when switching a preset: `setTheme` replaces previous inline
+overrides. Use `setTheme({})` to return to CSS inheritance. Workspace JSON includes configured theme overrides, including `fontFamily`.
+Application preferences and font files must be saved or loaded separately. Copy application content
 variables and font styles to companion documents in `prepareWindow`; the library
 propagates its own resolved chrome tokens on subsequent theme changes. Theme
 updates never reset pane view state, selection, or content renderers.
@@ -155,7 +154,7 @@ const tabBar = {
 ```
 
 `TabBarStyle` accepts `mode: 'full' | 'tapered'`,
-`shape: 'angle' | 'round' | 'scoop' | 'vertical'`, and optional `taperWidth` in positive,
+`shape: 'angle' | 'round' | 'scoop' | 'vertical' | 'rounded'`, and optional `taperWidth` in positive,
 finite CSS pixels. The default shape is `angle`; omitted width matches the
 header height. All curved and angled caps extend farther right at the top than
 at the bottom. Use `{ mode: 'tapered', shape: 'vertical' }` for a fitted bar
@@ -180,8 +179,9 @@ allowing the scene to fill the region.
 Call `mounted.setTabBar(options)` to replace the current configuration without
 remounting pane views. Passing `{}` restores defaults. Invalid shape/mode values
 or nonpositive/nonfinite widths throw without changing the current configuration.
-React prop changes update the same renderer in place; keep other renderer props
-stable as usual. Settings are renderer configuration, not Layout JSON.
+React prop changes update the same renderer in place; callback and component-map
+identity changes do not rebuild the workspace. Tab-bar settings are included in
+workspace JSON, but excluded from raw core layout JSON.
 Companion windows retain their title and Return bar; returning a pane uses the
 destination group's settings. End caps use SVG paths and theme colors, without
 requiring CSS `corner-shape` support.
@@ -197,10 +197,10 @@ The actions menu includes Close, and middle-click closing remains available when
 enabled. `placement: 'top'` restores top tabs; mode and shape apply in both placements.
 Placement supports region overrides and live changes through `setTabBar`.
 
-`resizeHandleWidth` sets the default divider gap in CSS pixels (default `'4px'`).
+`resizeHandleWidth` sets the default divider gap as a CSS length (default `'4px'`).
 Explicit split gaps still take precedence for resizable dividers.
 Disabled dividers have no gap by default. Set `disabledResizeHandleWidth` to a
-CSS pixel width to show their space without enabling resizing. The demo's
+CSS length to show their space without enabling resizing. The demo's
 “Show disabled resize handles” switch uses the selected handle width. These
 renderer settings affect allocation and resize limits without modifying Layout JSON.
 
@@ -243,7 +243,7 @@ top tabs use `headerHeight`. Both dimensions update live, including fitted tab o
 
 The demo's **Tab orientation** selects top or vertical tabs. **Tab placement**
 selects anchored (the default) or floating. Floating bars overlay content with
-an 8px inset. Their **Fit** selector offers full-width or fit-width; for vertical
+the `panelPadding` inset (8px by default). Their **Fit** selector offers full-width or fit-width; for vertical
 rails this controls the occupied height. **Corner type** selects fitted (square),
 rounded, or capsule. Floating bars do not use taper settings. Anchored bars expose
 **Taper options**, including `rounded`, a fitted bar with rounded corners and no cap
@@ -267,7 +267,7 @@ occupied width/height custom properties include the leading inset.
 Both demos start with floating fit-width tabs. Floating bars preserve their inset
 from content scrollbars as well as pane edges, including overlay scrollbars. The
 available span updates when pane content, overflow, or scrollbar sizing changes.
-The leading inset stays at 8px. Scrollbar clearance is reserved only at the
+The leading inset uses `panelPadding` (8px by default). Scrollbar clearance is reserved only at the
 trailing edge where the scrollbar appears; it does not push the bar inward
 on the opposite side.
 

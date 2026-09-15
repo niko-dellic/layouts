@@ -507,6 +507,8 @@ export function setupShell(getMounted: () => MountedLayout | undefined) {
   };
   const output = document.querySelector<HTMLTextAreaElement>('#layout-json')!;
   const dialog = document.querySelector<HTMLDialogElement>('#json-dialog')!;
+  // Dialogs must belong to the fullscreen subtree to remain visible.
+  document.querySelector('.demo-main')!.append(dialog);
   const error = document.querySelector<HTMLElement>('#json-error')!;
   settings.querySelector('#json-open')!.addEventListener('click', () => {
     output.value = JSON.stringify(getMounted()?.exportWorkspace(), null, 2);

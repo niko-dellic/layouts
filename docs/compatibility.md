@@ -14,7 +14,7 @@ dependency to either published package.
 | Tauri native popouts                       | Unsupported by current window API                      | Requires an asynchronous, message-based host adapter                                                |
 | Vue / other DOM frameworks                 | Vanilla integration expected; unverified               | No dedicated binding; application supplies mount/update/dispose                                     |
 | Cross-origin or independent native windows | Unsupported                                            | Current companions require synchronous same-origin DOM access                                       |
-| SSR                                        | Core supported; renderer requires a client mount       | No claim of server-rendered Quilt chrome                                                            |
+| SSR                                        | Core supported; renderer requires a client mount       | Quilt UI mounts on the client                                                                       |
 
 ## Electron reference host
 
@@ -39,9 +39,10 @@ restore native windows on launch, implement IPC data synchronization, or package
 an executable installer. A future Tauri adapter should reuse the core and DOM
 renderer while handling readiness, messaging, and lifecycle in a host-specific layer.
 
-## Downloadable showcase
+## Desktop downloads
 
-[Quilt Demo](https://quilt-layouts.vercel.app/electron.html) bundles the full web
-showcase as native apps. Source and packaging instructions are in
-[desktop/README.md](../desktop/README.md). These demo binaries are unsigned and
-not notarized; their release notes explain OS approval prompts.
+[Quilt Demo](https://quilt-layouts.vercel.app/electron.html) packages the vanilla and React
+demos with Electron. Source and packaging instructions are in
+[desktop/README.md](../desktop/README.md). These builds have no trusted developer certificate; macOS bundles use an ad-hoc
+signature and are not notarized. The [release notes](desktop-release.md) explain
+OS approval prompts.

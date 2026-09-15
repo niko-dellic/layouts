@@ -1,3 +1,4 @@
+import { mountFullscreenToggle } from './fullscreen.js';
 import { mountTheming } from './shell.js';
 import { canvas } from './scene.js';
 export { canvas } from './scene.js';
@@ -55,7 +56,9 @@ export const notes: PaneRenderer = ({ element, document: doc }) => {
 };
 export const toolbar: PaneRenderer = ({ element, document: doc }) => {
   element.classList.add('demo-toolbar');
+  const fullscreen = mountFullscreenToggle(doc);
   element.append(
+    fullscreen.button,
     field(doc, 'strong', 'Untitled workspace'),
     field(doc, 'span', '/', 'slash'),
     field(doc, 'span', 'Spatial study', 'muted'),
@@ -89,6 +92,7 @@ export const toolbar: PaneRenderer = ({ element, document: doc }) => {
   return {
     dispose() {
       unsubscribe();
+      fullscreen.dispose();
       for (const button of switcher.querySelectorAll('button')) button.onclick = null;
     },
   };

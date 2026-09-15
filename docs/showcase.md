@@ -1,12 +1,12 @@
-# Quilt in pictures
+# Demo screenshots
 
-These are captures of the working vanilla demo. The [React demo](https://quilt-layouts.vercel.app/react.html) uses the same layout engine and chrome. Try the controls yourself in the [live vanilla demo](https://quilt-layouts.vercel.app/vanilla.html).
+Screenshots of the [vanilla demo](https://quilt-layouts.vercel.app/vanilla.html). The [React demo](https://quilt-layouts.vercel.app/react.html) uses the same layout engine and chrome.
 
 ## Recorded walkthrough
 
 ![Recorded Quilt walkthrough with pane arrangements, scene interaction, and workspace presets](media/demo-walkthrough.webp)
 
-A 35-second recording of the demo in use, converted to a looping animated WebP at 1280 pixels wide. The original recording includes its own zooms and cursor movements.
+A 35-second recording of the demo in use, converted to a looping animated WebP at 1280 pixels wide.
 
 ## Resizing
 
@@ -34,7 +34,7 @@ The Review preset separates the timeline, inspector, and settings. This capture 
 
 ## Configuration controls
 
-Open the **Theming** tab to explore:
+The **Theming** tab contains these controls:
 
 | Control        | What it changes                                                                          |
 | -------------- | ---------------------------------------------------------------------------------------- |
@@ -43,7 +43,7 @@ Open the **Theming** tab to explore:
 | Tab            | Orientation, compact display, floating or anchored placement, fit, shape, and dimensions |
 | Resizing       | Divider width, auto-collapse behavior, and visibility of disabled handles                |
 | Corner handles | Shape, visibility, color, size, inset, stroke width, and opacity                         |
-| Layout JSON    | Inspect and edit the workspace structure                                                 |
+| Layout JSON    | Inspect and edit layout and appearance settings                                          |
 
 Use **Default**, **Focus**, and **Review** in the workspace toolbar to switch layouts. Applications can configure these features through the public API; see [theming](theming.md) and [API documentation](api.md).
 
@@ -64,6 +64,6 @@ In another terminal at the repository root:
 node scripts/capture-demos.mjs
 ```
 
-The script uses a fresh browser session, clicks the demo controls, drags real dividers, and writes four PNGs into `docs/media`. `DEMO_URL` can override the local server URL. Screenshots use a 1280 × 820 viewport. The images are captured UI, not mockups.
+The script uses a fresh browser session, clicks the demo controls, drags real dividers, and writes four PNGs into `docs/media`. `DEMO_URL` can override the local server URL. Screenshots use a 1280 × 820 viewport.
 
-The separate `demo-walkthrough.webp` comes from a supplied video recording; the capture script does not regenerate it.
+The separate `demo-walkthrough.webp` was converted from a video recording; the capture script does not regenerate it.

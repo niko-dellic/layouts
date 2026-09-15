@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+- Add workspace fullscreen controls to the vanilla and React demos while preserving mounted panes and keeping configuration dialogs accessible.
+- Improve the responsive landing-page layout and clarify browser and desktop demo descriptions.
+- Expand API, theme, integration, and lifecycle documentation and update demo links to quilt-layouts.vercel.app.
+
 ## 0.2.0
 
 - Preserve React provider context through portals and update renderer options without rebuilding pane views.
@@ -8,7 +14,6 @@
 - Add opt-in close confirmation with a built-in dialog or an application-owned asynchronous replacement.
 - Resolve geometry theme lengths through CSS, expose theme refresh/token mapping, and scope chrome resets to library elements.
 - Add integration examples and regression coverage; isolate the browser test server from running demos.
-
 - Add standalone vanilla, React, and Electron starters, typed application state, compile-time registration exclusivity, and explicit option resets.
 
 ## 0.1.1

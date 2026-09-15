@@ -223,8 +223,9 @@ over the focused region. Editable content, composition, repeats, dialogs, and ha
 events are ignored. Browser/OS-reserved shortcuts may not reach the page.
 
 `popouts: false` hides the window action and prevents API opening. Individual
-pane capabilities still apply. Electron/Tauri native adapters and additional
-framework bindings are not included in this release.
+pane capabilities still apply. The [Electron hosts](compatibility.md#electron-reference-host) use the existing
+same-origin window API. Tauri native-window adapters and dedicated bindings for
+other frameworks are not included.
 
 ## TypeScript state and option resets
 

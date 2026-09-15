@@ -12,7 +12,8 @@ npm ci
 npm run build && npm run build:demos
 ```
 
-The output includes `index.html`, `vanilla.html`, and `react.html`, with their bundled
-assets. Keep the Vercel project root at the repository root and use Node 24 in its
+The output includes `index.html`, `vanilla.html`, `react.html`, and `electron.html`,
+with their bundled assets. The Electron page links to binaries hosted in GitHub
+Releases; the site build does not create them. Keep the Vercel project root at the repository root and use Node 24 in its
 project settings. Git pull requests create previews; merging to `main` updates the
 production site. This deployment does not publish npm packages.
